@@ -112,7 +112,7 @@
     access.onclick=()=>dialog.showModal(); document.querySelector('.close').onclick=()=>dialog.close();
     
     // Autenticación modificada para validar con el servidor de Render mediante /api/auth
-    document.querySelector('loginForm').onsubmit=async e=>{
+    document.querySelector('#loginForm').onsubmit=async e=>{
       e.preventDefault(); 
       const pw=document.querySelector('#password').value; 
       try { 
