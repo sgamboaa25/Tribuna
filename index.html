@@ -39,7 +39,7 @@
     h1,h2,h3,p { margin-top:0; } 
     h1 { font: 700 clamp(2.2rem,4.5vw,4rem)/1.05 Georgia,serif; letter-spacing:-.04em; margin:.2rem 0 1.2rem; color:var(--ink); }
     .hero-copy { display:flex; flex-direction:column; justify-content:center; } 
-    .lead { font:1.1rem/1.6 Georgia,serif; color:var(--muted); }
+    .lead { font:1.1rem/1.6 Georgia,serif; color:var(--muted); margin-bottom:0; }
     .byline { font-size:.78rem; font-weight:700; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; margin-top:24px; }
     
     .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding:48px 0; }
@@ -55,10 +55,11 @@
     .article-link:hover h1,.article-link:hover h2 { color:var(--red); } 
     
     #articleDetail { display:none; background:var(--card-bg); border:1px solid var(--line); border-radius:12px; padding:48px; margin:20px 0 48px; box-shadow:0 10px 40px rgba(0,0,0,.03); } 
-    #articleDetail h1 { max-width:900px; font-size:3rem; } 
-    #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:8px; margin:28px 0; display:none; } 
+    #articleDetail h1 { max-width:900px; font-size:3rem; margin-bottom:12px; } 
+    #articleDetail .lead { margin-bottom:16px; }
+    #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:8px; margin:16px 0 24px; display:none; } 
     .detail-content { max-width:780px; font:1.05rem/1.85 Georgia,serif; color:#22262d; text-align:justify; } 
-    .detail-content p { margin-bottom:1.5em; }
+    .detail-content p { margin-bottom:1.2em; margin-top:0; }
     .back { border:0; background:transparent; color:var(--muted); padding:0 0 24px; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:6px; }
     .back:hover { color:var(--ink); }
 
@@ -91,10 +92,9 @@
     .modal-body { padding:28px; background:var(--card-bg); }
     
     label { display:block; font-weight:700; font-size:.78rem; margin-bottom:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; } 
-    input,select { width:0; width:100%; border:1px solid var(--line); border-radius:6px; padding:12px; font:inherit; font-size:.95rem; margin-bottom:20px; background:#fafafb; outline:none; transition:border-color .2s; } 
+    input,select { width:100%; border:1px solid var(--line); border-radius:6px; padding:12px; font:inherit; font-size:.95rem; margin-bottom:20px; background:#fafafb; outline:none; transition:border-color .2s; } 
     input:focus,select:focus { border-color:var(--ink); background:#fff; }
     
-    /* Editor enriquecido profesional */
     .editor-toolbar { display:flex; gap:6px; background:#f4f5f7; padding:8px; border:1px solid var(--line); border-top-left-radius:6px; border-top-right-radius:6px; flex-wrap:wrap; }
     .editor-btn { background:#fff; border:1px solid var(--line); border-radius:4px; padding:6px 12px; font-weight:600; font-size:.8rem; cursor:pointer; color:var(--ink); transition:background .1s; }
     .editor-btn:hover { background:#e8ebf0; }
@@ -213,7 +213,6 @@
           <div><label for="tags">Etiquetas</label><input id="tags" placeholder="Liga, equipo, atleta…" /></div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." style="height:90px; resize:vertical; padding:12px; border:1px solid var(--line); border-radius:6px; background:#fff; font:inherit; width:100%; outline:none;"></textarea></div>
           
-          <!-- Editor enriquecido profesional -->
           <div class="wide">
             <label for="bodyEditor">Cuerpo de la nota</label>
             <div class="editor-toolbar">
