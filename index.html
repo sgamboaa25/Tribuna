@@ -93,7 +93,7 @@
           <div class="wide"><label for="body">Cuerpo de la nota</label><textarea id="body" required placeholder="Cuenta la historia…"></textarea></div>
           <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" placeholder="Tu nombre y apellidos" /></div>
           <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" placeholder="nombre@ejemplo.com" /></div>
-          <div class="wide"><label for="photoFile">Fotografía</label><input id="photoFile" type="file" accept="image/*" /></div>
+          <div class="wide"><label for="photoFile">Fotografía local</label><input id="photoFile" type="file" accept="image/*" /></div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
         </div>
         <button class="submit">Guardar como borrador</button> <button class="access" type="button" id="previewButton">Vista previa</button><p class="message" id="saveMessage"></p>
@@ -219,32 +219,65 @@
       const message=document.querySelector('#saveMessage');
       
       let imageUrl='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=700&q=80';
-      if(fileInput.files && fileInput.files[0]){
-        imageUrl=await new Promise((resolve)=>{
-          const reader=new FileReader();
-          reader.onload=(uploadEvent)=>resolve(uploadEvent.target.result);
-          reader.readAsDataURL(fileInput.files[0]);
-        });
-      } else if(editingId!==null && notes[editingId].image){
-        imageUrl=notes[editingId].image;
-      }
+      message.textContent='Procesando imagen...';
 
-      const note={
-        title:document.querySelector('#title').value,
-        sport:document.querySelector('#sport').value,
-        tags:document.querySelector('#tags').value,
-        intro:document.querySelector('#intro').value,
-        body:document.querySelector('#body').value,
-        author:document.querySelector('#authorName').value,
-        email:document.querySelector('#authorEmail').value,
-        image:imageUrl
-      }; 
+      try {
+        if(fileInput.files && fileInput.files[0]){
+          imageUrl=await new Promise((resolve, reject)=>{
+            const reader=new FileReader();
+            reader.onload=(e)=>{
+              const img=new Image();
+              img.onload=()=>{
+                const canvas=document.createElement('canvas');
+                let width=img.width;
+                let height=img.height;
+                const max_width=1200;
+                
+                if (width > max_width) {
+                  height=Math.round((height * max_width) / width);
+                  width=max_width;
+                }
+                
+                canvas.width=width;
+                canvas.height=height;
+                const ctx=canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+              };
+              img.onerror = () => reject(new Error('Formato de imagen no válido.'));
+              img.src=e.target.result;
+            };
+            reader.onerror = () => reject(new Error('Error al leer el archivo.'));
+            reader.readAsDataURL(fileInput.files[0]);
+          });
+        } else if(editingId!==null && notes[editingId].image){
+          imageUrl=notes[editingId].image;
+        }
 
-      try { 
+        const note={
+          title:document.querySelector('#title').value,
+          sport:document.querySelector('#sport').value,
+          tags:document.querySelector('#tags').value,
+          intro:document.querySelector('#intro').value,
+          body:document.querySelector('#body').value,
+          author:document.querySelector('#authorName').value,
+          email:document.querySelector('#authorEmail').value,
+          image:imageUrl
+        }; 
+        
         const isNew=editingId===null; 
         const endpoint=isNew?'/api/notes':`/api/notes/${notes[editingId].id}`; 
-        const response=await fetch(endpoint,{method:isNew?'POST':'PUT',headers:{'Content-Type':'application/json','Authorization':`Bearer ${writerToken}`},body:JSON.stringify(note)}); 
-        if(!response.ok) throw new Error(); 
+        
+        const response=await fetch(endpoint,{
+          method:isNew?'POST':'PUT',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${writerToken}`},
+          body:JSON.stringify(note)
+        }); 
+        
+        if(response.status === 413) throw new Error('La imagen es demasiado pesada incluso tras la compresión.');
+        if(response.status === 401) throw new Error('Sesión expirada. Recarga la página, inicia sesión de redacción e intenta de nuevo.');
+        if(!response.ok) throw new Error('Error de conexión con el servidor Render.'); 
+        
         const saved=await response.json(); 
         if(isNew) notes.push(saved); else notes[editingId]=saved; 
         message.textContent=isNew?'Nota guardada en el servidor.':'Cambios guardados en el servidor.'; 
@@ -252,8 +285,8 @@
         renderDrafts(); 
         renderPublicCards(); 
         e.target.reset(); 
-      } catch { 
-        message.textContent='No se pudo guardar. Inicia sesión de redacción y verifica que el servidor esté en marcha.'; 
+      } catch (err) { 
+        message.textContent = err.message || 'Error desconocido al guardar la nota.';
       } 
     };
   </script>
