@@ -45,7 +45,7 @@
     #writerPanel { display:none; border:1px solid var(--line); border-radius:16px; background:#fff; padding:34px; margin:30px 0; box-shadow:0 12px 30px #1d263108; } #writerPanel h2 { color:var(--ink); margin-bottom:7px; }
     #writerPanel > p { color:var(--muted); font-size:.93rem; } #writerPanel > div > strong { display:block; margin-top:30px; font-size:.82rem; color:var(--muted); letter-spacing:.07em; text-transform:uppercase; }
     .draft-list { border-top:1px solid var(--line); margin:12px 0 32px; } .draft-item { display:flex; justify-content:space-between; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:15px 0; } .draft-item strong { display:block; font-family:Georgia,serif; font-size:1.03rem; } .draft-item small { color:var(--muted); } .edit-note { border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); padding:8px 12px; font-size:.82rem; font-weight:bold; cursor:pointer; white-space:nowrap; } .edit-note:hover { border-color:var(--blue); color:var(--blue); }
-    .editor-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; padding:23px; border:1px solid var(--line); border-radius:10px; background:#fcfcfd; } .editor-grid .wide { grid-column:1/-1; } #writerPanel label { color:#4f5661; font-size:.78rem; letter-spacing:.035em; text-transform:uppercase; } #writerPanel input,#writerPanel textarea,#writerPanel select { border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:none; transition:border-color .2s,box-shadow .2s; } #writerPanel input:focus,#writerPanel textarea:focus,#writerPanel select:focus { outline:0; border-color:var(--blue); box-shadow:0 0 0 3px #2463c51a; }
+    .editor-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; padding:23px; border:1px solid var(--line); border-radius:10px; background:#fcfcfd; } .editor-grid .wide { grid-column:1/-1; } #writerPanel label { color:#4f5661; font-size:.78rem; letter-spacing:.035em; text-transform:uppercase; } #writerPanel input,#writerPanel textarea,#writerPanel select { border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:none; transition:border-color .2s,box-shadow .2s; } #writerPanel input:focus,#writerPanel textarea:focus,#writerPanel select:focus { outline:0; border-color:var(--blue); box-shadow:0 0 0 3px #2463c51a; } #writerPanel input[type="file"] { padding:9px; font-size:.82rem; color:var(--muted); } #writerPanel input[type="file"]::file-selector-button { border:0; border-radius:4px; background:#edf3ff; color:var(--blue); padding:6px 9px; margin-right:9px; font-weight:bold; cursor:pointer; }
     .check { display:flex; align-items:center; gap:8px; margin:3px 0 0; font-size:.85rem; text-transform:none !important; letter-spacing:0 !important; } .check input { width:auto !important; margin:0; accent-color:var(--blue); } #articleForm > .submit { margin-top:16px; border-radius:6px; background:var(--blue); } #articleForm > .access { margin-top:16px; background:#eef0f3; color:var(--ink); } #preview { display:none; background:#f7f9fc; border:1px solid #e4ebf5; border-left:3px solid var(--blue); border-radius:8px; margin-top:28px; padding:24px; } #preview h1 { font-size:2rem; } #preview .preview-meta { color:var(--muted); font-size:.82rem; font-weight:bold; text-transform:uppercase; }
     @media (max-width:720px) { .brand { font-size:2.45rem; } .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } .hero-image { min-height:260px; } nav { gap:12px; overflow:auto; } .search-bar { grid-template-columns:1fr; } .search-bar button { min-height:42px; } #writerPanel { padding:22px 16px; } .editor-grid { padding:16px; } .newsletter { align-items:flex-start; flex-direction:column; } .utility span:last-child { display:none; } .rank-item:not(:first-child) { padding-left:0; border-left:0; } }
   </style>
@@ -93,7 +93,7 @@
           <div class="wide"><label for="body">Cuerpo de la nota</label><textarea id="body" required placeholder="Cuenta la historia…"></textarea></div>
           <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" placeholder="Tu nombre y apellidos" /></div>
           <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" placeholder="nombre@ejemplo.com" /></div>
-          <div class="wide"><label for="imageUrl">URL de la imagen</label><input id="imageUrl" placeholder="https://images.unsplash.com/..." /></div>
+          <div class="wide"><label for="photoFile">Fotografía</label><input id="photoFile" type="file" accept="image/*" /></div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
         </div>
         <button class="submit">Guardar como borrador</button> <button class="access" type="button" id="previewButton">Vista previa</button><p class="message" id="saveMessage"></p>
@@ -146,7 +146,39 @@
     document.querySelectorAll('.open-article').forEach(link=>link.onclick=e=>{e.preventDefault(); openArticle(Number(link.dataset.id));});
     document.querySelector('#backToCover').onclick=()=>{detail.style.display='none'; document.querySelector('#portada').scrollIntoView({behavior:'smooth'});};
     document.querySelector('#detailShare').onclick=()=>navigator.clipboard?.writeText(`${document.querySelector('#detailTitle').textContent} — ${location.href}`);
-    function renderDrafts(){ const list=document.querySelector('#draftList'); list.replaceChildren(); notes.forEach((note,id)=>{ const item=document.createElement('div'); item.className='draft-item'; const text=document.createElement('div'); const name=document.createElement('strong'); name.textContent=note.title; const meta=document.createElement('small'); meta.textContent=`${note.sport} · ${note.author}`; text.append(name,meta); const button=document.createElement('button'); button.className='edit-note'; button.type='button'; button.textContent='Editar'; button.onclick=()=>{editingId=id; document.querySelector('#title').value=note.title; document.querySelector('#sport').value=note.sport; document.querySelector('#tags').value=note.tags; document.querySelector('#intro').value=note.intro; document.querySelector('#body').value=note.body; document.querySelector('#authorName').value=note.author; document.querySelector('#authorEmail').value=note.email; document.querySelector('#imageUrl').value=note.image||''; document.querySelector('#saveMessage').textContent=`Editando: ${note.title}`; document.querySelector('#title').scrollIntoView({behavior:'smooth',block:'center'});}; item.append(text,button); list.append(item); }); }
+    function renderDrafts(){ 
+      const list=document.querySelector('#draftList'); 
+      list.replaceChildren(); 
+      notes.forEach((note,id)=>{ 
+        const item=document.createElement('div'); 
+        item.className='draft-item'; 
+        const text=document.createElement('div'); 
+        const name=document.createElement('strong'); 
+        name.textContent=note.title; 
+        const meta=document.createElement('small'); 
+        meta.textContent=`${note.sport} · ${note.author}`; 
+        text.append(name,meta); 
+        const button=document.createElement('button'); 
+        button.className='edit-note'; 
+        button.type='button'; 
+        button.textContent='Editar'; 
+        button.onclick=()=>{
+          editingId=id; 
+          document.querySelector('#title').value=note.title; 
+          document.querySelector('#sport').value=note.sport; 
+          document.querySelector('#tags').value=note.tags; 
+          document.querySelector('#intro').value=note.intro; 
+          document.querySelector('#body').value=note.body; 
+          document.querySelector('#authorName').value=note.author; 
+          document.querySelector('#authorEmail').value=note.email; 
+          document.querySelector('#photoFile').value='';
+          document.querySelector('#saveMessage').textContent=`Editando: ${note.title}`; 
+          document.querySelector('#title').scrollIntoView({behavior:'smooth',block:'center'});
+        }; 
+        item.append(text,button); 
+        list.append(item); 
+      }); 
+    }
     function renderPublicCards(){ 
       const grid=document.querySelector('#futbol'); 
       grid.querySelectorAll('.dynamic-card').forEach(card=>card.remove()); 
@@ -180,8 +212,23 @@
     }
     async function loadNotes(){ try { const response=await fetch('/api/notes'); if(!response.ok) throw new Error(); notes=await response.json(); renderDrafts(); renderPublicCards(); } catch { document.querySelector('#searchStatus').textContent='Conecta la web al servidor para ver las notas compartidas.'; } }
     renderDrafts(); loadNotes();
+    
     document.querySelector('#articleForm').onsubmit=async e=>{ 
       e.preventDefault(); 
+      const fileInput=document.querySelector('#photoFile');
+      const message=document.querySelector('#saveMessage');
+      
+      let imageUrl='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=700&q=80';
+      if(fileInput.files && fileInput.files[0]){
+        imageUrl=await new Promise((resolve)=>{
+          const reader=new FileReader();
+          reader.onload=(uploadEvent)=>resolve(uploadEvent.target.result);
+          reader.readAsDataURL(fileInput.files[0]);
+        });
+      } else if(editingId!==null && notes[editingId].image){
+        imageUrl=notes[editingId].image;
+      }
+
       const note={
         title:document.querySelector('#title').value,
         sport:document.querySelector('#sport').value,
@@ -190,9 +237,9 @@
         body:document.querySelector('#body').value,
         author:document.querySelector('#authorName').value,
         email:document.querySelector('#authorEmail').value,
-        image:document.querySelector('#imageUrl').value||'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=700&q=80'
+        image:imageUrl
       }; 
-      const message=document.querySelector('#saveMessage'); 
+
       try { 
         const isNew=editingId===null; 
         const endpoint=isNew?'/api/notes':`/api/notes/${notes[editingId].id}`; 
