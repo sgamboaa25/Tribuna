@@ -103,14 +103,32 @@
     </section>
   </main>
   <footer><div><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</div></footer>
-  <dialog id="loginDialog"><div class="modal-head"><button class="close" aria-label="Cerrar">×</button><h2>Acceso de redacción</h2></div><form class="modal-body" id="loginForm"><p>Ingresa tu clave de redactor para abrir el espacio de trabajo.</p><label for="password">Contraseña especial</label><input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /><button class="submit">Entrar a redacción</button><p class="message" id="loginMessage"></p><small>Demo local: la validación segura debe hacerse en el servidor antes de publicar el sitio.</small></form></dialog>
+  <dialog id="loginDialog"><div class="modal-head"><button class="close" aria-label="Cerrar">×</button><h2>Acceso de redacción</h2></div><form class="modal-body" id="loginForm"><p>Ingresa tu clave de redactor para abrir el espacio de trabajo.</p><label for="password">Contraseña especial</label><input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /><button class="submit">Entrar a redacción</button><p class="message" id="loginMessage"></p><small>Servidor activo en Render.</small></form></dialog>
   <script>
     const dialog=document.querySelector('#loginDialog'), access=document.querySelector('#accessButton'), panel=document.querySelector('#writerPanel'); let writerToken='';
     const liveDate=document.querySelector('#liveDate');
     function updateDate(){ liveDate.textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
     updateDate(); setInterval(updateDate, 30000);
     access.onclick=()=>dialog.showModal(); document.querySelector('.close').onclick=()=>dialog.close();
-    document.querySelector('#loginForm').onsubmit=async e=>{e.preventDefault(); const pw=document.querySelector('#password').value; try { const response=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}); if(!response.ok) throw new Error(); writerToken=(await response.json()).token; dialog.close(); panel.style.display='block'; access.textContent='Redacción activa'; panel.scrollIntoView({behavior:'smooth'}); } catch { document.querySelector('#loginMessage').textContent='No se pudo validar la contraseña. Abre la web desde el servidor.'; }};
+    
+    // Autenticación modificada para validar con el servidor de Render mediante /api/auth
+    document.querySelector('#loginForm').onsubmit=async e=>{
+      e.preventDefault(); 
+      const pw=document.querySelector('#password').value; 
+      try { 
+        const response=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}); 
+        if(!response.ok) throw new Error(); 
+        const data = await response.json();
+        writerToken=data.token; 
+        dialog.close(); 
+        panel.style.display='block'; 
+        access.textContent='Redacción activa'; 
+        panel.scrollIntoView({behavior:'smooth'}); 
+      } catch { 
+        document.querySelector('#loginMessage').textContent='Contraseña incorrecta o error de conexión con el servidor.'; 
+      }
+    };
+
     document.querySelector('#articleForm').onsubmit=e=>{e.preventDefault(); const photos=document.querySelector('#photos').files.length, videos=document.querySelector('#videos').files.length; const media=[]; if(photos) media.push(`${photos} fotografía${photos>1?'s':''}`); if(videos) media.push(`${videos} video${videos>1?'s':''}`); document.querySelector('#saveMessage').textContent=`Borrador guardado localmente (demo)${media.length ? `, con ${media.join(' y ')}` : ''}.`; e.target.reset();};
     document.querySelector('#previewButton').onclick=()=>{ const title=document.querySelector('#title').value||'Tu titular aparecerá aquí'; const intro=document.querySelector('#intro').value||'La entradilla aparecerá aquí.'; const sport=document.querySelector('#sport').value||'Deporte'; const author=document.querySelector('#authorName').value||'Redacción Tribuna'; const urgent=document.querySelector('#urgent').checked?'Última hora · ':''; const minutes=Math.max(1,Math.ceil(document.querySelector('#body').value.trim().split(/\s+/).filter(Boolean).length/200)); const preview=document.querySelector('#preview'); preview.innerHTML=`<div class="tag">${urgent}${sport}</div><h1>${title}</h1><p class="lead">${intro}</p><p class="preview-meta">Por ${author} · ${minutes} min de lectura</p>`; preview.style.display='block'; preview.scrollIntoView({behavior:'smooth',block:'nearest'}); };
     const publicSport=document.querySelector('#publicSport'), publicSportToggle=document.querySelector('#publicSportToggle');
@@ -123,7 +141,7 @@
       {sport:'Fútbol',title:'Cuando el juego pide una mirada más profunda',intro:'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'análisis, fútbol',body:'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.'},
       {sport:'Fútbol',title:'La grada también juega el partido',intro:'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'crónica, afición',body:'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.'},
       {sport:'Baloncesto',title:'El talento joven ya no espera turno',intro:'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.',author:'Diego Morales',email:'diego@tribuna.test',tags:'baloncesto, liga',body:'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.'},
-      {sport:'Atletismo',title:'La victoria tiene más de una medida',intro:'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.',author:'Sofía Campos',email:'sofia@tribuna.test',tags:'opinión, atletismo',body:'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.'}
+      {sport:'Atletismo',title:'La victoria tiene más de una medida',intro:'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.',author:'Sofía Campos',email:'sofia@tribuna.test',tags:'opinión, atletismo',body:'Notodos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.'}
     ];
     let editingId=null;
     const detail=document.querySelector('#articleDetail');
