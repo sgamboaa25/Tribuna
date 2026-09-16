@@ -36,7 +36,12 @@
     .newsletter button { background:#fff; color:var(--blue); border:0; padding:12px 17px; font-weight:bold; white-space:nowrap; cursor:pointer; }
     .most-read { border-top:1px solid var(--line); margin:6px 0 40px; padding-top:25px; } .most-read h2 { font-size:2.1rem; margin-bottom:5px; } .most-read > p { color:var(--muted); margin-bottom:20px; }
     .ranking { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line); } .rank-item { display:flex; gap:15px; padding:20px 18px 20px 0; border-bottom:1px solid var(--line); } .rank-item:not(:first-child) { padding-left:18px; border-left:1px solid var(--line); } .rank-number { color:var(--red); font:bold 2.5rem/1 Georgia,serif; } .rank-item a { color:var(--ink); text-decoration:none; font:bold 1.15rem/1.15 Georgia,serif; } .rank-item a:hover { color:var(--red); } .reads { display:block; color:var(--muted); font-size:.75rem; margin-top:8px; text-transform:uppercase; letter-spacing:.05em; }
-    footer { background:var(--ink); color:#dce0e5; padding:30px 24px; } footer div { max-width:1132px; margin:auto; font-size:.85rem; }
+    footer { background:var(--ink); color:#dce0e5; padding:30px 24px; } 
+    footer div.footer-content { max-width:1132px; margin:auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; font-size:.85rem; }
+    .social-links { display:flex; gap:18px; align-items:center; }
+    .social-links a { color:#fff; display:block; transition:opacity .2s; }
+    .social-links a:hover { opacity:.6; }
+    .social-links svg { width:20px; height:20px; fill:currentColor; }
     dialog { width:min(560px,calc(100% - 28px)); border:0; padding:0; box-shadow:0 18px 60px #0008; } dialog::backdrop { background:#10131bb3; }
     .modal-head { padding:25px 28px; background:var(--ink); color:#fff; } .modal-head h2 { margin:0; } .modal-body { padding:28px; }
     label { display:block; font-weight:bold; font-size:.9rem; margin-bottom:6px; } input,textarea { width:100%; border:1px solid #b9b4aa; padding:11px; font:inherit; margin-bottom:17px; }
@@ -101,7 +106,24 @@
       <article id="preview" aria-live="polite"></article>
     </section>
   </main>
-  <footer><div><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</div></footer>
+  
+  <footer>
+    <div class="footer-content">
+      <span><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</span>
+      <div class="social-links">
+        <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+          <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/s.gamboaa/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@s.gamboaaa" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+          <svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 3.44-2.84 6.47-6.28 7.03-3.68.61-7.53-1.35-8.79-4.85-1.12-3.11.19-6.9 3.07-8.49 1.84-.99 4.14-1.07 6.13-.37l.11 4.15c-1.3-.23-2.73.01-3.69.96-.86.84-1.1 2.22-.6 3.32.48 1.05 1.57 1.7 2.73 1.65 1.41-.05 2.62-1.18 2.83-2.58.07-.44.1-.89.1-1.34.02-5.46.01-10.92.02-16.38z"/></svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
   <dialog id="loginDialog"><div class="modal-head"><button class="close" aria-label="Cerrar">×</button><h2>Acceso de redacción</h2></div><form class="modal-body" id="loginForm"><p>Ingresa tu clave de redactor para abrir el espacio de trabajo.</p><label for="password">Contraseña especial</label><input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /><button class="submit">Entrar a redacción</button><p class="message" id="loginMessage"></p><small>Servidor activo en Render.</small></form></dialog>
   <script>
     const dialog=document.querySelector('#loginDialog'), access=document.querySelector('#accessButton'), panel=document.querySelector('#writerPanel'); let writerToken='';
@@ -219,7 +241,8 @@
       const message=document.querySelector('#saveMessage');
       
       let imageUrl='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=700&q=80';
-      message.textContent='Procesando imagen...';
+      message.style.color = 'var(--blue)';
+      message.textContent='Procesando imagen y guardando nota...';
 
       try {
         if(fileInput.files && fileInput.files[0]){
@@ -231,7 +254,7 @@
                 const canvas=document.createElement('canvas');
                 let width=img.width;
                 let height=img.height;
-                const max_width=1200;
+                const max_width=900; 
                 
                 if (width > max_width) {
                   height=Math.round((height * max_width) / width);
@@ -242,7 +265,7 @@
                 canvas.height=height;
                 const ctx=canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.8));
+                resolve(canvas.toDataURL('image/jpeg', 0.65)); 
               };
               img.onerror = () => reject(new Error('Formato de imagen no válido.'));
               img.src=e.target.result;
@@ -274,18 +297,28 @@
           body:JSON.stringify(note)
         }); 
         
-        if(response.status === 413) throw new Error('La imagen es demasiado pesada incluso tras la compresión.');
-        if(response.status === 401) throw new Error('Sesión expirada. Recarga la página, inicia sesión de redacción e intenta de nuevo.');
-        if(!response.ok) throw new Error('Error de conexión con el servidor Render.'); 
+        if(response.status === 401) throw new Error('Sesión de redacción requerida. Haz clic en el botón negro superior e inicia sesión.');
+        
+        if(!response.ok) {
+          let serverError = 'Error de conexión con el servidor Render.';
+          try {
+            const errData = await response.json();
+            if (errData.error) serverError = errData.error;
+          } catch(err){}
+          throw new Error(serverError);
+        }
         
         const saved=await response.json(); 
         if(isNew) notes.push(saved); else notes[editingId]=saved; 
-        message.textContent=isNew?'Nota guardada en el servidor.':'Cambios guardados en el servidor.'; 
+        
+        message.style.color = 'var(--blue)';
+        message.textContent=isNew?'Nota guardada exitosamente en el servidor.':'Cambios guardados exitosamente.'; 
         editingId=null; 
         renderDrafts(); 
         renderPublicCards(); 
         e.target.reset(); 
       } catch (err) { 
+        message.style.color = 'var(--red)';
         message.textContent = err.message || 'Error desconocido al guardar la nota.';
       } 
     };
