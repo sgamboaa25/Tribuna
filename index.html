@@ -22,7 +22,7 @@
     .sport-picker { position:relative; } .sport-toggle { display:flex; width:100%; height:100%; min-height:42px; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); padding:0 12px; font:inherit; cursor:pointer; } .sport-toggle::after { content:'⌄'; color:var(--muted); font-size:1.1rem; transform:translateY(-2px); } .sport-menu { display:none; position:absolute; z-index:5; top:calc(100% + 7px); right:0; left:0; overflow:hidden; padding:5px; border:1px solid var(--line); border-radius:8px; background:#fff; box-shadow:0 14px 35px #1d26311c; } .sport-picker.is-open .sport-menu { display:block; } .sport-picker.is-open .sport-toggle { border-color:var(--blue); } .sport-option { display:block; width:100%; border:0; border-radius:5px; background:transparent; color:var(--ink); padding:9px 10px; text-align:left; font:inherit; font-size:.9rem; cursor:pointer; } .sport-option:hover,.sport-option.is-selected { background:#edf3ff; color:var(--blue); }
     .tag { color:var(--red); font-size:.75rem; font-weight:bold; text-transform:uppercase; letter-spacing:.1em; }
     .hero { display:grid; grid-template-columns:1.55fr 1fr; gap:44px; padding-bottom:42px; border-bottom:1px solid var(--line); }
-    .hero-image { min-height:410px; border-radius:12px; background:linear-gradient(145deg,rgba(12,23,41,.08),rgba(230,51,49,.19)), url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80') center/cover; }
+    .hero-image { min-height:410px; border-radius:12px; background-position:center; background-size:cover; }
     h1,h2,h3,p { margin-top:0; } h1 { font: bold clamp(2.3rem,5vw,4.7rem)/.98 Georgia,serif; letter-spacing:-.055em; margin:.3rem 0 1.25rem; }
     .hero-copy { display:flex; flex-direction:column; justify-content:center; } .lead { font:1.13rem/1.55 Georgia,serif; color:#3f4855; }
     .byline { font-size:.82rem; font-weight:bold; margin-top:20px; }
@@ -67,10 +67,9 @@
       <form class="search-bar" id="searchForm"><input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Buscar noticias" /><div class="sport-picker" id="publicSport" data-value=""><button type="button" class="sport-toggle" id="publicSportToggle" aria-expanded="false">Todos los deportes</button><div class="sport-menu" role="menu"><button class="sport-option is-selected" type="button" data-value="">Todos los deportes</button><button class="sport-option" type="button" data-value="fútbol">Fútbol</button><button class="sport-option" type="button" data-value="baloncesto">Baloncesto</button><button class="sport-option" type="button" data-value="atletismo">Atletismo</button></div></div><button>Buscar</button></form>
       <p class="search-status" id="searchStatus" aria-live="polite"></p>
     </section>
-    <section class="hero">
-      <div class="hero-image" role="img" aria-label="Balón en un estadio"></div>
-      <article class="hero-copy searchable" data-sport="fútbol" data-search="análisis fútbol juego mirada profunda resultados"><a class="article-link open-article" href="#lectura" data-id="0"><div class="tag">Análisis · Fútbol</div><h1>Cuando el juego pide una mirada más profunda</h1><p class="lead">Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.</p><p class="byline">POR MARTA VILLALOBOS · 6 MIN DE LECTURA</p></a></article>
-    </section>
+    
+    <section class="hero" id="heroContainer"></section>
+    
     <article id="articleDetail" aria-live="polite">
       <button class="back" id="backToCover">← Volver a portada</button>
       <div class="tag" id="detailTag"></div>
@@ -81,19 +80,14 @@
       <p class="detail-content" id="detailBody"></p>
       <button class="share" id="detailShare">Compartir esta nota</button>
     </article>
-    <section class="grid" id="futbol">
-      <article class="card searchable" data-sport="fútbol" data-search="crónica fútbol grada partido estadio afición"><a class="article-link open-article" href="#lectura" data-id="1"><img src="https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80" alt="Estadio lleno" /><div class="tag">Crónica · Fútbol</div><h2>La grada también juega el partido</h2><p>Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.</p></a><button class="share" data-share="La grada también juega el partido">Compartir nota</button></article>
-      <article class="card searchable" id="otros" data-sport="baloncesto" data-search="baloncesto talento joven liga figuras"><a class="article-link open-article" href="#lectura" data-id="2"><img src="https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80" alt="Cancha de baloncesto" /><div class="tag">Baloncesto</div><h2>El talento joven ya no espera turno</h2><p>Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.</p></a><button class="share" data-share="El talento joven ya no espera turno">Compartir nota</button></article>
-      <article class="card searchable" id="opinion" data-sport="atletismo" data-search="opinión atleta victoria deporte perseverancia"><a class="article-link open-article" href="#lectura" data-id="3"><img src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80" alt="Atleta corriendo" /><div class="tag">Opinión · Atletismo</div><h2>La victoria tiene más de una medida</h2><p>Repensar el deporte desde el cuidado, la comunidad y la perseverancia.</p></a><button class="share" data-share="La victoria tiene más de una medida">Compartir nota</button></article>
-    </section>
+    
+    <section class="grid" id="futbol"></section>
+    
     <section class="most-read" aria-labelledby="mostReadTitle">
       <div class="tag">Lo más consultado</div><h2 id="mostReadTitle">Las notas más leídas</h2><p>Las historias que están marcando la conversación deportiva hoy.</p>
-      <div class="ranking">
-        <article class="rank-item"><div class="rank-number">01</div><div><a class="open-article" href="#lectura" data-id="0">Cuando el juego pide una mirada más profunda</a><span class="reads">12.4 mil lecturas</span></div></article>
-        <article class="rank-item"><div class="rank-number">02</div><div><a class="open-article" href="#lectura" data-id="2">El talento joven ya no espera turno</a><span class="reads">9.8 mil lecturas</span></div></article>
-        <article class="rank-item"><div class="rank-number">03</div><div><a class="open-article" href="#lectura" data-id="3">La victoria tiene más de una medida</a><span class="reads">7.1 mil lecturas</span></div></article>
-      </div>
+      <div class="ranking" id="rankingContainer"></div>
     </section>
+
     <section class="newsletter" id="podcast"><div><h2>El deporte, sin ruido.</h2><p>Recibe cada domingo nuestra selección de historias esenciales.</p></div><button onclick="alert('Gracias. En la versión final aquí iría el formulario de suscripción.')">Suscribirme</button></section>
     <section id="writerPanel">
       <div class="tag">Área privada</div><h2>Redactar una nueva nota</h2><p>Bienvenido al espacio de redacción. Este contenido solo se publica tras revisión editorial.</p>
@@ -164,12 +158,12 @@
     document.querySelectorAll('.sport-option').forEach(option=>option.onclick=()=>{publicSport.dataset.value=option.dataset.value; publicSportToggle.textContent=option.textContent; publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded','false'); document.querySelectorAll('.sport-option').forEach(item=>item.classList.toggle('is-selected',item===option));});
     document.addEventListener('click',e=>{if(!publicSport.contains(e.target)){publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded','false');}});
     document.querySelector('#searchForm').onsubmit=e=>{ e.preventDefault(); const term=document.querySelector('#searchInput').value.trim().toLowerCase(); const sport=publicSport.dataset.value; const items=[...document.querySelectorAll('.searchable')]; const shown=items.filter(item=>{ const words=item.dataset.search; const matchesTerm=!term||words.includes(term); const matchesSport=!sport||item.dataset.sport===sport; item.classList.toggle('is-hidden',!(matchesTerm&&matchesSport)); return matchesTerm&&matchesSport; }).length; document.querySelector('#searchStatus').textContent=shown ? `${shown} nota${shown===1?'':'s'} encontrada${shown===1?'':'s'}.` : 'No encontramos notas con esos criterios.'; };
-    document.querySelectorAll('.share').forEach(button=>button.onclick=async()=>{ const text=`${button.dataset.share} — TRIBUNA`; try { if(navigator.share) await navigator.share({title:button.dataset.share,text,url:location.href}); else { await navigator.clipboard.writeText(`${text} ${location.href}`); button.textContent='Enlace copiado'; setTimeout(()=>button.textContent='Compartir nota',1800); } } catch(error) {} });
+    
     let notes=[
-      {sport:'Fútbol',title:'Cuando el juego pide una mirada más profunda',intro:'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'análisis, fútbol',body:'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.'},
-      {sport:'Fútbol',title:'La grada también juega el partido',intro:'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'crónica, afición',body:'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.'},
-      {sport:'Baloncesto',title:'El talento joven ya no espera turno',intro:'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.',author:'Diego Morales',email:'diego@tribuna.test',tags:'baloncesto, liga',body:'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.'},
-      {sport:'Atletismo',title:'La victoria tiene más de una medida',intro:'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.',author:'Sofía Campos',email:'sofia@tribuna.test',tags:'opinión, atletismo',body:'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.'}
+      {sport:'Fútbol',title:'Cuando el juego pide una mirada más profunda',intro:'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'análisis, fútbol',body:'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
+      {sport:'Fútbol',title:'La grada también juega el partido',intro:'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'crónica, afición',body:'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image:'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
+      {sport:'Baloncesto',title:'El talento joven ya no espera turno',intro:'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.',author:'Diego Morales',email:'diego@tribuna.test',tags:'baloncesto, liga',body:'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image:'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
+      {sport:'Atletismo',title:'La victoria tiene más de una medida',intro:'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.',author:'Sofía Campos',email:'sofia@tribuna.test',tags:'opinión, atletismo',body:'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image:'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
     ];
     let editingId=null;
     const detail=document.querySelector('#articleDetail');
@@ -190,16 +184,16 @@
         imgEl.style.display='none';
       } 
       
-      document.querySelector('#detailByline').innerHTML=`POR ${note.author.toUpperCase()} | <a href="mailto:${note.email}" style="color:var(--muted); text-decoration:none;">${note.email}</a> · ${Math.max(1,Math.ceil(note.body.split(/\s+/).length/200))} MIN DE LECTURA`; 
+      document.querySelector('#detailByline').innerHTML=`POR ${note.author.toUpperCase()} | <a href="mailto:${note.email}" style="color:var(--muted); text-decoration:none;">${note.email}</a> · ${Math.max(1,Math.ceil((note.body||'').split(/\s+/).length/200))} MIN DE LECTURA`; 
       document.querySelector('#detailBody').textContent=note.body; 
       document.querySelector('#detailShare').dataset.share=note.title; 
       detail.style.display='block'; 
       detail.scrollIntoView({behavior:'smooth',block:'start'}); 
     }
     
-    document.querySelectorAll('.open-article').forEach(link=>link.onclick=e=>{e.preventDefault(); openArticle(Number(link.dataset.id));});
     document.querySelector('#backToCover').onclick=()=>{detail.style.display='none'; document.querySelector('#portada').scrollIntoView({behavior:'smooth'});};
     document.querySelector('#detailShare').onclick=()=>navigator.clipboard?.writeText(`${document.querySelector('#detailTitle').textContent} — ${location.href}`);
+    
     function renderDrafts(){ 
       const list=document.querySelector('#draftList'); 
       list.replaceChildren(); 
@@ -233,39 +227,46 @@
         list.append(item); 
       }); 
     }
-    function renderPublicCards(){ 
-      const grid=document.querySelector('#futbol'); 
-      grid.querySelectorAll('.dynamic-card').forEach(card=>card.remove()); 
-      notes.slice(4).forEach((note,id)=>{ 
-        const card=document.createElement('article'); 
-        card.className='card searchable dynamic-card'; 
-        card.dataset.sport=note.sport.toLowerCase(); 
-        card.dataset.search=`${note.sport} ${note.title} ${note.tags}`.toLowerCase(); 
-        const link=document.createElement('a'); 
-        link.className='article-link open-article'; 
-        link.href='#lectura'; 
-        link.dataset.id=String(id+4); 
-        
-        const img=document.createElement('img');
-        img.src=note.image||'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=700&q=80';
-        img.alt=note.title;
-        link.append(img);
 
-        const tag=document.createElement('div'); 
-        tag.className='tag'; 
-        tag.textContent=note.sport; 
-        const title=document.createElement('h2'); 
-        title.textContent=note.title; 
-        const intro=document.createElement('p'); 
-        intro.textContent=note.intro; 
-        link.append(tag,title,intro); 
-        link.onclick=e=>{e.preventDefault(); openArticle(Number(link.dataset.id));}; 
-        card.append(link); 
-        grid.append(card); 
-      }); 
+    function renderPublicCards(){ 
+      const hero = document.querySelector('#heroContainer');
+      const grid = document.querySelector('#futbol');
+      const ranking = document.querySelector('#rankingContainer');
+
+      if(notes.length > 0){
+        const n = notes[0];
+        hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background:linear-gradient(145deg,rgba(12,23,41,.08),rgba(230,51,49,.19)), url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}') center/cover;"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div class="tag">${n.sport}</div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()} · ${Math.max(1,Math.ceil((n.body||'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
+      } else { hero.innerHTML = ''; }
+
+      grid.innerHTML = '';
+      notes.slice(1).forEach((n, idx) => {
+        const id = idx + 1;
+        grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="${id}"><img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" /><div class="tag">${n.sport}</div><h2>${n.title}</h2><p>${n.intro}</p></a><button class="share" data-share="${n.title}">Compartir nota</button></article>`;
+      });
+
+      ranking.innerHTML = '';
+      notes.slice(0, 3).forEach((n, id) => {
+        ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia actual</span></div></article>`;
+      });
+
+      document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
+      document.querySelectorAll('.share').forEach(btn => btn.onclick = async () => {
+        const text = `${btn.dataset.share} — TRIBUNA`;
+        try {
+          if (navigator.share) await navigator.share({ title: btn.dataset.share, text, url: location.href });
+          else {
+            await navigator.clipboard.writeText(`${text} ${location.href}`);
+            btn.textContent = 'Enlace copiado';
+            setTimeout(() => btn.textContent = 'Compartir nota', 1800);
+          }
+        } catch (err) {}
+      });
     }
+
     async function loadNotes(){ try { const response=await fetch('/api/notes'); if(!response.ok) throw new Error(); notes=await response.json(); renderDrafts(); renderPublicCards(); } catch { document.querySelector('#searchStatus').textContent='Conecta la web al servidor para ver las notas compartidas.'; } }
-    renderDrafts(); loadNotes();
+    renderDrafts(); 
+    renderPublicCards();
+    loadNotes();
     
     document.querySelector('#articleForm').onsubmit=async e=>{ 
       e.preventDefault(); 
