@@ -645,13 +645,6 @@
     loadStandings(initialLeague);
     standingsInterval = setInterval(() => loadStandings(document.getElementById('leaguePicker').dataset.value), 300000);
 
-    const fallbackNotes = [
-      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
-      {id: 2, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
-      {id: 3, status: 'publicada', urgent: false, sport: 'Baloncesto', title: 'El talento joven ya no espera turno', intro: 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', author: 'Diego Morales', email: 'diego@tribuna.test', tags: 'baloncesto, liga', body: 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image: 'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
-      {id: 4, status: 'publicada', urgent: false, sport: 'Atletismo', title: 'La victoria tiene más de una medida', intro: 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', author: 'Sofía Campos', email: 'sofia@tribuna.test', tags: 'opinión, atletismo', body: 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
-    ];
-
     let allPublicNotes = [];
     let currentDisplayNotes = [];
     let allPanelNotes = [];
@@ -944,7 +937,7 @@
         allPublicNotes = data;
         handleRoute();
       } catch (err) { 
-        allPublicNotes = fallbackNotes;
+        allPublicNotes = [];
         handleRoute();
       } 
     }
