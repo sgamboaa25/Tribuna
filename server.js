@@ -192,6 +192,7 @@ app.get('/api/standings/:liga', async (req, res) => {
     const transformedData = rawStandings.map(item => ({
       posicion: item.position,
       equipo: item.team.name,
+      escudo: item.team.crest,
       jugados: item.playedGames,
       ganados: item.won,
       empatados: item.draw,

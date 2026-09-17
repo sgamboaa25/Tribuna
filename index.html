@@ -96,6 +96,8 @@
     .standings-table td { padding:14px 12px; border-bottom:1px solid var(--line); color:var(--ink); }
     .standings-table tr:last-child td { border-bottom:0; }
     .standings-table .team-col { text-align:left; font-family:'Fraunces', serif; font-weight:700; font-size:1.05rem; }
+    .team-cell { display:flex; align-items:center; gap:10px; }
+    .team-crest { width:22px; height:22px; object-fit:contain; flex-shrink:0; }
     .standings-table .pos-col { font-weight:700; color:var(--muted); width:40px; }
     .standings-table .pts-col { font-weight:700; background:var(--hover-bg); }
     
@@ -540,7 +542,12 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td class="pos-col">${t.posicion}</td>
-              <td class="team-col">${t.equipo}</td>
+              <td class="team-col">
+                <div class="team-cell">
+                  ${t.escudo ? `<img src="${t.escudo}" alt="${t.equipo}" class="team-crest" loading="lazy" />` : ''}
+                  <span>${t.equipo}</span>
+                </div>
+              </td>
               <td>${t.jugados}</td>
               <td>${t.ganados}</td>
               <td>${t.empatados}</td>
