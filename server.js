@@ -49,13 +49,13 @@ app.post('/api/auth', (req, res) => {
   return res.json({ token, expiresAt });
 });
 
-// GET Público: Devuelve notas publicadas o notas sin columna de status explícita
+// GET Público: Obtiene directamente todas las notas de Supabase
 app.get('/api/notes', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .or('status.eq.publicada,status.is.null');
+      .order('id', { ascending: false });
       
     if (error) throw error;
     res.json(data || []);
@@ -64,7 +64,7 @@ app.get('/api/notes', async (req, res) => {
   }
 });
 
-// GET Privado: Devuelve todas las notas registradas en Supabase
+// GET Privado: Devuelve todas las notas para la redacción
 app.get('/api/notes/all', authenticateWriter, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -131,8 +131,7 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const { data: notes } = await supabase
       .from('notes')
-      .select('id, created_at, status')
-      .or('status.eq.publicada,status.is.null');
+      .select('id, created_at, status');
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;

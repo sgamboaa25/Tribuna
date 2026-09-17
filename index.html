@@ -660,9 +660,8 @@
         const name = document.createElement('strong'); 
         name.textContent = note.title; 
         
-        const currentStatus = note.status || 'borrador';
-        const statusClass = currentStatus === 'publicada' ? 'status-publicada' : (currentStatus === 'en revisión' ? 'status-revision' : 'status-borrador');
-        const badge = `<span class="status-badge ${statusClass}">${currentStatus}</span>`;
+        const statusClass = note.status === 'publicada' ? 'status-publicada' : (note.status === 'en revisión' ? 'status-revision' : 'status-borrador');
+        const badge = `<span class="status-badge ${statusClass}">${note.status || 'borrador'}</span>`;
         name.innerHTML += badge;
 
         const meta = document.createElement('small'); 
@@ -675,9 +674,9 @@
         const statusSelect = document.createElement('select');
         statusSelect.className = 'status-select';
         statusSelect.innerHTML = `
-          <option value="borrador" ${currentStatus === 'borrador' ? 'selected' : ''}>Borrador</option>
-          <option value="en revisión" ${currentStatus === 'en revisión' ? 'selected' : ''}>En revisión</option>
-          <option value="publicada" ${currentStatus === 'publicada' ? 'selected' : ''}>Publicada</option>
+          <option value="borrador" ${note.status === 'borrador' ? 'selected' : ''}>Borrador</option>
+          <option value="en revisión" ${note.status === 'en revisión' ? 'selected' : ''}>En revisión</option>
+          <option value="publicada" ${note.status === 'publicada' ? 'selected' : ''}>Publicada</option>
         `;
 
         statusSelect.onchange = async () => {
@@ -692,7 +691,7 @@
           editingId = note.id; 
           document.querySelector('#title').value = note.title; 
           document.querySelector('#sport').value = note.sport; 
-          document.querySelector('#status').value = currentStatus; 
+          document.querySelector('#status').value = note.status || 'borrador'; 
           document.querySelector('#tags').value = note.tags || ''; 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
@@ -749,9 +748,10 @@
         const response = await fetch('/api/notes'); 
         if(!response.ok) throw new Error(); 
         const data = await response.json(); 
-        publicNotes = (data && data.length > 0) ? data : fallbackNotes;
+        
+        publicNotes = data;
         renderPublicCards(); 
-      } catch { 
+      } catch (err) { 
         publicNotes = fallbackNotes;
         renderPublicCards();
       } 
@@ -765,11 +765,10 @@
         }); 
         if(!response.ok) throw new Error(); 
         const data = await response.json();
-        allPanelNotes = (data && data.length > 0) ? data : fallbackNotes;
+        allPanelNotes = data;
         renderDrafts(); 
       } catch (err) {
-        allPanelNotes = fallbackNotes;
-        renderDrafts();
+        console.error("Error al cargar notas de redacción:", err);
       } 
     }
 
