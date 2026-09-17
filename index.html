@@ -95,7 +95,7 @@
     .card:hover { border-color:var(--muted); transform:translateY(-2px); } 
     .card img { width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--hover-bg); }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
-    .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; }
+    .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 
     a { text-decoration: none; color: inherit; }
     .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
@@ -682,7 +682,8 @@
         imgEl.style.display = 'none';
       } 
       
-      document.querySelector('#detailByline').innerHTML = `POR ${note.author.toUpperCase()} | <a href="mailto:${note.email}" style="color:var(--muted); text-decoration:none;">${note.email}</a> · ${Math.max(1, Math.ceil((note.body || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} MIN DE LECTURA`; 
+      const authorSlug = encodeURIComponent((note.author || '').toLowerCase().replace(/\s+/g, '-'));
+      document.querySelector('#detailByline').innerHTML = `POR <a href="/autor/${authorSlug}" onclick="navigateTo(event, '/autor/${authorSlug}')" style="color:var(--ink); text-decoration:underline; font-weight:700;">${note.author.toUpperCase()}</a> | <a href="mailto:${note.email}" style="color:var(--muted); text-decoration:none;">${note.email}</a> · ${Math.max(1, Math.ceil((note.body || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} MIN DE LECTURA`; 
       
       document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(note.body, { 
         ALLOWED_TAGS: ['b', 'i', 'u', 'div', 'p', 'br'], 
@@ -805,7 +806,8 @@
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
         const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
-        hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background-image: url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}');"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div>${urgentBadge}<span class="tag">${n.sport}</span></div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()} · ${Math.max(1, Math.ceil((n.body||'').replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
+        const authorSlug = encodeURIComponent((n.author || '').toLowerCase().replace(/\s+/g, '-'));
+        hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background-image: url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}');"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div>${urgentBadge}<span class="tag">${n.sport}</span></div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR <span onclick="navigateTo(event, '/autor/${authorSlug}')" style="text-decoration:underline;">${n.author.toUpperCase()}</span> · ${Math.max(1, Math.ceil((n.body||'').replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -843,7 +845,7 @@
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
     }
 
-    // Enrutamiento SPA dinámico por categoría / etiqueta
+    // Enrutamiento SPA dinámico por categoría, etiqueta y autor
     async function handleRoute() {
       const path = window.location.pathname;
       const categoryHeader = document.getElementById('categoryHeaderContainer');
@@ -880,6 +882,22 @@
           currentDisplayNotes = await res.json();
         } catch(err) {
           currentDisplayNotes = allPublicNotes.filter(n => (n.tags || '').toLowerCase().includes(tagName.toLowerCase()));
+        }
+      } else if (path.startsWith('/autor/')) {
+        const authorParam = path.replace('/autor/', '');
+        const authorName = decodeURIComponent(authorParam).replace(/-/g, ' ');
+
+        document.title = `Artículos de ${authorName} | TRIBUNA`;
+        document.getElementById('metaDesc').content = `Crónicas y reportajes firmados por ${authorName} en TRIBUNA.`;
+
+        categoryHeader.innerHTML = `<div class="category-header"><div class="tag">Perfil de autor</div><h1>${authorName}</h1><p>Historias, crónicas y reportajes firmados por el redactor.</p></div>`;
+
+        try {
+          const res = await fetch(`/api/notes/author/${encodeURIComponent(authorParam)}`);
+          if (!res.ok) throw new Error();
+          currentDisplayNotes = await res.json();
+        } catch(err) {
+          currentDisplayNotes = allPublicNotes.filter(n => (n.author || '').toLowerCase() === authorName.toLowerCase());
         }
       } else {
         document.title = "Tribuna | Periodismo deportivo";

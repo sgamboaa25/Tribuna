@@ -112,6 +112,30 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
   }
 });
 
+// GET Autor Público
+app.get('/api/notes/author/:author', async (req, res) => {
+  const authorParam = req.params.author.toLowerCase().replace(/-/g, ' ');
+
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('status', 'publicada')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const filtered = (data || []).filter(note => 
+      (note.author || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
+      authorParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    );
+
+    res.json(filtered);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET Búsqueda Pública
 app.get('/api/notes/search', async (req, res) => {
   const term = (req.query.q || '').trim().toLowerCase();
