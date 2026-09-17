@@ -592,7 +592,7 @@
       ).join('');
     }
 
-    // Carga de posiciones en vivo mediante Edge Function con caché y manejo de errores
+    // Carga de posiciones en vivo mediante Edge Function con caché y manejo de errores seguros
     async function loadStandings(liga) {
       standingsStatus.textContent = 'Actualizando...';
       renderSkeleton();
@@ -617,6 +617,11 @@
             if (index < 4) rowClass = 'row-highlight';
             else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
           }
+
+          const gf = Number(row.gf) || 0;
+          const gc = Number(row.gc) || 0;
+          const dif = gf - gc;
+          const difFormatted = dif > 0 ? '+' + dif : dif;
           
           return `
             <tr class="${rowClass}">
@@ -628,8 +633,8 @@
                 </div>
               </td>
               <td>${row.pj}</td><td>${row.g}</td><td>${row.e}</td><td>${row.p}</td>
-              <td class="hide-mobile">${row.gf}</td><td class="hide-mobile">${row.ga}</td>
-              <td class="hide-mobile">${row.gf - row.ga > 0 ? '+' + (row.gf - row.ga) : row.gf - row.ga}</td>
+              <td class="hide-mobile">${gf}</td><td class="hide-mobile">${gc}</td>
+              <td class="hide-mobile">${difFormatted}</td>
               <td class="pts-col">${row.pts}</td>
             </tr>
           `;
