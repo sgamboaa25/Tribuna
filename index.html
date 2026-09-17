@@ -50,7 +50,6 @@
     .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:var(--paper); padding:0 24px; height:44px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
     .search-status { min-height:1.4em; margin:10px 0 0; color:var(--muted); font-size:.85rem; }
     
-    /* Componente Selector Personalizado */
     .custom-picker { position:relative; min-width:280px; } 
     .search-bar .custom-picker { min-width:100%; width:100%; }
     .custom-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:1px solid var(--ink); border-radius:8px; background:var(--input-bg); color:var(--ink); padding:0 16px; font-family:'Inter', sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; box-sizing:border-box; } 
@@ -84,7 +83,6 @@
     .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
     .article-link:hover h1, .article-link:hover h2 { color: var(--accent) !important; } 
 
-    /* Estilos de la tabla de posiciones */
     .standings-section { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; }
     .standings-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
     .standings-header h2 { margin-bottom:0; }
@@ -168,6 +166,15 @@
     .draft-item { display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid var(--line); padding:18px 0; } 
     .draft-item strong { display:block; font-family:'Fraunces', serif; font-size:1.1rem; color:var(--ink); } 
     .draft-item small { color:var(--muted); font-size:.8rem; } 
+    
+    .status-badge { display:inline-block; padding:3px 8px; border-radius:4px; font-size:.7rem; font-weight:700; text-transform:uppercase; margin-left:8px; }
+    .status-borrador { background:#eef0f3; color:#646a73; }
+    .status-revision { background:#fef3c7; color:#92400e; }
+    .status-publicada { background:#d1fae5; color:#065f46; }
+
+    .draft-actions { display:flex; gap:8px; align-items:center; }
+    .status-select { width:auto !important; margin-bottom:0 !important; padding:6px 10px !important; font-size:.8rem !important; }
+
     .edit-note { border:1px solid var(--line); border-radius:6px; background:var(--card-bg); color:var(--ink); padding:8px 14px; font-size:.8rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; font-family:'Inter', sans-serif; } 
     .edit-note:hover { border-color:var(--ink); background:var(--hover-bg); }
     
@@ -190,6 +197,8 @@
       .newsletter { flex-direction:column; align-items:flex-start; padding:28px; } 
       .hide-mobile { display:none; }
       .custom-picker { width:100%; min-width:100%; }
+      .draft-item { flex-direction:column; align-items:flex-start; }
+      .draft-actions { width:100%; justify-content:space-between; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -239,7 +248,6 @@
     
     <section class="grid" id="futbol"></section>
 
-    <!-- TABLA DE POSICIONES -->
     <section class="standings-section" id="posiciones">
       <div class="standings-header">
         <div>
@@ -281,9 +289,7 @@
               <th class="pts-col">Pts</th>
             </tr>
           </thead>
-          <tbody id="standingsBody">
-            <!-- Renderizado por JS -->
-          </tbody>
+          <tbody id="standingsBody"></tbody>
         </table>
       </div>
     </section>
@@ -302,9 +308,9 @@
 
     <section id="writerPanel">
       <div class="tag">Área privada</div>
-      <h2>Redactar una nueva nota</h2>
-      <p>Bienvenido al espacio de redacción. Este contenido se publica tras revisión editorial.</p>
-      <div><strong>Notas publicadas</strong><div class="draft-list" id="draftList"></div></div>
+      <h2>Panel editorial de redacción</h2>
+      <p>Bienvenido al espacio de redacción. Las notas quedan como borrador hasta ser aprobadas para publicación.</p>
+      <div><strong>Gestión de contenido</strong><div class="draft-list" id="draftList"></div></div>
       
       <form id="articleForm">
         <div class="editor-grid">
@@ -317,7 +323,15 @@
               <option>Ciclismo</option><option>Tenis</option><option>Motor</option><option>Natación</option><option>Otros deportes</option>
             </select>
           </div>
-          <div><label for="tags">Etiquetas</label><input id="tags" placeholder="Liga, equipo, atleta…" /></div>
+          <div>
+            <label for="status">Estado Editorial</label>
+            <select id="status" required>
+              <option value="borrador" selected>Borrador</option>
+              <option value="en revisión">En revisión</option>
+              <option value="publicada">Publicada</option>
+            </select>
+          </div>
+          <div class="wide"><label for="tags">Etiquetas</label><input id="tags" placeholder="Liga, equipo, atleta…" /></div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." style="height:90px; resize:vertical; padding:12px; border:1px solid var(--line); border-radius:6px; background:var(--input-bg); color:var(--ink); font-family:'Inter', sans-serif; width:100%; outline:none;"></textarea></div>
           
           <div class="wide">
@@ -338,7 +352,7 @@
           <div class="wide"><label for="photoFile">Fotografía principal</label><input id="photoFile" type="file" accept="image/*" /></div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
         </div>
-        <button class="submit" type="submit">Guardar en el servidor</button> 
+        <button class="submit" type="submit">Guardar nota</button> 
         <p class="message" id="saveMessage" aria-live="polite"></p>
       </form>
     </section>
@@ -400,19 +414,6 @@
     
     access.onclick = () => dialog.showModal(); 
     document.querySelector('.close').onclick = () => dialog.close();
-    
-    dialog.addEventListener('keydown', function(e) {
-      if (e.key === 'Tab') {
-        const focusableElements = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) { e.preventDefault(); lastElement.focus(); }
-        } else {
-          if (document.activeElement === lastElement) { e.preventDefault(); firstElement.focus(); }
-        }
-      }
-    });
 
     document.querySelector('#loginForm').onsubmit = async e => {
       e.preventDefault(); 
@@ -437,13 +438,14 @@
         panel.style.display = 'block'; 
         access.textContent = 'Redacción activa'; 
         loginMsg.textContent = '';
+        
+        loadAllNotesForPanel();
         panel.scrollIntoView({ behavior: 'smooth' }); 
       } catch (err) { 
         loginMsg.textContent = err.message; 
       }
     };
 
-    // Inicializador genérico para selectores personalizados
     function setupCustomPicker(pickerId, onChangeCallback) {
       const picker = document.getElementById(pickerId);
       if (!picker) return;
@@ -494,7 +496,6 @@
       document.querySelector('#searchStatus').textContent = shown ? `${shown} nota${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'}.` : 'No encontramos notas con esos criterios.'; 
     };
     
-    // Lógica para Tabla de Posiciones
     const standingsBody = document.getElementById('standingsBody');
     const standingsStatus = document.getElementById('standingsStatus');
     let standingsInterval;
@@ -553,23 +554,18 @@
       standingsInterval = setInterval(() => loadStandings(selectedLeague), 300000);
     });
 
-    // Iniciar carga de tabla
     const initialLeague = document.getElementById('leaguePicker').dataset.value;
     renderSkeleton();
     loadStandings(initialLeague);
     standingsInterval = setInterval(() => loadStandings(document.getElementById('leaguePicker').dataset.value), 300000);
 
-    let notes = [
-      {sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
-      {sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
-      {sport: 'Baloncesto', title: 'El talento joven ya no espera turno', intro: 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', author: 'Diego Morales', email: 'diego@tribuna.test', tags: 'baloncesto, liga', body: 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image: 'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
-      {sport: 'Atletismo', title: 'La victoria tiene más de una medida', intro: 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', author: 'Sofía Campos', email: 'sofia@tribuna.test', tags: 'opinión, atletismo', body: 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
-    ];
+    let publicNotes = [];
+    let allPanelNotes = [];
     let editingId = null;
     const detail = document.querySelector('#articleDetail');
     
     function openArticle(id){ 
-      const note = notes[id]; 
+      const note = publicNotes[id]; 
       if(!note) return; 
       document.querySelector('#detailTag').textContent = note.sport; 
       document.querySelector('#detailTitle').textContent = note.title; 
@@ -630,24 +626,47 @@
     function renderDrafts(){ 
       const list = document.querySelector('#draftList'); 
       list.replaceChildren(); 
-      notes.forEach((note, id) => { 
+      allPanelNotes.forEach((note) => { 
         const item = document.createElement('div'); 
         item.className = 'draft-item'; 
+        
         const text = document.createElement('div'); 
         const name = document.createElement('strong'); 
         name.textContent = note.title; 
+        
+        const statusClass = note.status === 'publicada' ? 'status-publicada' : (note.status === 'en revisión' ? 'status-revision' : 'status-borrador');
+        const badge = `<span class="status-badge ${statusClass}">${note.status || 'borrador'}</span>`;
+        name.innerHTML += badge;
+
         const meta = document.createElement('small'); 
-        meta.textContent = `${note.sport} · ${note.author}`; 
+        meta.textContent = `${note.sport} · Por ${note.author}`; 
         text.append(name, meta); 
+        
+        const actions = document.createElement('div');
+        actions.className = 'draft-actions';
+
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'status-select';
+        statusSelect.innerHTML = `
+          <option value="borrador" ${note.status === 'borrador' ? 'selected' : ''}>Borrador</option>
+          <option value="en revisión" ${note.status === 'en revisión' ? 'selected' : ''}>En revisión</option>
+          <option value="publicada" ${note.status === 'publicada' ? 'selected' : ''}>Publicada</option>
+        `;
+
+        statusSelect.onchange = async () => {
+          await updateNoteStatus(note.id, statusSelect.value);
+        };
+
         const button = document.createElement('button'); 
         button.className = 'edit-note'; 
         button.type = 'button'; 
         button.textContent = 'Editar'; 
         button.onclick = () => {
-          editingId = id; 
+          editingId = note.id; 
           document.querySelector('#title').value = note.title; 
           document.querySelector('#sport').value = note.sport; 
-          document.querySelector('#tags').value = note.tags; 
+          document.querySelector('#status').value = note.status || 'borrador'; 
+          document.querySelector('#tags').value = note.tags || ''; 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
           document.querySelector('#authorName').value = note.author; 
@@ -656,7 +675,9 @@
           document.querySelector('#saveMessage').textContent = `Editando: ${note.title}`; 
           document.querySelector('#title').scrollIntoView({behavior: 'smooth', block: 'center'});
         }; 
-        item.append(text, button); 
+        
+        actions.append(statusSelect, button);
+        item.append(text, actions); 
         list.append(item); 
       }); 
     }
@@ -666,19 +687,19 @@
       const grid = document.querySelector('#futbol');
       const ranking = document.querySelector('#rankingContainer');
 
-      if(notes.length > 0){
-        const n = notes[0];
+      if(publicNotes.length > 0){
+        const n = publicNotes[0];
         hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background-image: url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}');"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div class="tag">${n.sport}</div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()} · ${Math.max(1, Math.ceil((n.body||'').replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
-      } else { hero.innerHTML = ''; }
+      } else { hero.innerHTML = '<p style="grid-column:1/-1; padding:40px 0; color:var(--muted);">No hay noticias publicadas en este momento.</p>'; }
 
       grid.innerHTML = '';
-      notes.slice(1).forEach((n, idx) => {
+      publicNotes.slice(1).forEach((n, idx) => {
         const id = idx + 1;
         grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="${id}"><img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" /><div class="tag">${n.sport}</div><h2>${n.title}</h2><p>${n.intro}</p></a><button class="share" data-share="${n.title}">Compartir nota</button></article>`;
       });
 
       ranking.innerHTML = '';
-      notes.slice(0, 3).forEach((n, id) => {
+      publicNotes.slice(0, 3).forEach((n, id) => {
         ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia actual</span></div></article>`;
       });
 
@@ -696,10 +717,53 @@
       });
     }
 
-    async function loadNotes(){ try { const response = await fetch('/api/notes'); if(!response.ok) throw new Error(); notes = await response.json(); renderDrafts(); renderPublicCards(); } catch { document.querySelector('#searchStatus').textContent = 'Conecta la web al servidor para ver las notas compartidas.'; } }
-    renderDrafts(); 
-    renderPublicCards();
-    loadNotes();
+    async function loadPublicNotes(){ 
+      try { 
+        const response = await fetch('/api/notes'); 
+        if(!response.ok) throw new Error(); 
+        publicNotes = await response.json(); 
+        renderPublicCards(); 
+      } catch { 
+        document.querySelector('#searchStatus').textContent = 'Conecta la web al servidor para ver las notas compartidas.'; 
+      } 
+    }
+
+    async function loadAllNotesForPanel(){ 
+      if (!writerToken) return;
+      try { 
+        const response = await fetch('/api/notes/all', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        }); 
+        if(!response.ok) throw new Error(); 
+        allPanelNotes = await response.json(); 
+        renderDrafts(); 
+      } catch (err) {
+        console.error("Error al cargar lista privada:", err);
+      } 
+    }
+
+    async function updateNoteStatus(id, newStatus) {
+      try {
+        const response = await fetch(`/api/notes/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${writerToken}`
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (!response.ok) throw new Error('No se pudo actualizar el estado');
+        
+        await loadAllNotesForPanel();
+        await loadPublicNotes();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    loadPublicNotes();
+    if (writerToken) loadAllNotesForPanel();
     
     document.querySelector('#articleForm').onsubmit = async e => { 
       e.preventDefault(); 
@@ -744,13 +808,15 @@
             reader.onerror = () => reject(new Error('Error al leer el archivo.'));
             reader.readAsDataURL(fileInput.files[0]);
           });
-        } else if(editingId !== null && notes[editingId].image){
-          imageUrl = notes[editingId].image;
+        } else if(editingId !== null){
+          const currentNote = allPanelNotes.find(n => n.id === editingId);
+          if (currentNote && currentNote.image) imageUrl = currentNote.image;
         }
 
         const note = {
           title: document.querySelector('#title').value,
           sport: document.querySelector('#sport').value,
+          status: document.querySelector('#status').value,
           tags: document.querySelector('#tags').value,
           intro: document.querySelector('#intro').value,
           body: bodyContent,
@@ -760,7 +826,7 @@
         }; 
         
         const isNew = editingId === null; 
-        const endpoint = isNew ? '/api/notes' : `/api/notes/${notes[editingId].id}`; 
+        const endpoint = isNew ? '/api/notes' : `/api/notes/${editingId}`; 
         
         const response = await fetch(endpoint, {
           method: isNew ? 'POST' : 'PUT',
@@ -771,7 +837,7 @@
         if(response.status === 401) throw new Error('Sesión de redacción expirada o no autorizada. Ingresa de nuevo.');
         
         if(!response.ok) {
-          let serverError = 'Error de conexión con el servidor Render.';
+          let serverError = 'Error de conexión con el servidor.';
           try {
             const errData = await response.json();
             if (errData.error) serverError = errData.error;
@@ -779,16 +845,16 @@
           throw new Error(serverError);
         }
         
-        const saved = await response.json(); 
-        if(isNew) notes.push(saved); else notes[editingId] = saved; 
-        
         message.style.color = 'var(--accent)';
-        message.textContent = isNew ? 'Nota guardada exitosamente en el servidor.' : 'Cambios guardados exitosamente.'; 
+        message.textContent = isNew ? 'Nota guardada exitosamente.' : 'Cambios guardados exitosamente.'; 
         editingId = null; 
-        renderDrafts(); 
-        renderPublicCards(); 
+        
+        await loadAllNotesForPanel();
+        await loadPublicNotes();
+        
         e.target.reset();
         document.querySelector('#bodyEditor').innerHTML = '';
+        document.querySelector('#status').value = 'borrador';
       } catch (err) { 
         message.style.color = 'var(--accent)';
         message.textContent = err.message || 'Error desconocido al guardar la nota.';

@@ -9,10 +9,8 @@ app.use(express.static(__dirname));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_ROLE_KEY);
 
-// Almacenamiento en memoria para tokens activos de redacción (TTL de 8 horas)
 const activeSessions = new Map();
 
-// Middleware de autenticación para la redacción
 const authenticateWriter = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -31,37 +29,52 @@ const authenticateWriter = (req, res, next) => {
   next();
 };
 
-// Endpoint de autenticación (Validación exclusivamente en el Servidor)
 app.post('/api/auth', (req, res) => {
   const { email, password } = req.body;
   const serverPassword = process.env.WRITER_PASSWORD;
 
   if (!serverPassword) {
-    return res.status(500).json({ error: 'Configuración interna del servidor incompleta (WRITER_PASSWORD no configurada).' });
+    return res.status(500).json({ error: 'Configuración interna del servidor incompleta.' });
   }
 
   if (!email || password !== serverPassword) {
     return res.status(401).json({ error: 'Credenciales incorrectas.' });
   }
 
-  // Generación de token criptográfico seguro
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // Expira en 8 horas
+  const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
 
   activeSessions.set(token, { email, expiresAt });
 
   return res.json({ token, expiresAt });
 });
 
-// Rutas de Notas
+// GET Público: Solo devuelve notas publicadas
 app.get('/api/notes', async (req, res) => {
-  const { data, error } = await supabase.from('notes').select('*');
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('status', 'publicada');
+    
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// GET Privado: Devuelve todas las notas para la redacción
+app.get('/api/notes/all', authenticateWriter, async (req, res) => {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .order('created_at', { ascending: false });
+    
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
 
 app.post('/api/notes', authenticateWriter, async (req, res) => {
   delete req.body.id;
+  if (!req.body.status) req.body.status = 'borrador';
+  
   const { data, error } = await supabase.from('notes').insert([req.body]).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
@@ -74,19 +87,29 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   res.json(data[0]);
 });
 
-// Configuración API Football-Data.org
+// Cambiar estado editorial
+app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+  
+  if (!['borrador', 'en revisión', 'publicada'].includes(status)) {
+    return res.status(400).json({ error: 'Estado editorial no válido.' });
+  }
+
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ status })
+    .eq('id', id)
+    .select();
+    
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data[0]);
+});
+
 const LEAGUE_MAP = {
-  'cl': 'CL',
-  'bl1': 'BL1',
-  'ded': 'DED',
-  'bsa': 'BSA',
-  'pd': 'PD',
-  'fl1': 'FL1',
-  'elc': 'ELC',
-  'ppl': 'PPL',
-  'ec': 'EC',
-  'sa': 'SA',
-  'pl': 'PL'
+  'cl': 'CL', 'bl1': 'BL1', 'ded': 'DED', 'bsa': 'BSA',
+  'pd': 'PD', 'fl1': 'FL1', 'elc': 'ELC', 'ppl': 'PPL',
+  'ec': 'EC', 'sa': 'SA', 'pl': 'PL'
 };
 
 const cache = {};
@@ -96,9 +119,7 @@ app.get('/api/standings/:liga', async (req, res) => {
   const ligaKey = req.params.liga.toLowerCase();
   const leagueCode = LEAGUE_MAP[ligaKey];
 
-  if (!leagueCode) {
-    return res.status(400).json({ error: 'Liga no válida.' });
-  }
+  if (!leagueCode) return res.status(400).json({ error: 'Liga no válida.' });
 
   const now = Date.now();
   if (cache[ligaKey] && (now - cache[ligaKey].timestamp < CACHE_TTL_MS)) {
@@ -106,17 +127,11 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Configuración interna del servidor.' });
-  }
+  if (!apiKey) return res.status(500).json({ error: 'Configuración interna del servidor.' });
 
   try {
     const url = `https://api.football-data.org/v4/competitions/${leagueCode}/standings`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'X-Auth-Token': apiKey }
-    });
-
+    const response = await fetch(url, { headers: { 'X-Auth-Token': apiKey } });
     const json = await response.json();
 
     if (!response.ok || !json.standings || json.standings.length === 0) {
@@ -142,9 +157,7 @@ app.get('/api/standings/:liga', async (req, res) => {
     cache[ligaKey] = { timestamp: now, data: transformedData };
     return res.json({ stale: false, data: transformedData });
   } catch (error) {
-    if (cache[ligaKey]) {
-      return res.json({ stale: true, data: cache[ligaKey].data });
-    }
+    if (cache[ligaKey]) return res.json({ stale: true, data: cache[ligaKey].data });
     return res.status(503).json({ error: error.message });
   }
 });
