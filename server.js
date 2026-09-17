@@ -82,7 +82,7 @@ app.get('/api/notes/all', authenticateWriter, async (req, res) => {
 app.post('/api/notes', authenticateWriter, async (req, res) => {
   delete req.body.id;
   if (!req.body.status) req.body.status = 'borrador';
-  req.body.urgent = Boolean(req.body.urgent); // Guardar estado de última hora
+  req.body.urgent = Boolean(req.body.urgent);
   
   const { data, error } = await supabase.from('notes').insert([req.body]).select();
   if (error) return res.status(500).json({ error: error.message });
@@ -91,7 +91,7 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
 
 app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const id = req.params.id;
-  req.body.urgent = Boolean(req.body.urgent); // Actualizar estado de última hora
+  req.body.urgent = Boolean(req.body.urgent);
   const { data, error } = await supabase.from('notes').update(req.body).eq('id', id).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);

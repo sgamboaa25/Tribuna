@@ -52,6 +52,13 @@
     .breaking-title:hover { text-decoration:underline; }
     .tag-urgent { background:var(--accent); color:#ffffff !important; padding:2px 6px; border-radius:3px; font-weight:800; margin-right:6px; }
     
+    /* Grupo de Botones de Compartir */
+    .share-group { display:flex; align-items:center; gap:12px; margin-top:28px; border-top:1px solid var(--line); padding-top:20px; }
+    .share-label { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+    .share-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--hover-bg); color:var(--muted); text-decoration:none; border:1px solid var(--line); transition:all .2s; cursor:pointer; }
+    .share-btn:hover { color:var(--accent); border-color:var(--accent); background:var(--card-bg); transform:translateY(-1px); }
+    .share-btn svg { width:16px; height:16px; fill:currentColor; }
+
     .search-bar { display:grid; grid-template-columns:1fr 200px auto; gap:12px; background:var(--card-bg); border:1px solid var(--line); border-radius:8px; margin-bottom:48px; padding:10px; box-shadow:0 4px 20px rgba(0,0,0,.02); align-items:center; } 
     .search-bar input { margin:0; background:transparent; color:var(--ink); border:0; padding:10px 14px; font-size:.95rem; outline:none; font-family:'Inter', sans-serif; } 
     .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:var(--paper); padding:0 24px; height:44px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
@@ -83,7 +90,6 @@
     .card img { width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--hover-bg); }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; }
-    .share { border:0; background:transparent; color:var(--accent); padding:0; font-size:.75rem; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; align-self:flex-start; font-family:'Inter', sans-serif; } 
     .is-hidden { display:none !important; }
 
     a { text-decoration: none; color: inherit; }
@@ -258,7 +264,22 @@
       <img id="detailImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="" loading="lazy" decoding="async" />
       <div class="detail-content" id="detailBody"></div>
       <p class="byline" id="detailByline" style="margin-top:36px; border-top:1px solid var(--line); padding-top:20px;"></p>
-      <button class="share" id="detailShare" style="margin-top:20px;">Compartir esta nota</button>
+      
+      <div class="share-group">
+        <span class="share-label">Compartir:</span>
+        <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="Compartir en WhatsApp">
+          <svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg>
+        </a>
+        <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="Compartir en X">
+          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Compartir en Facebook">
+          <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg>
+        </a>
+        <button id="shareCopy" type="button" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
+          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
+      </div>
     </article>
     
     <section class="grid" id="futbol"></section>
@@ -631,6 +652,21 @@
         ALLOWED_ATTR: ['style'] 
       });
 
+      // Configurar enlaces del grupo de compartir
+      const noteUrl = encodeURIComponent(window.location.href);
+      const noteText = encodeURIComponent(`${note.title} — TRIBUNA`);
+      
+      document.querySelector('#shareWa').href = `https://api.whatsapp.com/send?text=${noteText}%20${noteUrl}`;
+      document.querySelector('#shareX').href = `https://twitter.com/intent/tweet?text=${noteText}&url=${noteUrl}`;
+      document.querySelector('#shareFb').href = `https://www.facebook.com/sharer/sharer.php?u=${noteUrl}`;
+      
+      const copyBtn = document.querySelector('#shareCopy');
+      copyBtn.onclick = async () => {
+        await navigator.clipboard.writeText(window.location.href);
+        copyBtn.style.color = 'var(--accent)';
+        setTimeout(() => copyBtn.style.color = '', 1500);
+      };
+
       document.title = `${note.title} | TRIBUNA`;
       detail.style.display = 'block';
       detail.focus();
@@ -647,8 +683,6 @@
 
       document.querySelector('#portada').scrollIntoView({behavior: 'smooth'});
     };
-    
-    document.querySelector('#detailShare').onclick = () => navigator.clipboard?.writeText(`${document.querySelector('#detailTitle').textContent} — ${location.href}`);
     
     function renderDrafts(){ 
       const list = document.querySelector('#draftList'); 
@@ -742,7 +776,22 @@
       publicNotes.slice(1).forEach((n, idx) => {
         const id = idx + 1;
         const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
-        grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="${id}"><img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" /><div>${urgentBadge}<span class="tag">${n.sport}</span></div><h2>${n.title}</h2><p>${n.intro}</p></a><button class="share" data-share="${n.title}">Compartir nota</button></article>`;
+        const nUrl = encodeURIComponent(window.location.href);
+        const nText = encodeURIComponent(`${n.title} — TRIBUNA`);
+
+        grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}">
+          <a class="article-link open-article" href="#lectura" data-id="${id}">
+            <img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" />
+            <div>${urgentBadge}<span class="tag">${n.sport}</span></div>
+            <h2>${n.title}</h2>
+            <p>${n.intro}</p>
+          </a>
+          <div class="share-group" style="margin-top:12px; padding-top:12px;">
+            <a href="https://api.whatsapp.com/send?text=${nText}%20${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
+            <a href="https://twitter.com/intent/tweet?text=${nText}&url=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
+          </div>
+        </article>`;
       });
 
       ranking.innerHTML = '';
@@ -751,17 +800,6 @@
       });
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
-      document.querySelectorAll('.share').forEach(btn => btn.onclick = async () => {
-        const text = `${btn.dataset.share} — TRIBUNA`;
-        try {
-          if (navigator.share) await navigator.share({ title: btn.dataset.share, text, url: location.href });
-          else {
-            await navigator.clipboard.writeText(`${text} ${location.href}`);
-            btn.textContent = 'Enlace copiado';
-            setTimeout(() => btn.textContent = 'Compartir nota', 1800);
-          }
-        } catch (err) {}
-      });
     }
 
     async function loadPublicNotes(){ 
