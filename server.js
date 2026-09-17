@@ -29,21 +29,27 @@ app.put('/api/notes/:id', async (req, res) => {
 });
 
 const LEAGUE_MAP = {
-  'costa-rica': '162',
-  'honduras': '163',
-  'guatemala': '164',
-  'el-salvador': '165',
-  'panama': '166'
+  'cl': 'CL',
+  'bl1': 'BL1',
+  'ded': 'DED',
+  'bsa': 'BSA',
+  'pd': 'PD',
+  'fl1': 'FL1',
+  'elc': 'ELC',
+  'ppl': 'PPL',
+  'ec': 'EC',
+  'sa': 'SA',
+  'pl': 'PL'
 };
 
 const cache = {};
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
 app.get('/api/standings/:liga', async (req, res) => {
-  const ligaKey = req.params.liga;
-  const leagueId = LEAGUE_MAP[ligaKey];
+  const ligaKey = req.params.liga.toLowerCase();
+  const leagueCode = LEAGUE_MAP[ligaKey];
 
-  if (!leagueId) {
+  if (!leagueCode) {
     return res.status(400).json({ error: 'Liga no válida.' });
   }
 
@@ -52,39 +58,40 @@ app.get('/api/standings/:liga', async (req, res) => {
     return res.json({ stale: false, data: cache[ligaKey].data });
   }
 
-  const apiKey = process.env.API_FOOTBALL_KEY;
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'Configuración interna del servidor.' });
   }
 
   try {
-    const seasonYear = '2026';
-    const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${seasonYear}`;
+    const url = `https://api.football-data.org/v4/competitions/${leagueCode}/standings`;
     
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'x-apisports-key': apiKey
+        'X-Auth-Token': apiKey
       }
     });
 
     const json = await response.json();
 
-    if (!response.ok || !json.response || json.response.length === 0) {
-      throw new Error(json.message || `Error HTTP: ${response.status} - Sin datos para la temporada ${seasonYear}`);
+    if (!response.ok || !json.standings || json.standings.length === 0) {
+      throw new Error(json.message || `Error HTTP: ${response.status}`);
     }
 
-    const rawStandings = json.response[0].league.standings[0];
+    const standingObj = json.standings.find(s => s.type === 'TOTAL') || json.standings[0];
+    const rawStandings = standingObj ? standingObj.table : [];
+
     const transformedData = rawStandings.map(item => ({
-      posicion: item.rank,
+      posicion: item.position,
       equipo: item.team.name,
-      jugados: item.all.played,
-      ganados: item.all.win,
-      empatados: item.all.draw,
-      perdidos: item.all.lose,
-      golesFavor: item.all.goals.for,
-      golesContra: item.all.goals.against,
-      diferencia: item.goalsDiff,
+      jugados: item.playedGames,
+      ganados: item.won,
+      empatados: item.draw,
+      perdidos: item.lost,
+      golesFavor: item.goalsFor,
+      golesContra: item.goalsAgainst,
+      diferencia: item.goalDifference,
       puntos: item.points
     }));
 
