@@ -1,33 +1,80 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_ROLE_KEY);
 
+// Almacenamiento en memoria para tokens activos de redacción (TTL de 8 horas)
+const activeSessions = new Map();
+
+// Middleware de autenticación para la redacción
+const authenticateWriter = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Acceso no autorizado: Token faltante.' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const session = activeSessions.get(token);
+
+  if (!session || session.expiresAt < Date.now()) {
+    activeSessions.delete(token);
+    return res.status(401).json({ error: 'Sesión expirada o no válida. Inicia sesión de nuevo.' });
+  }
+
+  req.writer = session.email;
+  next();
+};
+
+// Endpoint de autenticación (Validación exclusivamente en el Servidor)
+app.post('/api/auth', (req, res) => {
+  const { email, password } = req.body;
+  const serverPassword = process.env.WRITER_PASSWORD;
+
+  if (!serverPassword) {
+    return res.status(500).json({ error: 'Configuración interna del servidor incompleta (WRITER_PASSWORD no configurada).' });
+  }
+
+  if (!email || password !== serverPassword) {
+    return res.status(401).json({ error: 'Credenciales incorrectas.' });
+  }
+
+  // Generación de token criptográfico seguro
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 8 * 60 * 60 * 1000; // Expira en 8 horas
+
+  activeSessions.set(token, { email, expiresAt });
+
+  return res.json({ token, expiresAt });
+});
+
+// Rutas de Notas
 app.get('/api/notes', async (req, res) => {
   const { data, error } = await supabase.from('notes').select('*');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
 
-app.post('/api/notes', async (req, res) => {
+app.post('/api/notes', authenticateWriter, async (req, res) => {
   delete req.body.id;
   const { data, error } = await supabase.from('notes').insert([req.body]).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
 
-app.put('/api/notes/:id', async (req, res) => {
+app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const id = req.params.id;
   const { data, error } = await supabase.from('notes').update(req.body).eq('id', id).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
 
+// Configuración API Football-Data.org
 const LEAGUE_MAP = {
   'cl': 'CL',
   'bl1': 'BL1',
@@ -65,12 +112,9 @@ app.get('/api/standings/:liga', async (req, res) => {
 
   try {
     const url = `https://api.football-data.org/v4/competitions/${leagueCode}/standings`;
-    
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'X-Auth-Token': apiKey
-      }
+      headers: { 'X-Auth-Token': apiKey }
     });
 
     const json = await response.json();
@@ -98,7 +142,6 @@ app.get('/api/standings/:liga', async (req, res) => {
     cache[ligaKey] = { timestamp: now, data: transformedData };
     return res.json({ stale: false, data: transformedData });
   } catch (error) {
-    console.error(`[API ERROR] ${ligaKey}:`, error.message);
     if (cache[ligaKey]) {
       return res.json({ stale: true, data: cache[ligaKey].data });
     }

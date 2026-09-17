@@ -52,7 +52,7 @@
     
     /* Componente Selector Personalizado */
     .custom-picker { position:relative; min-width:280px; } 
-    .search-bar .custom-picker { min-width:100%; width:100%; } /* Ajuste específico para la barra de búsqueda */
+    .search-bar .custom-picker { min-width:100%; width:100%; }
     .custom-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:1px solid var(--ink); border-radius:8px; background:var(--input-bg); color:var(--ink); padding:0 16px; font-family:'Inter', sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; box-sizing:border-box; } 
     .custom-toggle::after { content:'⌄'; color:var(--muted); font-size:1.1rem; margin-left:12px; } 
     .custom-menu { display:none; position:absolute; z-index:20; top:calc(100% + 8px); right:0; left:0; overflow:hidden; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--card-bg); box-shadow:0 10px 30px rgba(0,0,0,.08); max-height:320px; overflow-y:auto; } 
@@ -386,7 +386,15 @@
       localStorage.setItem('tribuna_theme', newTheme);
     });
 
-    const dialog = document.querySelector('#loginDialog'), access = document.querySelector('#accessButton'), panel = document.querySelector('#writerPanel'); let writerToken = '';
+    const dialog = document.querySelector('#loginDialog'), access = document.querySelector('#accessButton'), panel = document.querySelector('#writerPanel'); 
+    let writerToken = sessionStorage.getItem('tribuna_writer_token') || '';
+    
+    // Mantener la sesión visible si el token ya existía en sessionStorage
+    if (writerToken) {
+      panel.style.display = 'block';
+      access.textContent = 'Redacción activa';
+    }
+
     const liveDate = document.querySelector('#liveDate');
     function updateDate(){ liveDate.textContent = new Intl.DateTimeFormat('es-ES', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date()); }
     updateDate(); setInterval(updateDate, 30000);
@@ -411,21 +419,28 @@
       e.preventDefault(); 
       const email = document.querySelector('#loginEmail').value;
       const pw = document.querySelector('#password').value; 
+      const loginMsg = document.querySelector('#loginMessage');
+
       try { 
-        const response = await fetch('/api/auth',{
+        const response = await fetch('/api/auth', {
           method: 'POST', 
           headers: {'Content-Type': 'application/json'}, 
-          body: JSON.stringify({email: email, password: pw})
+          body: JSON.stringify({ email: email, password: pw })
         }); 
-        if(!response.ok) throw new Error(); 
+        
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Credenciales incorrectas'); 
+        
         writerToken = data.token; 
+        sessionStorage.setItem('tribuna_writer_token', writerToken);
+
         dialog.close(); 
         panel.style.display = 'block'; 
         access.textContent = 'Redacción activa'; 
-        panel.scrollIntoView({behavior: 'smooth'}); 
-      } catch { 
-        document.querySelector('#loginMessage').textContent = 'Credenciales incorrectas o error de conexión.'; 
+        loginMsg.textContent = '';
+        panel.scrollIntoView({ behavior: 'smooth' }); 
+      } catch (err) { 
+        loginMsg.textContent = err.message; 
       }
     };
 
@@ -434,7 +449,6 @@
       const picker = document.getElementById(pickerId);
       if (!picker) return;
       const toggle = picker.querySelector('.custom-toggle');
-      const menu = picker.querySelector('.custom-menu');
       const options = picker.querySelectorAll('.custom-option');
 
       toggle.onclick = (e) => {
