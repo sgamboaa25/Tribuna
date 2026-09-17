@@ -38,21 +38,23 @@
     .theme-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:1.1rem; padding:0; display:flex; align-items:center; }
     .theme-toggle:hover { color:var(--ink); }
     .brand-row { display:flex; align-items:center; justify-content:space-between; padding:24px 0; }
-    .brand { font-family:'Fraunces', serif; font-size:2.8rem; font-weight:800; letter-spacing:-.06em; }
+    .brand { font-family:'Fraunces', serif; font-size:2.8rem; font-weight:800; letter-spacing:-.06em; text-decoration:none; color:var(--ink); }
     .brand span { color:var(--accent); }
     nav { display:flex; gap:28px; border-top:1px solid var(--line); padding:16px 0; font-weight:600; font-size:.82rem; letter-spacing:.03em; text-transform:uppercase; }
-    nav a { color:var(--muted); text-decoration:none; transition:color .2s; } nav a:hover { color:var(--ink); }
+    nav a { color:var(--muted); text-decoration:none; transition:color .2s; cursor:pointer; } nav a:hover, nav a.active { color:var(--ink); }
     .access { border:0; background:var(--ink); color:var(--paper); padding:10px 18px; font-weight:600; font-size:.85rem; cursor:pointer; border-radius:4px; transition:opacity .2s; font-family:'Inter', sans-serif; } .access:hover { opacity:.85; }
     main { max-width:1200px; margin:auto; padding:32px 24px; }
 
-    /* Banner de Última Hora */
+    .category-header { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:32px; }
+    .category-header h1 { font:800 2.8rem/1.1 'Fraunces', serif; margin:0 0 8px; text-transform:capitalize; }
+    .category-header p { color:var(--muted); font-size:1.05rem; margin:0; }
+
     .breaking-banner { background:var(--accent); color:#ffffff; padding:10px 24px; display:flex; align-items:center; gap:12px; font-size:0.85rem; font-weight:600; }
     .breaking-label { background:#ffffff; color:var(--accent); padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; }
     .breaking-title { color:#ffffff; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .breaking-title:hover { text-decoration:underline; }
     .tag-urgent { background:var(--accent); color:#ffffff !important; padding:2px 6px; border-radius:3px; font-weight:800; margin-right:6px; }
     
-    /* Grupo de Botones de Compartir */
     .share-group { display:flex; align-items:center; gap:12px; margin-top:28px; border-top:1px solid var(--line); padding-top:20px; }
     .share-label { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
     .share-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--hover-bg); color:var(--muted); text-decoration:none; border:1px solid var(--line); transition:all .2s; cursor:pointer; }
@@ -233,13 +235,24 @@
       <div><span id="liveDate" aria-live="polite"></span><span style="margin-left:14px; padding-left:14px; border-left:1px solid var(--line);">Periodismo deportivo independiente</span></div>
       <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Alternar modo oscuro">🌓</button>
     </div>
-    <div class="brand-row"><div class="brand">TRIB<span>U</span>NA</div><button class="access" id="accessButton" aria-haspopup="dialog" aria-controls="loginDialog">Acceso redacción</button></div>
-    <nav aria-label="Navegación principal"><a href="#portada">Portada</a><a href="#futbol">Fútbol</a><a href="#otros">Otros deportes</a><a href="#opinion">Opinión</a><a href="#podcast">Podcast</a></nav>
+    <div class="brand-row">
+      <a href="/" class="brand" onclick="navigateTo(event, '/')">TRIB<span>U</span>NA</a>
+      <button class="access" id="accessButton" aria-haspopup="dialog" aria-controls="loginDialog">Acceso redacción</button>
+    </div>
+    <nav aria-label="Navegación principal">
+      <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+      <a href="/categoria/futbol" onclick="navigateTo(event, '/categoria/futbol')">Fútbol</a>
+      <a href="/categoria/baloncesto" onclick="navigateTo(event, '/categoria/baloncesto')">Baloncesto</a>
+      <a href="/categoria/atletismo" onclick="navigateTo(event, '/categoria/atletismo')">Atletismo</a>
+      <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+    </nav>
   </header>
   
   <div id="breakingContainer"></div>
 
   <main id="portada">
+    <div id="categoryHeaderContainer"></div>
+
     <section aria-label="Buscar noticias">
       <form class="search-bar" id="searchForm">
         <input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
@@ -270,18 +283,10 @@
       
       <div class="share-group">
         <span class="share-label">Compartir:</span>
-        <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="Compartir en WhatsApp">
-          <svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg>
-        </a>
-        <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="Compartir en X">
-          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>
-        <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Compartir en Facebook">
-          <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg>
-        </a>
-        <button id="shareCopy" type="button" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace">
-          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-        </button>
+        <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
+        <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="Compartir en X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Compartir en Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
+        <button id="shareCopy" type="button" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
       </div>
     </article>
     
@@ -535,7 +540,6 @@
 
     setupCustomPicker('publicSport', () => executeSearch());
 
-    // Búsqueda en vivo con Debounce (300ms)
     let searchDebounceTimeout;
     const searchInput = document.querySelector('#searchInput');
     const searchStatus = document.querySelector('#searchStatus');
@@ -549,7 +553,7 @@
         if (!response.ok) throw new Error();
         const results = await response.json();
 
-        publicNotes = results;
+        currentDisplayNotes = results;
         renderPublicCards();
 
         if (results.length > 0) {
@@ -648,19 +652,20 @@
     standingsInterval = setInterval(() => loadStandings(document.getElementById('leaguePicker').dataset.value), 300000);
 
     const fallbackNotes = [
-      {status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
-      {status: 'publicada', urgent: false, sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
-      {status: 'publicada', urgent: false, sport: 'Baloncesto', title: 'El talento joven ya no espera turno', intro: 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', author: 'Diego Morales', email: 'diego@tribuna.test', tags: 'baloncesto, liga', body: 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image: 'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
-      {status: 'publicada', urgent: false, sport: 'Atletismo', title: 'La victoria tiene más de una medida', intro: 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', author: 'Sofía Campos', email: 'sofia@tribuna.test', tags: 'opinión, atletismo', body: 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
+      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
+      {id: 2, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
+      {id: 3, status: 'publicada', urgent: false, sport: 'Baloncesto', title: 'El talento joven ya no espera turno', intro: 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', author: 'Diego Morales', email: 'diego@tribuna.test', tags: 'baloncesto, liga', body: 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image: 'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
+      {id: 4, status: 'publicada', urgent: false, sport: 'Atletismo', title: 'La victoria tiene más de una medida', intro: 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', author: 'Sofía Campos', email: 'sofia@tribuna.test', tags: 'opinión, atletismo', body: 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
     ];
 
-    let publicNotes = [];
+    let allPublicNotes = [];
+    let currentDisplayNotes = [];
     let allPanelNotes = [];
     let editingId = null;
     const detail = document.querySelector('#articleDetail');
     
-    function openArticle(id){ 
-      const note = publicNotes[id]; 
+    function openArticle(index){ 
+      const note = currentDisplayNotes[index]; 
       if(!note) return; 
       const urgentTag = note.urgent ? ' [ÚLTIMA HORA]' : '';
       document.querySelector('#detailTag').textContent = `${note.sport}${urgentTag}`; 
@@ -782,13 +787,13 @@
       const ranking = document.querySelector('#rankingContainer');
       const breakingContainer = document.querySelector('#breakingContainer');
 
-      const urgentNotes = publicNotes.filter(n => n.urgent);
+      const urgentNotes = currentDisplayNotes.filter(n => n.urgent);
       if (urgentNotes.length > 0) {
         const latestUrgent = urgentNotes[0];
         breakingContainer.innerHTML = `
           <div class="breaking-banner" role="region" aria-label="Noticia de última hora">
             <span class="breaking-label">ÚLTIMA HORA</span>
-            <a href="#lectura" class="breaking-title open-article" data-id="${publicNotes.indexOf(latestUrgent)}">
+            <a href="#lectura" class="breaking-title open-article" data-id="${currentDisplayNotes.indexOf(latestUrgent)}">
               ${latestUrgent.title}
             </a>
           </div>
@@ -797,41 +802,101 @@
         breakingContainer.innerHTML = '';
       }
 
-      if(publicNotes.length > 0){
-        const n = publicNotes[0];
+      if (currentDisplayNotes.length > 0) {
+        const n = currentDisplayNotes[0];
         const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
         hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background-image: url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}');"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div>${urgentBadge}<span class="tag">${n.sport}</span></div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()} · ${Math.max(1, Math.ceil((n.body||'').replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
-      } else { hero.innerHTML = '<p style="grid-column:1/-1; padding:40px 0; color:var(--muted);">No hay noticias publicadas en este momento.</p>'; }
+        hero.style.display = 'grid';
+      } else { 
+        hero.style.display = 'none'; 
+      }
 
       grid.innerHTML = '';
-      publicNotes.slice(1).forEach((n, idx) => {
-        const id = idx + 1;
-        const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
-        const nUrl = encodeURIComponent(window.location.href);
-        const nText = encodeURIComponent(`${n.title} — TRIBUNA`);
+      if (currentDisplayNotes.length > 1) {
+        currentDisplayNotes.slice(1).forEach((n, idx) => {
+          const id = idx + 1;
+          const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
+          const nUrl = encodeURIComponent(window.location.href);
+          const nText = encodeURIComponent(`${n.title} — TRIBUNA`);
 
-        grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}">
-          <a class="article-link open-article" href="#lectura" data-id="${id}">
-            <img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" />
-            <div>${urgentBadge}<span class="tag">${n.sport}</span></div>
-            <h2>${n.title}</h2>
-            <p>${n.intro}</p>
-          </a>
-          <div class="share-group" style="margin-top:12px; padding-top:12px;">
-            <a href="https://api.whatsapp.com/send?text=${nText}%20${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
-            <a href="https://twitter.com/intent/tweet?text=${nText}&url=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
-          </div>
-        </article>`;
-      });
+          grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}">
+            <a class="article-link open-article" href="#lectura" data-id="${id}">
+              <img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" />
+              <div>${urgentBadge}<span class="tag">${n.sport}</span></div>
+              <h2>${n.title}</h2>
+              <p>${n.intro}</p>
+            </a>
+            <div class="share-group" style="margin-top:12px; padding-top:12px;">
+              <a href="https://api.whatsapp.com/send?text=${nText}%20${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
+              <a href="https://twitter.com/intent/tweet?text=${nText}&url=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+              <a href="https://www.facebook.com/sharer/sharer.php?u=${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
+            </div>
+          </article>`;
+        });
+      }
 
       ranking.innerHTML = '';
-      publicNotes.slice(0, 3).forEach((n, id) => {
+      currentDisplayNotes.slice(0, 3).forEach((n, id) => {
         ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia actual</span></div></article>`;
       });
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
     }
+
+    // Enrutamiento SPA dinámico por categoría / etiqueta
+    async function handleRoute() {
+      const path = window.location.pathname;
+      const categoryHeader = document.getElementById('categoryHeaderContainer');
+      categoryHeader.innerHTML = '';
+
+      if (path.startsWith('/categoria/')) {
+        const sportParam = path.replace('/categoria/', '');
+        const sportName = decodeURIComponent(sportParam).replace(/-/g, ' ');
+        
+        document.title = `${sportName.charAt(0).toUpperCase() + sportName.slice(1)} — Últimas noticias | TRIBUNA`;
+        document.getElementById('metaDesc').content = `Sección de noticias, análisis y crónicas de ${sportName} en TRIBUNA.`;
+        
+        categoryHeader.innerHTML = `<div class="category-header"><h1>${sportName}</h1><p>Noticias, análisis e historias del ${sportName}.</p></div>`;
+
+        try {
+          const res = await fetch(`/api/notes/category/${encodeURIComponent(sportParam)}`);
+          if (!res.ok) throw new Error();
+          currentDisplayNotes = await res.json();
+        } catch(err) {
+          currentDisplayNotes = allPublicNotes.filter(n => (n.sport || '').toLowerCase() === sportName.toLowerCase());
+        }
+      } else if (path.startsWith('/etiqueta/')) {
+        const tagParam = path.replace('/etiqueta/', '');
+        const tagName = decodeURIComponent(tagParam).replace(/-/g, ' ');
+
+        document.title = `#${tagName} — Historias relacionadas | TRIBUNA`;
+        document.getElementById('metaDesc').content = `Noticias y crónicas etiquetadas con #${tagName} en TRIBUNA.`;
+
+        categoryHeader.innerHTML = `<div class="category-header"><h1>#${tagName}</h1><p>Historias etiquetadas bajo la categoría de ${tagName}.</p></div>`;
+
+        try {
+          const res = await fetch(`/api/notes/tag/${encodeURIComponent(tagParam)}`);
+          if (!res.ok) throw new Error();
+          currentDisplayNotes = await res.json();
+        } catch(err) {
+          currentDisplayNotes = allPublicNotes.filter(n => (n.tags || '').toLowerCase().includes(tagName.toLowerCase()));
+        }
+      } else {
+        document.title = "Tribuna | Periodismo deportivo";
+        document.getElementById('metaDesc').content = "TRIBUNA - Periodismo deportivo independiente sin ruido.";
+        currentDisplayNotes = [...allPublicNotes];
+      }
+
+      renderPublicCards();
+    }
+
+    function navigateTo(e, path) {
+      if (e) e.preventDefault();
+      window.history.pushState({}, '', path);
+      handleRoute();
+    }
+
+    window.addEventListener('popstate', handleRoute);
 
     async function loadPublicNotes(){ 
       try { 
@@ -839,11 +904,11 @@
         if(!response.ok) throw new Error(); 
         const data = await response.json(); 
         
-        publicNotes = data;
-        renderPublicCards(); 
+        allPublicNotes = data;
+        handleRoute();
       } catch (err) { 
-        publicNotes = fallbackNotes;
-        renderPublicCards();
+        allPublicNotes = fallbackNotes;
+        handleRoute();
       } 
     }
 

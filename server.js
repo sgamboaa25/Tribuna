@@ -65,7 +65,54 @@ app.get('/api/notes', async (req, res) => {
   }
 });
 
-// GET Búsqueda Pública: Filtra por titular, entradilla y etiquetas en notas publicadas
+// GET Categoría Pública
+app.get('/api/notes/category/:sport', async (req, res) => {
+  const sportParam = req.params.sport.toLowerCase().replace(/-/g, ' ');
+
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('status', 'publicada')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const filtered = (data || []).filter(note => 
+      (note.sport || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
+      sportParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    );
+
+    res.json(filtered);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET Etiqueta Pública
+app.get('/api/notes/tag/:tag', async (req, res) => {
+  const tagParam = req.params.tag.toLowerCase().replace(/-/g, ' ');
+
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('status', 'publicada')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    const filtered = (data || []).filter(note => 
+      (note.tags || '').toLowerCase().includes(tagParam)
+    );
+
+    res.json(filtered);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET Búsqueda Pública
 app.get('/api/notes/search', async (req, res) => {
   const term = (req.query.q || '').trim().toLowerCase();
   const sport = (req.query.sport || '').trim().toLowerCase();
@@ -147,7 +194,7 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   res.json(data[0]);
 });
 
-// FASE 5: SEO - Servir robots.txt
+// SEO
 app.get('/robots.txt', (req, res) => {
   const host = req.get('host');
   const protocol = req.protocol;
@@ -156,7 +203,6 @@ app.get('/robots.txt', (req, res) => {
   res.send(content);
 });
 
-// FASE 5: SEO - Generar sitemap.xml dinámico desde Supabase
 app.get('/sitemap.xml', async (req, res) => {
   const host = req.get('host');
   const protocol = req.protocol;
@@ -244,6 +290,11 @@ app.get('/api/standings/:liga', async (req, res) => {
     if (cache[ligaKey]) return res.json({ stale: true, data: cache[ligaKey].data });
     return res.status(503).json({ error: error.message });
   }
+});
+
+// Middleware SPA para soportar rutas dinámicas en el navegador
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
