@@ -1,54 +1,33 @@
 const express = require('express');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
 app.use(express.json());
-
-// ==========================================
-// 1. CARGAR LA PÁGINA WEB (ESTO RESUELVE EL "Cannot GET /")
-// ==========================================
-// Esto le indica a Express que sirva todos los archivos de esta misma carpeta (index.html, etc.)
 app.use(express.static(__dirname));
 
-// ==========================================
-// 2. ENDPOINTS DE AUTENTICACIÓN Y NOTAS
-// ==========================================
-let notes = [
-  {id: 0, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}
-];
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-app.post('/api/auth', (req, res) => {
-  const { email, password } = req.body;
-  if (email && password) {
-    res.json({ token: 'mock-token-seguro' });
-  } else {
-    res.status(401).json({ error: 'Credenciales inválidas' });
-  }
+app.get('/api/notes', async (req, res) => {
+  const { data, error } = await supabase.from('notes').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
-app.get('/api/notes', (req, res) => {
-  res.json(notes);
+app.post('/api/notes', async (req, res) => {
+  delete req.body.id;
+  const { data, error } = await supabase.from('notes').insert([req.body]).select();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data[0]);
 });
 
-app.post('/api/notes', (req, res) => {
-  const newNote = { id: notes.length, ...req.body };
-  notes.push(newNote);
-  res.json(newNote);
+app.put('/api/notes/:id', async (req, res) => {
+  const id = req.params.id;
+  const { data, error } = await supabase.from('notes').update(req.body).eq('id', id).select();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data[0]);
 });
 
-app.put('/api/notes/:id', (req, res) => {
-  const id = Number(req.params.id);
-  if (notes[id]) {
-    notes[id] = { id, ...req.body };
-    res.json(notes[id]);
-  } else {
-    res.status(404).json({ error: 'Nota no encontrada' });
-  }
-});
-
-// ==========================================
-// 3. CONFIGURACIÓN DE LIGAS (API-FOOTBALL)
-// ==========================================
 const LEAGUE_MAP = {
   'costa-rica': '162',
   'honduras': '163',
@@ -58,7 +37,7 @@ const LEAGUE_MAP = {
 };
 
 const cache = {};
-const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
 app.get('/api/standings/:liga', async (req, res) => {
   const ligaKey = req.params.liga;
@@ -69,14 +48,12 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 
   const now = Date.now();
-
   if (cache[ligaKey] && (now - cache[ligaKey].timestamp < CACHE_TTL_MS)) {
     return res.json({ stale: false, data: cache[ligaKey].data });
   }
 
   const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) {
-    console.error('[API ERROR] Falta la variable de entorno API_FOOTBALL_KEY');
     return res.status(500).json({ error: 'Configuración interna del servidor.' });
   }
 
@@ -92,18 +69,12 @@ app.get('/api/standings/:liga', async (req, res) => {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`API-Football respondió con código HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error();
 
     const json = await response.json();
-    
-    if (!json.response || json.response.length === 0) {
-      throw new Error('No se encontraron datos para esta temporada o liga.');
-    }
+    if (!json.response || json.response.length === 0) throw new Error();
 
     const rawStandings = json.response[0].league.standings[0];
-    
     const transformedData = rawStandings.map(item => ({
       posicion: item.rank,
       equipo: item.team.name,
@@ -118,19 +89,14 @@ app.get('/api/standings/:liga', async (req, res) => {
     }));
 
     cache[ligaKey] = { timestamp: now, data: transformedData };
-
     return res.json({ stale: false, data: transformedData });
-
   } catch (error) {
-    console.error(`[API ERROR] Fallo al obtener tabla para ${ligaKey}:`, error.message);
-
     if (cache[ligaKey]) {
       return res.json({ stale: true, data: cache[ligaKey].data });
     }
-
     return res.status(503).json({ error: 'No se pudieron recuperar los datos.' });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor de Tribuna en ejecución en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor activo en puerto ${PORT}`));
