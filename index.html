@@ -50,13 +50,15 @@
     .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:var(--paper); padding:0 24px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
     .search-status { min-height:1.4em; margin:10px 0 0; color:var(--muted); font-size:.85rem; }
     
-    .sport-picker { position:relative; } 
-    .sport-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:0; border-radius:6px; background:var(--hover-bg); color:var(--ink); padding:0 14px; font-family:'Inter', sans-serif; font-size:.9rem; cursor:pointer; } 
-    .sport-toggle::after { content:'⌄'; color:var(--muted); font-size:1rem; } 
-    .sport-menu { display:none; position:absolute; z-index:10; top:calc(100% + 8px); right:0; left:0; overflow:hidden; padding:6px; border:1px solid var(--line); border-radius:8px; background:var(--card-bg); box-shadow:0 10px 30px rgba(0,0,0,.06); } 
-    .sport-picker.is-open .sport-menu { display:block; } 
-    .sport-option { display:block; width:100%; border:0; border-radius:6px; background:transparent; color:var(--ink); padding:10px 12px; text-align:left; font-family:'Inter', sans-serif; font-size:.88rem; cursor:pointer; } 
-    .sport-option:hover,.sport-option.is-selected { background:var(--hover-bg); font-weight:600; }
+    /* Componente Selector Personalizado */
+    .custom-picker { position:relative; min-width:280px; } 
+    .custom-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:1px solid var(--ink); border-radius:8px; background:var(--input-bg); color:var(--ink); padding:0 16px; font-family:'Inter', sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; box-sizing:border-box; } 
+    .custom-toggle::after { content:'⌄'; color:var(--muted); font-size:1.1rem; margin-left:12px; } 
+    .custom-menu { display:none; position:absolute; z-index:20; top:calc(100% + 8px); right:0; left:0; overflow:hidden; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--card-bg); box-shadow:0 10px 30px rgba(0,0,0,.08); max-height:320px; overflow-y:auto; } 
+    .custom-picker.is-open .custom-menu { display:block; } 
+    .custom-option { display:block; width:100%; border:0; border-radius:8px; background:transparent; color:var(--ink); padding:12px 14px; text-align:left; font-family:'Inter', sans-serif; font-size:.88rem; cursor:pointer; } 
+    .custom-option:hover { background:var(--hover-bg); }
+    .custom-option.is-selected { background:var(--hover-bg); font-weight:700; }
     
     .tag { color:var(--accent); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; display:inline-block; }
     
@@ -77,17 +79,15 @@
     .share { border:0; background:transparent; color:var(--accent); padding:0; font-size:.75rem; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; align-self:flex-start; font-family:'Inter', sans-serif; } 
     .is-hidden { display:none !important; }
 
-    /* Estilos corregidos para enlaces de artículos */
     a { text-decoration: none; color: inherit; }
     .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
     .article-link:hover h1, .article-link:hover h2 { color: var(--accent) !important; } 
 
     /* Estilos de la tabla de posiciones */
     .standings-section { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; }
-    .standings-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+    .standings-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
     .standings-header h2 { margin-bottom:0; }
     .standings-controls { display:flex; align-items:center; gap:16px; }
-    .standings-controls select { margin-bottom:0; width:auto; min-width:260px; padding:8px 12px; }
     .status-indicator { font-size:.8rem; font-weight:600; color:var(--muted); }
     .status-error { color:var(--accent); }
     
@@ -100,7 +100,6 @@
     .standings-table .pos-col { font-weight:700; color:var(--muted); width:40px; }
     .standings-table .pts-col { font-weight:700; background:var(--hover-bg); }
     
-    /* Resaltado de posiciones */
     .standings-table tbody tr:nth-child(-n+4) td { background:var(--row-highlight); }
     .standings-table tbody tr:nth-last-child(-n+2) td { background:var(--row-relegation); }
     
@@ -189,7 +188,7 @@
       .editor-grid { padding:16px; } 
       .newsletter { flex-direction:column; align-items:flex-start; padding:28px; } 
       .hide-mobile { display:none; }
-      .standings-controls select { width:100%; }
+      .custom-picker { width:100%; min-width:100%; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -210,13 +209,13 @@
     <section aria-label="Buscar noticias">
       <form class="search-bar" id="searchForm">
         <input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
-        <div class="sport-picker" id="publicSport" data-value="">
-          <button type="button" class="sport-toggle" id="publicSportToggle" aria-expanded="false" aria-haspopup="menu">Todos los deportes</button>
-          <div class="sport-menu" role="menu">
-            <button class="sport-option is-selected" type="button" data-value="" role="menuitem">Todos los deportes</button>
-            <button class="sport-option" type="button" data-value="fútbol" role="menuitem">Fútbol</button>
-            <button class="sport-option" type="button" data-value="baloncesto" role="menuitem">Baloncesto</button>
-            <button class="sport-option" type="button" data-value="atletismo" role="menuitem">Atletismo</button>
+        <div class="custom-picker" id="publicSport" data-value="">
+          <button type="button" class="custom-toggle" id="publicSportToggle" aria-expanded="false" aria-haspopup="menu">Todos los deportes</button>
+          <div class="custom-menu" role="menu">
+            <button class="custom-option is-selected" type="button" data-value="" role="menuitem">Todos los deportes</button>
+            <button class="custom-option" type="button" data-value="fútbol" role="menuitem">Fútbol</button>
+            <button class="custom-option" type="button" data-value="baloncesto" role="menuitem">Baloncesto</button>
+            <button class="custom-option" type="button" data-value="atletismo" role="menuitem">Atletismo</button>
           </div>
         </div>
         <button type="submit">Buscar</button>
@@ -247,18 +246,21 @@
           <h2>Posiciones del Fútbol Internacional</h2>
         </div>
         <div class="standings-controls">
-          <select id="leagueSelector" aria-label="Seleccionar liga">
-            <option value="pl">Premier League (Inglaterra)</option>
-            <option value="pd">La Liga (España)</option>
-            <option value="sa">Serie A (Italia)</option>
-            <option value="bl1">Bundesliga (Alemania)</option>
-            <option value="fl1">Ligue 1 (Francia)</option>
-            <option value="cl">UEFA Champions League</option>
-            <option value="bsa">Brasileirão (Brasil)</option>
-            <option value="ppl">Primeira Liga (Portugal)</option>
-            <option value="ded">Eredivisie (Países Bajos)</option>
-            <option value="elc">Championship (Inglaterra)</option>
-          </select>
+          <div class="custom-picker" id="leaguePicker" data-value="pl">
+            <button type="button" class="custom-toggle" id="leaguePickerToggle" aria-expanded="false" aria-haspopup="menu">Premier League (Inglaterra)</button>
+            <div class="custom-menu" role="menu">
+              <button class="custom-option is-selected" type="button" data-value="pl" role="menuitem">Premier League (Inglaterra)</button>
+              <button class="custom-option" type="button" data-value="pd" role="menuitem">La Liga (España)</button>
+              <button class="custom-option" type="button" data-value="sa" role="menuitem">Serie A (Italia)</button>
+              <button class="custom-option" type="button" data-value="bl1" role="menuitem">Bundesliga (Alemania)</button>
+              <button class="custom-option" type="button" data-value="fl1" role="menuitem">Ligue 1 (Francia)</button>
+              <button class="custom-option" type="button" data-value="cl" role="menuitem">UEFA Champions League</button>
+              <button class="custom-option" type="button" data-value="bsa" role="menuitem">Brasileirão (Brasil)</button>
+              <button class="custom-option" type="button" data-value="ppl" role="menuitem">Primeira Liga (Portugal)</option>
+              <button class="custom-option" type="button" data-value="ded" role="menuitem">Eredivisie (Países Bajos)</option>
+              <button class="custom-option" type="button" data-value="elc" role="menuitem">Championship (Inglaterra)</button>
+            </div>
+          </div>
           <span id="standingsStatus" class="status-indicator"></span>
         </div>
       </div>
@@ -426,14 +428,59 @@
       }
     };
 
-    const publicSport = document.querySelector('#publicSport'), publicSportToggle = document.querySelector('#publicSportToggle');
-    publicSportToggle.onclick = () => { const isOpen = publicSport.classList.toggle('is-open'); publicSportToggle.setAttribute('aria-expanded', isOpen); };
-    document.querySelectorAll('.sport-option').forEach(option => option.onclick = () => { publicSport.dataset.value = option.dataset.value; publicSportToggle.textContent = option.textContent; publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded', 'false'); document.querySelectorAll('.sport-option').forEach(item => item.classList.toggle('is-selected', item === option)); });
-    document.addEventListener('click', e => { if(!publicSport.contains(e.target)){ publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded', 'false'); }});
-    document.querySelector('#searchForm').onsubmit = e => { e.preventDefault(); const term = document.querySelector('#searchInput').value.trim().toLowerCase(); const sport = publicSport.dataset.value; const items = [...document.querySelectorAll('.searchable')]; const shown = items.filter(item => { const words = item.dataset.search; const matchesTerm = !term || words.includes(term); const matchesSport = !sport || item.dataset.sport === sport; item.classList.toggle('is-hidden', !(matchesTerm && matchesSport)); return matchesTerm && matchesSport; }).length; document.querySelector('#searchStatus').textContent = shown ? `${shown} nota${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'}.` : 'No encontramos notas con esos criterios.'; };
+    // Inicializador genérico para selectores personalizados
+    function setupCustomPicker(pickerId, onChangeCallback) {
+      const picker = document.getElementById(pickerId);
+      if (!picker) return;
+      const toggle = picker.querySelector('.custom-toggle');
+      const menu = picker.querySelector('.custom-menu');
+      const options = picker.querySelectorAll('.custom-option');
+
+      toggle.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = picker.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', isOpen);
+      };
+
+      options.forEach(option => {
+        option.onclick = (e) => {
+          e.stopPropagation();
+          const val = option.dataset.value;
+          picker.dataset.value = val;
+          toggle.textContent = option.textContent;
+          picker.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+          options.forEach(item => item.classList.toggle('is-selected', item === option));
+          if (onChangeCallback) onChangeCallback(val);
+        };
+      });
+
+      document.addEventListener('click', e => {
+        if (!picker.contains(e.target)) {
+          picker.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    setupCustomPicker('publicSport');
+
+    document.querySelector('#searchForm').onsubmit = e => { 
+      e.preventDefault(); 
+      const term = document.querySelector('#searchInput').value.trim().toLowerCase(); 
+      const sport = document.getElementById('publicSport').dataset.value; 
+      const items = [...document.querySelectorAll('.searchable')]; 
+      const shown = items.filter(item => { 
+        const words = item.dataset.search; 
+        const matchesTerm = !term || words.includes(term); 
+        const matchesSport = !sport || item.dataset.sport === sport; 
+        item.classList.toggle('is-hidden', !(matchesTerm && matchesSport)); 
+        return matchesTerm && matchesSport; 
+      }).length; 
+      document.querySelector('#searchStatus').textContent = shown ? `${shown} nota${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'}.` : 'No encontramos notas con esos criterios.'; 
+    };
     
     // Lógica para Tabla de Posiciones
-    const leagueSelector = document.getElementById('leagueSelector');
     const standingsBody = document.getElementById('standingsBody');
     const standingsStatus = document.getElementById('standingsStatus');
     let standingsInterval;
@@ -485,17 +532,18 @@
       }
     }
 
-    leagueSelector.addEventListener('change', (e) => {
+    setupCustomPicker('leaguePicker', (selectedLeague) => {
       renderSkeleton();
-      loadStandings(e.target.value);
+      loadStandings(selectedLeague);
       clearInterval(standingsInterval);
-      standingsInterval = setInterval(() => loadStandings(leagueSelector.value), 300000); // 5 min
+      standingsInterval = setInterval(() => loadStandings(selectedLeague), 300000);
     });
 
     // Iniciar carga de tabla
+    const initialLeague = document.getElementById('leaguePicker').dataset.value;
     renderSkeleton();
-    loadStandings(leagueSelector.value);
-    standingsInterval = setInterval(() => loadStandings(leagueSelector.value), 300000);
+    loadStandings(initialLeague);
+    standingsInterval = setInterval(() => loadStandings(document.getElementById('leaguePicker').dataset.value), 300000);
 
     let notes = [
       {sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
