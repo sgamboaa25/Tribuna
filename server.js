@@ -58,8 +58,8 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 
   try {
-    const currentYear = new Date().getFullYear();
-    const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${currentYear}`;
+    const seasonYear = '2026';
+    const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${seasonYear}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -68,13 +68,10 @@ app.get('/api/standings/:liga', async (req, res) => {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status}`);
-    }
-
     const json = await response.json();
-    if (!json.response || json.response.length === 0) {
-      throw new Error('No se encontraron datos en la respuesta');
+
+    if (!response.ok || !json.response || json.response.length === 0) {
+      throw new Error(json.message || `Error HTTP: ${response.status} - Sin datos para la temporada ${seasonYear}`);
     }
 
     const rawStandings = json.response[0].league.standings[0];
@@ -98,7 +95,7 @@ app.get('/api/standings/:liga', async (req, res) => {
     if (cache[ligaKey]) {
       return res.json({ stale: true, data: cache[ligaKey].data });
     }
-    return res.status(503).json({ error: 'No se pudieron recuperar los datos.' });
+    return res.status(503).json({ error: error.message });
   }
 });
 
