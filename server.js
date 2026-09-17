@@ -1,5 +1,4 @@
 const express = require('express');
-const fetch = require('node-fetch');
 const app = express();
 
 app.use(express.json());
@@ -78,6 +77,7 @@ app.get('/api/standings/:liga', async (req, res) => {
     const currentYear = new Date().getFullYear();
     const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${currentYear}`;
     
+    // Usando fetch nativo de Node.js (sin dependencias externas)
     const response = await fetch(url, {
       method: 'GET',
       headers: {
