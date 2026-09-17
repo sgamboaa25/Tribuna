@@ -78,10 +78,11 @@ app.get('/api/notes/category/:sport', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => 
-      (note.sport || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
-      sportParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    );
+    const filtered = (data || []).filter(note => {
+      const noteSport = (note.sport || note.deporte || '').toLowerCase();
+      return noteSport.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
+             sportParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    });
 
     res.json(filtered);
   } catch (error) {
@@ -102,9 +103,10 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => 
-      (note.tags || '').toLowerCase().includes(tagParam)
-    );
+    const filtered = (data || []).filter(note => {
+      const tags = (note.tags || note.etiquetas || '').toLowerCase();
+      return tags.includes(tagParam);
+    });
 
     res.json(filtered);
   } catch (error) {
@@ -125,10 +127,11 @@ app.get('/api/notes/author/:author', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => 
-      (note.author || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
-      authorParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    );
+    const filtered = (data || []).filter(note => {
+      const author = (note.author || note.autor || '').toLowerCase();
+      return author.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
+             authorParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    });
 
     res.json(filtered);
   } catch (error) {
@@ -154,10 +157,10 @@ app.get('/api/notes/search', async (req, res) => {
     let results = data || [];
     if (term) {
       results = results.filter(note => {
-        const titleMatch = (note.title || '').toLowerCase().includes(term);
-        const introMatch = (note.intro || '').toLowerCase().includes(term);
-        const tagsMatch = (note.tags || '').toLowerCase().includes(term);
-        return titleMatch || introMatch || tagsMatch;
+        const title = (note.title || note.titulo || '').toLowerCase();
+        const intro = (note.intro || note.entradilla || '').toLowerCase();
+        const tags = (note.tags || note.etiquetas || '').toLowerCase();
+        return title.includes(term) || intro.includes(term) || tags.includes(term);
       });
     }
 

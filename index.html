@@ -98,7 +98,7 @@
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 
     a { text-decoration: none; color: inherit; }
-    .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
+    .article-link { display: block; color: inherit; text-decoration: none; } 
     .article-link:hover h1, .article-link:hover h2 { color: var(--accent) !important; } 
 
     .standings-section { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; }
@@ -413,15 +413,9 @@
         </div>
       </div>
       <div class="social-links">
-        <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Página de Facebook">
-          <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg>
-        </a>
-        <a href="https://www.instagram.com/s.gamboaa/" target="_blank" rel="noopener noreferrer" aria-label="Perfil de Instagram">
-          <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0z"/></svg>
-        </a>
-        <a href="https://www.tiktok.com/@s.gamboaaa" target="_blank" rel="noopener noreferrer" aria-label="Perfil de TikTok">
-          <svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 3.44-2.84 6.47-6.28 7.03-3.68.61-7.53-1.35-8.79-4.85-1.12-3.11.19-6.9 3.07-8.49 1.84-.99 4.14-1.07 6.13-.37l.11 4.15c-1.3-.23-2.73.01-3.69.96-.86.84-1.1 2.22-.6 3.32.48 1.05 1.57 1.7 2.73 1.65 1.41-.05 2.62-1.18 2.83-2.58.07-.44.1-.89.1-1.34.02-5.46.01-10.92.02-16.38z"/></svg>
-        </a>
+        <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Página de Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
+        <a href="https://www.instagram.com/s.gamboaa/" target="_blank" rel="noopener noreferrer" aria-label="Perfil de Instagram"><svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0 z"/></svg></a>
+        <a href="https://www.tiktok.com/@s.gamboaaa" target="_blank" rel="noopener noreferrer" aria-label="Perfil de TikTok"><svg viewBox="0 0 24 24"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 3.44-2.84 6.47-6.28 7.03-3.68.61-7.53-1.35-8.79-4.85-1.12-3.11.19-6.9 3.07-8.49 1.84-.99 4.14-1.07 6.13-.37l.11 4.15c-1.3-.23-2.73.01-3.69.96-.86.84-1.1 2.22-.6 3.32.48 1.05 1.57 1.7 2.73 1.65 1.41-.05 2.62-1.18 2.83-2.58.07-.44.1-.89.1-1.34.02-5.46.01-10.92.02-16.38z"/></svg></a>
       </div>
     </div>
   </footer>
@@ -667,31 +661,39 @@
     function openArticle(index){ 
       const note = currentDisplayNotes[index]; 
       if(!note) return; 
+      const title = note.title || note.titulo || 'Sin titular';
+      const intro = note.intro || note.entradilla || '';
+      const sport = note.sport || note.deporte || 'General';
+      const author = note.author || note.autor || 'Redacción';
+      const email = note.email || 'contacto@tribuna.test';
+      const body = note.body || note.contenido || '';
+      const image = note.image || '';
+
       const urgentTag = note.urgent ? ' [ÚLTIMA HORA]' : '';
-      document.querySelector('#detailTag').textContent = `${note.sport}${urgentTag}`; 
-      document.querySelector('#detailTitle').textContent = note.title; 
-      document.querySelector('#detailIntro').textContent = note.intro; 
+      document.querySelector('#detailTag').textContent = `${sport}${urgentTag}`; 
+      document.querySelector('#detailTitle').textContent = title; 
+      document.querySelector('#detailIntro').textContent = intro; 
       
       const imgEl = document.querySelector('#detailImage'); 
-      if (note.image && note.image.trim() !== '') {
-        imgEl.src = note.image; 
-        imgEl.alt = note.title; 
+      if (image && image.trim() !== '') {
+        imgEl.src = image; 
+        imgEl.alt = title; 
         imgEl.style.display = 'block';
       } else {
         imgEl.removeAttribute('src');
         imgEl.style.display = 'none';
       } 
       
-      const authorSlug = encodeURIComponent((note.author || '').toLowerCase().replace(/\s+/g, '-'));
-      document.querySelector('#detailByline').innerHTML = `POR <a href="/autor/${authorSlug}" onclick="navigateTo(event, '/autor/${authorSlug}')" style="color:var(--ink); text-decoration:underline; font-weight:700;">${note.author.toUpperCase()}</a> | <a href="mailto:${note.email}" style="color:var(--muted); text-decoration:none;">${note.email}</a> · ${Math.max(1, Math.ceil((note.body || '').replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} MIN DE LECTURA`; 
+      const authorSlug = encodeURIComponent((author).toLowerCase().replace(/\s+/g, '-'));
+      document.querySelector('#detailByline').innerHTML = `POR <a href="/autor/${authorSlug}" onclick="navigateTo(event, '/autor/${authorSlug}')" style="color:var(--ink); text-decoration:underline; font-weight:700;">${author.toUpperCase()}</a> | <a href="mailto:${email}" style="color:var(--muted); text-decoration:none;">${email}</a> · ${Math.max(1, Math.ceil((body).replace(/<[^>]*>/g, '').split(/\s+/).length / 200))} MIN DE LECTURA`; 
       
-      document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(note.body, { 
+      document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body, { 
         ALLOWED_TAGS: ['b', 'i', 'u', 'div', 'p', 'br'], 
         ALLOWED_ATTR: ['style'] 
       });
 
       const noteUrl = encodeURIComponent(window.location.href);
-      const noteText = encodeURIComponent(`${note.title} — TRIBUNA`);
+      const noteText = encodeURIComponent(`${title} — TRIBUNA`);
       
       document.querySelector('#shareWa').href = `https://api.whatsapp.com/send?text=${noteText}%20${noteUrl}`;
       document.querySelector('#shareX').href = `https://twitter.com/intent/tweet?text=${noteText}&url=${noteUrl}`;
@@ -704,7 +706,7 @@
         setTimeout(() => copyBtn.style.color = '', 1500);
       };
 
-      document.title = `${note.title} | TRIBUNA`;
+      document.title = `${title} | TRIBUNA`;
       detail.style.display = 'block';
       detail.focus();
       detail.scrollIntoView({behavior: 'smooth', block: 'start'}); 
@@ -728,9 +730,13 @@
         const item = document.createElement('div'); 
         item.className = 'draft-item'; 
         
+        const title = note.title || note.titulo || 'Sin titular';
+        const sport = note.sport || note.deporte || 'General';
+        const author = note.author || note.autor || 'Redacción';
+
         const text = document.createElement('div'); 
         const name = document.createElement('strong'); 
-        name.textContent = note.title; 
+        name.textContent = title; 
         
         const statusClass = note.status === 'publicada' ? 'status-publicada' : (note.status === 'en revisión' ? 'status-revision' : 'status-borrador');
         const badge = `<span class="status-badge ${statusClass}">${note.status || 'borrador'}</span>`;
@@ -738,7 +744,7 @@
         name.innerHTML += badge + urgentBadge;
 
         const meta = document.createElement('small'); 
-        meta.textContent = `${note.sport} · Por ${note.author}`; 
+        meta.textContent = `${sport} · Por ${author}`; 
         text.append(name, meta); 
         
         const actions = document.createElement('div');
@@ -762,17 +768,17 @@
         button.textContent = 'Editar'; 
         button.onclick = () => {
           editingId = note.id; 
-          document.querySelector('#title').value = note.title; 
-          document.querySelector('#sport').value = note.sport; 
+          document.querySelector('#title').value = title; 
+          document.querySelector('#sport').value = sport; 
           document.querySelector('#status').value = note.status || 'borrador'; 
-          document.querySelector('#tags').value = note.tags || ''; 
-          document.querySelector('#intro').value = note.intro; 
-          document.querySelector('#bodyEditor').innerHTML = note.body; 
-          document.querySelector('#authorName').value = note.author; 
-          document.querySelector('#authorEmail').value = note.email; 
+          document.querySelector('#tags').value = note.tags || note.etiquetas || ''; 
+          document.querySelector('#intro').value = note.intro || note.entradilla || ''; 
+          document.querySelector('#bodyEditor').innerHTML = note.body || note.contenido || ''; 
+          document.querySelector('#authorName').value = author; 
+          document.querySelector('#authorEmail').value = note.email || ''; 
           document.querySelector('#urgent').checked = Boolean(note.urgent);
           document.querySelector('#photoFile').value = '';
-          document.querySelector('#saveMessage').textContent = `Editando: ${note.title}`; 
+          document.querySelector('#saveMessage').textContent = `Editando: ${title}`; 
           document.querySelector('#title').scrollIntoView({behavior: 'smooth', block: 'center'});
         }; 
         
@@ -791,11 +797,12 @@
       const urgentNotes = currentDisplayNotes.filter(n => n.urgent);
       if (urgentNotes.length > 0) {
         const latestUrgent = urgentNotes[0];
+        const urgentTitle = latestUrgent.title || latestUrgent.titulo || '';
         breakingContainer.innerHTML = `
           <div class="breaking-banner" role="region" aria-label="Noticia de última hora">
             <span class="breaking-label">ÚLTIMA HORA</span>
             <a href="#lectura" class="breaking-title open-article" data-id="${currentDisplayNotes.indexOf(latestUrgent)}">
-              ${latestUrgent.title}
+              ${urgentTitle}
             </a>
           </div>
         `;
@@ -805,9 +812,16 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
+        const title = n.title || n.titulo || 'Sin titular';
+        const intro = n.intro || n.entradilla || '';
+        const sport = n.sport || n.deporte || 'General';
+        const author = n.author || n.autor || 'Redacción';
+        const image = n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80';
+        const body = n.body || n.contenido || '';
+
         const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
-        const authorSlug = encodeURIComponent((n.author || '').toLowerCase().replace(/\s+/g, '-'));
-        hero.innerHTML = `<div class="hero-image" role="img" aria-label="${n.title}" style="background-image: url('${n.image || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}');"></div><article class="hero-copy searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div>${urgentBadge}<span class="tag">${n.sport}</span></div><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR <span onclick="navigateTo(event, '/autor/${authorSlug}')" style="text-decoration:underline;">${n.author.toUpperCase()}</span> · ${Math.max(1, Math.ceil((n.body||'').replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
+        const authorSlug = encodeURIComponent((author).toLowerCase().replace(/\s+/g, '-'));
+        hero.innerHTML = `<div class="hero-image" role="img" aria-label="${title}" style="background-image: url('${image}');"></div><article class="hero-copy searchable" data-sport="${sport.toLowerCase()}" data-search="${(sport+' '+title+' '+(n.tags||n.etiquetas||'')).toLowerCase()}"><a class="article-link open-article" href="#lectura" data-id="0"><div>${urgentBadge}<span class="tag">${sport}</span></div><h1>${title}</h1><p class="lead">${intro}</p><p class="byline">POR <span onclick="navigateTo(event, '/autor/${authorSlug}')" style="text-decoration:underline;">${author.toUpperCase()}</span> · ${Math.max(1, Math.ceil((body).replace(/<[^>]*>/g,'').split(/\s+/).length/200))} MIN DE LECTURA</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -817,16 +831,21 @@
       if (currentDisplayNotes.length > 1) {
         currentDisplayNotes.slice(1).forEach((n, idx) => {
           const id = idx + 1;
+          const title = n.title || n.titulo || 'Sin titular';
+          const intro = n.intro || n.entradilla || '';
+          const sport = n.sport || n.deporte || 'General';
+          const image = n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80';
+
           const urgentBadge = n.urgent ? `<span class="tag tag-urgent">ÚLTIMA HORA</span>` : '';
           const nUrl = encodeURIComponent(window.location.href);
-          const nText = encodeURIComponent(`${n.title} — TRIBUNA`);
+          const nText = encodeURIComponent(`${title} — TRIBUNA`);
 
-          grid.innerHTML += `<article class="card searchable" data-sport="${n.sport.toLowerCase()}" data-search="${(n.sport+' '+n.title+' '+(n.tags||'')).toLowerCase()}">
+          grid.innerHTML += `<article class="card searchable" data-sport="${sport.toLowerCase()}" data-search="${(sport+' '+title+' '+(n.tags||n.etiquetas||'')).toLowerCase()}">
             <a class="article-link open-article" href="#lectura" data-id="${id}">
-              <img src="${n.image || 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'}" alt="${n.title}" loading="lazy" decoding="async" />
-              <div>${urgentBadge}<span class="tag">${n.sport}</span></div>
-              <h2>${n.title}</h2>
-              <p>${n.intro}</p>
+              <img src="${image}" alt="${title}" loading="lazy" decoding="async" />
+              <div>${urgentBadge}<span class="tag">${sport}</span></div>
+              <h2>${title}</h2>
+              <p>${intro}</p>
             </a>
             <div class="share-group" style="margin-top:12px; padding-top:12px;">
               <a href="https://api.whatsapp.com/send?text=${nText}%20${nUrl}" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
@@ -839,13 +858,13 @@
 
       ranking.innerHTML = '';
       currentDisplayNotes.slice(0, 3).forEach((n, id) => {
-        ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia actual</span></div></article>`;
+        const title = n.title || n.titulo || 'Sin titular';
+        ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${title}</a><span class="reads">Tendencia actual</span></div></article>`;
       });
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
     }
 
-    // Enrutamiento SPA dinámico por categoría, etiqueta y autor
     async function handleRoute() {
       const path = window.location.pathname;
       const categoryHeader = document.getElementById('categoryHeaderContainer');
@@ -865,7 +884,7 @@
           if (!res.ok) throw new Error();
           currentDisplayNotes = await res.json();
         } catch(err) {
-          currentDisplayNotes = allPublicNotes.filter(n => (n.sport || '').toLowerCase() === sportName.toLowerCase());
+          currentDisplayNotes = allPublicNotes.filter(n => ((n.sport || n.deporte) || '').toLowerCase() === sportName.toLowerCase());
         }
       } else if (path.startsWith('/etiqueta/')) {
         const tagParam = path.replace('/etiqueta/', '');
@@ -881,7 +900,7 @@
           if (!res.ok) throw new Error();
           currentDisplayNotes = await res.json();
         } catch(err) {
-          currentDisplayNotes = allPublicNotes.filter(n => (n.tags || '').toLowerCase().includes(tagName.toLowerCase()));
+          currentDisplayNotes = allPublicNotes.filter(n => ((n.tags || n.etiquetas) || '').toLowerCase().includes(tagName.toLowerCase()));
         }
       } else if (path.startsWith('/autor/')) {
         const authorParam = path.replace('/autor/', '');
@@ -897,7 +916,7 @@
           if (!res.ok) throw new Error();
           currentDisplayNotes = await res.json();
         } catch(err) {
-          currentDisplayNotes = allPublicNotes.filter(n => (n.author || '').toLowerCase() === authorName.toLowerCase());
+          currentDisplayNotes = allPublicNotes.filter(n => ((n.author || n.autor) || '').toLowerCase() === authorName.toLowerCase());
         }
       } else {
         document.title = "Tribuna | Periodismo deportivo";
