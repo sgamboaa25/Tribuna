@@ -1,7 +1,6 @@
 {
   "name": "tribuna-deportiva",
   "version": "1.0.0",
-  "description": "Periodismo deportivo independiente",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

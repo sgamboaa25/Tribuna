@@ -1,10 +1,17 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
 
 // ==========================================
-// 1. ENDPOINTS DE AUTENTICACIÓN Y NOTAS
+// 1. CARGAR LA PÁGINA WEB (ESTO RESUELVE EL "Cannot GET /")
+// ==========================================
+// Esto le indica a Express que sirva todos los archivos de esta misma carpeta (index.html, etc.)
+app.use(express.static(__dirname));
+
+// ==========================================
+// 2. ENDPOINTS DE AUTENTICACIÓN Y NOTAS
 // ==========================================
 let notes = [
   {id: 0, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}
@@ -40,7 +47,7 @@ app.put('/api/notes/:id', (req, res) => {
 });
 
 // ==========================================
-// 2. CONFIGURACIÓN DE LIGAS (API-FOOTBALL)
+// 3. CONFIGURACIÓN DE LIGAS (API-FOOTBALL)
 // ==========================================
 const LEAGUE_MAP = {
   'costa-rica': '162',
@@ -77,7 +84,6 @@ app.get('/api/standings/:liga', async (req, res) => {
     const currentYear = new Date().getFullYear();
     const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${currentYear}`;
     
-    // Usando fetch nativo de Node.js (sin dependencias externas)
     const response = await fetch(url, {
       method: 'GET',
       headers: {
