@@ -77,6 +77,11 @@
     .share { border:0; background:transparent; color:var(--accent); padding:0; font-size:.75rem; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; align-self:flex-start; font-family:'Inter', sans-serif; } 
     .is-hidden { display:none !important; }
 
+    /* Estilos corregidos para enlaces de artículos */
+    a { text-decoration: none; color: inherit; }
+    .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
+    .article-link:hover h1, .article-link:hover h2 { color: var(--accent) !important; } 
+
     /* Estilos de la tabla de posiciones */
     .standings-section { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; }
     .standings-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
