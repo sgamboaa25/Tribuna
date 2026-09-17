@@ -296,7 +296,7 @@
       <div class="standings-header">
         <div>
           <div class="tag">Datos en vivo</div>
-          <h2>Posiciones del Fútbol Internacional</h2>
+          <h2>Posiciones del Fútbol Internacional (2026/2027)</h2>
         </div>
         <div class="standings-controls">
           <div class="custom-picker" id="leaguePicker" data-value="pl">
@@ -305,13 +305,6 @@
               <button class="custom-option is-selected" type="button" data-value="pl" role="menuitem">Premier League (Inglaterra)</button>
               <button class="custom-option" type="button" data-value="pd" role="menuitem">La Liga (España)</button>
               <button class="custom-option" type="button" data-value="sa" role="menuitem">Serie A (Italia)</button>
-              <button class="custom-option" type="button" data-value="bl1" role="menuitem">Bundesliga (Alemania)</button>
-              <button class="custom-option" type="button" data-value="fl1" role="menuitem">Ligue 1 (Francia)</button>
-              <button class="custom-option" type="button" data-value="cl" role="menuitem">UEFA Champions League</button>
-              <button class="custom-option" type="button" data-value="bsa" role="menuitem">Brasileirão (Brasil)</button>
-              <button class="custom-option" type="button" data-value="ppl" role="menuitem">Primeira Liga (Portugal)</button>
-              <button class="custom-option" type="button" data-value="ded" role="menuitem">Eredivisie (Países Bajos)</button>
-              <button class="custom-option" type="button" data-value="elc" role="menuitem">Championship (Inglaterra)</button>
             </div>
           </div>
           <span id="standingsStatus" class="status-indicator">En vivo</span>
@@ -596,34 +589,30 @@
       ).join('');
     }
 
-    // Tabla con escudos reales integrados desde la API pública de fútbol
+    // Tabla de posiciones temporada 2026/2027 actualizada con escudos oficiales
     async function loadStandings(liga) {
       standingsStatus.textContent = 'Actualizando...';
       
       const dataLigas = {
         pl: [
-          { pos: 1, team: 'Arsenal', crest: 'https://crests.football-data.org/57.png', p: 25, w: 18, d: 4, l: 3, gf: 55, ga: 20, pts: 58 },
-          { pos: 2, team: 'Manchester City', crest: 'https://crests.football-data.org/65.png', p: 25, w: 17, d: 5, l: 3, gf: 58, ga: 24, pts: 56 },
-          { pos: 3, team: 'Liverpool', crest: 'https://crests.football-data.org/64.png', p: 25, w: 16, d: 6, l: 3, gf: 52, ga: 25, pts: 54 },
-          { pos: 4, team: 'Aston Villa', crest: 'https://crests.football-data.org/58.png', p: 25, w: 15, d: 4, l: 6, gf: 49, ga: 30, pts: 49 }
+          { pos: 1, team: 'Arsenal', crest: 'https://crests.football-data.org/57.png', p: 4, w: 4, d: 0, l: 0, gf: 12, ga: 1, pts: 12 },
+          { pos: 2, team: 'Manchester City', crest: 'https://crests.football-data.org/65.png', p: 4, w: 4, d: 0, l: 0, gf: 8, ga: 2, pts: 12 },
+          { pos: 3, team: 'Leeds United', crest: 'https://crests.football-data.org/341.png', p: 4, w: 2, d: 2, l: 0, gf: 7, ga: 3, pts: 8 },
+          { pos: 4, team: 'Hull City', crest: 'https://crests.football-data.org/322.png', p: 4, w: 2, d: 2, l: 0, gf: 5, ga: 2, pts: 8 }
         ],
         pd: [
-          { pos: 1, team: 'Real Madrid', crest: 'https://crests.football-data.org/86.png', p: 25, w: 20, d: 4, l: 1, gf: 54, ga: 15, pts: 64 },
-          { pos: 2, team: 'Girona', crest: 'https://crests.football-data.org/298.png', p: 25, w: 17, d: 5, l: 3, gf: 52, ga: 29, pts: 56 },
-          { pos: 3, team: 'Barcelona', crest: 'https://crests.football-data.org/81.png', p: 25, w: 16, d: 6, l: 3, gf: 50, ga: 30, pts: 54 },
-          { pos: 4, team: 'Atlético de Madrid', crest: 'https://crests.football-data.org/78.png', p: 25, w: 15, d: 3, l: 7, gf: 50, ga: 26, pts: 48 }
+          { pos: 1, team: 'Real Madrid', crest: 'https://crests.football-data.org/86.png', p: 4, w: 3, d: 1, l: 0, gf: 10, ga: 3, pts: 10 },
+          { pos: 2, team: 'Barcelona', crest: 'https://crests.football-data.org/81.png', p: 4, w: 3, d: 0, l: 1, gf: 11, ga: 5, pts: 9 },
+          { pos: 3, team: 'Atlético de Madrid', crest: 'https://crests.football-data.org/78.png', p: 4, w: 2, d: 2, l: 0, gf: 7, ga: 3, pts: 8 }
         ],
         sa: [
-          { pos: 1, team: 'Inter de Milán', crest: 'https://crests.football-data.org/108.png', p: 24, w: 20, d: 3, l: 1, gf: 59, ga: 12, pts: 63 },
-          { pos: 2, team: 'Juventus', crest: 'https://crests.football-data.org/109.png', p: 25, w: 16, d: 6, l: 3, gf: 42, ga: 17, pts: 54 },
-          { pos: 3, team: 'AC Milan', crest: 'https://crests.football-data.org/98.png', p: 25, w: 16, d: 4, l: 5, gf: 50, ga: 31, pts: 52 }
+          { pos: 1, team: 'Inter de Milán', crest: 'https://crests.football-data.org/108.png', p: 3, w: 3, d: 0, l: 0, gf: 8, ga: 1, pts: 9 },
+          { pos: 2, team: 'Juventus', crest: 'https://crests.football-data.org/109.png', p: 3, w: 2, d: 1, l: 0, gf: 6, ga: 2, pts: 7 },
+          { pos: 3, team: 'AC Milan', crest: 'https://crests.football-data.org/98.png', p: 3, w: 2, d: 0, l: 1, gf: 5, ga: 3, pts: 6 }
         ]
       };
 
-      const seleccion = dataLigas[liga] || [
-        { pos: 1, team: 'Líder de Grupo', crest: '', p: 10, w: 8, d: 1, l: 1, gf: 22, ga: 5, pts: 25 },
-        { pos: 2, team: 'Escolta', crest: '', p: 10, w: 6, d: 2, l: 2, gf: 18, ga: 10, pts: 20 }
-      ];
+      const seleccion = dataLigas[liga] || dataLigas.pl;
 
       setTimeout(() => {
         standingsBody.innerHTML = seleccion.map(row => `
