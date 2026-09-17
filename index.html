@@ -132,16 +132,20 @@
 
     footer { background:var(--ink); color:var(--paper); padding:40px 24px; margin-top:60px; opacity:0.9; } 
     footer div.footer-content { max-width:1200px; margin:auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; font-size:.85rem; }
+    .footer-links { display:flex; gap:16px; flex-wrap:wrap; }
+    .footer-links button { background:transparent; border:0; color:var(--paper); opacity:.7; cursor:pointer; font-size:.85rem; padding:0; text-decoration:underline; font-family:'Inter', sans-serif; }
+    .footer-links button:hover { opacity:1; }
     .social-links { display:flex; gap:20px; align-items:center; }
     .social-links a { color:var(--paper); display:block; opacity:.7; transition:opacity .2s; }
     .social-links a:hover { opacity:1; }
     .social-links svg { width:20px; height:20px; fill:currentColor; }
 
-    dialog { width:min(480px,calc(100% - 32px)); border:1px solid var(--line); padding:0; border-radius:12px; box-shadow:0 25px 60px rgba(0,0,0,.15); overflow:hidden; background:var(--card-bg); color:var(--ink); } 
+    dialog { width:min(680px,calc(100% - 32px)); border:1px solid var(--line); padding:0; border-radius:12px; box-shadow:0 25px 60px rgba(0,0,0,.15); overflow:hidden; background:var(--card-bg); color:var(--ink); } 
     dialog::backdrop { background:rgba(0,0,0,.6); backdrop-filter:blur(4px); }
     .modal-head { padding:24px; background:var(--ink); color:var(--paper); display:flex; justify-content:space-between; align-items:center; } 
     .modal-head h2 { margin:0; font-size:1.2rem; font-family:'Inter', sans-serif; font-weight:700; } 
-    .modal-body { padding:28px; }
+    .modal-body { padding:28px; max-height:70vh; overflow-y:auto; line-height:1.7; }
+    .legal-text h3 { font-family:'Fraunces', serif; margin-top:20px; margin-bottom:8px; }
     
     label { display:block; font-weight:700; font-size:.78rem; margin-bottom:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; } 
     input,select { width:100%; border:1px solid var(--line); color:var(--ink); border-radius:6px; padding:12px; font-family:'Inter', sans-serif; font-size:.95rem; margin-bottom:20px; background:var(--input-bg); outline:none; transition:border-color .2s; } 
@@ -360,7 +364,14 @@
   
   <footer>
     <div class="footer-content">
-      <span><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</span>
+      <div>
+        <span><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</span>
+        <div class="footer-links" style="margin-top: 10px;">
+          <button type="button" onclick="openLegalModal('privacy')">Política de privacidad</button>
+          <button type="button" onclick="openLegalModal('legal')">Aviso legal</button>
+          <button type="button" onclick="openLegalModal('terms')">Términos de uso</button>
+        </div>
+      </div>
       <div class="social-links">
         <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Página de Facebook">
           <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg>
@@ -386,6 +397,14 @@
       <button class="submit">Entrar a redacción</button>
       <p class="message" id="loginMessage" aria-live="assertive"></p>
     </form>
+  </dialog>
+
+  <dialog id="legalDialog" aria-labelledby="legalTitle">
+    <div class="modal-head">
+      <h2 id="legalTitle">Información Legal</h2>
+      <button class="close" onclick="document.getElementById('legalDialog').close()" aria-label="Cerrar ventana">×</button>
+    </div>
+    <div class="modal-body legal-text" id="legalContent"></div>
   </dialog>
 
   <script>
@@ -559,6 +578,13 @@
     loadStandings(initialLeague);
     standingsInterval = setInterval(() => loadStandings(document.getElementById('leaguePicker').dataset.value), 300000);
 
+    const fallbackNotes = [
+      {status: 'publicada', sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
+      {status: 'publicada', sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
+      {status: 'publicada', sport: 'Baloncesto', title: 'El talento joven ya no espera turno', intro: 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', author: 'Diego Morales', email: 'diego@tribuna.test', tags: 'baloncesto, liga', body: 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', image: 'https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80'},
+      {status: 'publicada', sport: 'Atletismo', title: 'La victoria tiene más de una medida', intro: 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', author: 'Sofía Campos', email: 'sofia@tribuna.test', tags: 'opinión, atletismo', body: 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80'}
+    ];
+
     let publicNotes = [];
     let allPanelNotes = [];
     let editingId = null;
@@ -721,10 +747,12 @@
       try { 
         const response = await fetch('/api/notes'); 
         if(!response.ok) throw new Error(); 
-        publicNotes = await response.json(); 
+        const data = await response.json(); 
+        publicNotes = data.length > 0 ? data : fallbackNotes;
         renderPublicCards(); 
       } catch { 
-        document.querySelector('#searchStatus').textContent = 'Conecta la web al servidor para ver las notas compartidas.'; 
+        publicNotes = fallbackNotes;
+        renderPublicCards();
       } 
     }
 
@@ -735,10 +763,12 @@
           headers: { 'Authorization': `Bearer ${writerToken}` }
         }); 
         if(!response.ok) throw new Error(); 
-        allPanelNotes = await response.json(); 
+        const data = await response.json();
+        allPanelNotes = data.length > 0 ? data : fallbackNotes;
         renderDrafts(); 
       } catch (err) {
-        console.error("Error al cargar lista privada:", err);
+        allPanelNotes = fallbackNotes;
+        renderDrafts();
       } 
     }
 
@@ -760,6 +790,51 @@
       } catch (err) {
         alert(err.message);
       }
+    }
+
+    // Funciones para modal de páginas legales
+    function openLegalModal(type) {
+      const modal = document.getElementById('legalDialog');
+      const title = document.getElementById('legalTitle');
+      const content = document.getElementById('legalContent');
+
+      if (type === 'privacy') {
+        title.textContent = 'Política de privacidad';
+        content.innerHTML = `
+          <p>En <strong>TRIBUNA</strong> nos tomamos muy en serio la protección de sus datos personales. Esta política describe cómo recopilamos, utilizamos y protegemos la información suministrada a través de nuestro sitio web.</p>
+          <h3>1. Recopilación de datos</h3>
+          <p>Únicamente recopilamos su correo electrónico cuando decide suscribirse voluntariamente a nuestro boletín semanal (newsletter).</p>
+          <h3>2. Uso de la información</h3>
+          <p>El correo electrónico proporcionado se utilizará exclusivamente para el envío de información periodística y resúmenes de contenidos propios del medio. No compartimos ni vendemos sus datos a terceros.</p>
+          <h3>3. Responsable del Tratamiento</h3>
+          <p><strong>[NOMBRE DE LA ENTIDAD / RAZÓN SOCIAL]</strong><br>
+          Domicilio: <strong>[DIRECCIÓN COMPLETA, PAÍS]</strong><br>
+          Correo de contacto: <strong>[CORREO DE CONTACTO LEGAL]</strong></p>
+        `;
+      } else if (type === 'legal') {
+        title.textContent = 'Aviso legal';
+        content.innerHTML = `
+          <p>El presente aviso legal regula el uso del portal periodístico <strong>TRIBUNA</strong>.</p>
+          <h3>1. Propiedad Intelectual</h3>
+          <p>Todos los textos, crónicas, reportajes e imágenes de producción propia publicados en este portal son propiedad exclusiva de TRIBUNA y están protegidos por las leyes de propiedad intelectual internacionales.</p>
+          <h3>2. Titular del portal</h3>
+          <p><strong>[NOMBRE DE LA ENTIDAD / RAZÓN SOCIAL]</strong><br>
+          Número de Identificación Fiscal/Registro: <strong>[CÓDIGO DE IDENTIFICACIÓN DE EMPRESA]</strong><br>
+          País de operación: <strong>[PAÍS PRINCIPAL]</strong></p>
+        `;
+      } else if (type === 'terms') {
+        title.textContent = 'Términos de uso';
+        content.innerHTML = `
+          <p>Al acceder y navegar por <strong>TRIBUNA</strong>, el usuario acepta de manera íntegra las siguientes condiciones generales de uso:</p>
+          <h3>1. Uso de contenidos</h3>
+          <p>Los contenidos publicados tienen carácter informativo y periodístico. Se prohíbe la reproducción total o parcial del material publicado con fines comerciales sin la autorización por escrito previa de los editores.</p>
+          <h3>2. Conducta del usuario</h3>
+          <p>Queda expresamente prohibido hacer uso indebido del portal para infectarlo con códigos maliciosos o alterar las funcionalidades del servidor.</p>
+          <p>Última actualización: <strong>17 de septiembre de 2026</strong></p>
+        `;
+      }
+
+      modal.showModal();
     }
 
     loadPublicNotes();

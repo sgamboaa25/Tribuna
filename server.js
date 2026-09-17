@@ -49,26 +49,34 @@ app.post('/api/auth', (req, res) => {
   return res.json({ token, expiresAt });
 });
 
-// GET Público: Solo devuelve notas publicadas
+// GET Público: Devuelve notas publicadas
 app.get('/api/notes', async (req, res) => {
-  const { data, error } = await supabase
-    .from('notes')
-    .select('*')
-    .eq('status', 'publicada');
-    
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('status', 'publicada');
+      
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // GET Privado: Devuelve todas las notas para la redacción
 app.get('/api/notes/all', authenticateWriter, async (req, res) => {
-  const { data, error } = await supabase
-    .from('notes')
-    .select('*')
-    .order('created_at', { ascending: false });
-    
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .order('id', { ascending: false });
+      
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/api/notes', authenticateWriter, async (req, res) => {
@@ -87,7 +95,6 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   res.json(data[0]);
 });
 
-// Cambiar estado editorial
 app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
