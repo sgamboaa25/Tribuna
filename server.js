@@ -49,13 +49,13 @@ app.post('/api/auth', (req, res) => {
   return res.json({ token, expiresAt });
 });
 
-// GET Público: Devuelve notas publicadas
+// GET Público: Devuelve notas publicadas o notas sin columna de status explícita
 app.get('/api/notes', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .eq('status', 'publicada');
+      .or('status.eq.publicada,status.is.null');
       
     if (error) throw error;
     res.json(data || []);
@@ -64,7 +64,7 @@ app.get('/api/notes', async (req, res) => {
   }
 });
 
-// GET Privado: Devuelve todas las notas para la redacción
+// GET Privado: Devuelve todas las notas registradas en Supabase
 app.get('/api/notes/all', authenticateWriter, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -111,6 +111,48 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
     
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
+});
+
+// FASE 5: SEO - Servir robots.txt
+app.get('/robots.txt', (req, res) => {
+  const host = req.get('host');
+  const protocol = req.protocol;
+  const content = `User-agent: *\nAllow: /\n\nSitemap: ${protocol}://${host}/sitemap.xml`;
+  res.type('text/plain');
+  res.send(content);
+});
+
+// FASE 5: SEO - Generar sitemap.xml dinámico desde Supabase
+app.get('/sitemap.xml', async (req, res) => {
+  const host = req.get('host');
+  const protocol = req.protocol;
+  const baseUrl = `${protocol}://${host}`;
+
+  try {
+    const { data: notes } = await supabase
+      .from('notes')
+      .select('id, created_at, status')
+      .or('status.eq.publicada,status.is.null');
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+    
+    xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+
+    if (notes && notes.length > 0) {
+      notes.forEach(note => {
+        const date = note.created_at ? new Date(note.created_at).toISOString() : new Date().toISOString();
+        xml += `  <url>\n    <loc>${baseUrl}/#note-${note.id}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+      });
+    }
+
+    xml += `</urlset>`;
+
+    res.type('application/xml');
+    res.send(xml);
+  } catch (error) {
+    res.status(500).send('Error al generar el sitemap');
+  }
 });
 
 const LEAGUE_MAP = {

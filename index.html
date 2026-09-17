@@ -660,8 +660,9 @@
         const name = document.createElement('strong'); 
         name.textContent = note.title; 
         
-        const statusClass = note.status === 'publicada' ? 'status-publicada' : (note.status === 'en revisión' ? 'status-revision' : 'status-borrador');
-        const badge = `<span class="status-badge ${statusClass}">${note.status || 'borrador'}</span>`;
+        const currentStatus = note.status || 'borrador';
+        const statusClass = currentStatus === 'publicada' ? 'status-publicada' : (currentStatus === 'en revisión' ? 'status-revision' : 'status-borrador');
+        const badge = `<span class="status-badge ${statusClass}">${currentStatus}</span>`;
         name.innerHTML += badge;
 
         const meta = document.createElement('small'); 
@@ -674,9 +675,9 @@
         const statusSelect = document.createElement('select');
         statusSelect.className = 'status-select';
         statusSelect.innerHTML = `
-          <option value="borrador" ${note.status === 'borrador' ? 'selected' : ''}>Borrador</option>
-          <option value="en revisión" ${note.status === 'en revisión' ? 'selected' : ''}>En revisión</option>
-          <option value="publicada" ${note.status === 'publicada' ? 'selected' : ''}>Publicada</option>
+          <option value="borrador" ${currentStatus === 'borrador' ? 'selected' : ''}>Borrador</option>
+          <option value="en revisión" ${currentStatus === 'en revisión' ? 'selected' : ''}>En revisión</option>
+          <option value="publicada" ${currentStatus === 'publicada' ? 'selected' : ''}>Publicada</option>
         `;
 
         statusSelect.onchange = async () => {
@@ -691,7 +692,7 @@
           editingId = note.id; 
           document.querySelector('#title').value = note.title; 
           document.querySelector('#sport').value = note.sport; 
-          document.querySelector('#status').value = note.status || 'borrador'; 
+          document.querySelector('#status').value = currentStatus; 
           document.querySelector('#tags').value = note.tags || ''; 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
@@ -748,7 +749,7 @@
         const response = await fetch('/api/notes'); 
         if(!response.ok) throw new Error(); 
         const data = await response.json(); 
-        publicNotes = data.length > 0 ? data : fallbackNotes;
+        publicNotes = (data && data.length > 0) ? data : fallbackNotes;
         renderPublicCards(); 
       } catch { 
         publicNotes = fallbackNotes;
@@ -764,7 +765,7 @@
         }); 
         if(!response.ok) throw new Error(); 
         const data = await response.json();
-        allPanelNotes = data.length > 0 ? data : fallbackNotes;
+        allPanelNotes = (data && data.length > 0) ? data : fallbackNotes;
         renderDrafts(); 
       } catch (err) {
         allPanelNotes = fallbackNotes;
@@ -792,7 +793,6 @@
       }
     }
 
-    // Funciones para modal de páginas legales
     function openLegalModal(type) {
       const modal = document.getElementById('legalDialog');
       const title = document.getElementById('legalTitle');
