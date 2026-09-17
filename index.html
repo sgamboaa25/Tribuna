@@ -881,22 +881,44 @@
     document.querySelector('#articleForm').onsubmit = async e => { 
       e.preventDefault(); 
       const message = document.querySelector('#saveMessage');
-      message.textContent = 'Guardando nota en Supabase...';
+      message.textContent = 'Subiendo imagen y guardando nota...';
 
-      const note = {
-        title: document.querySelector('#title').value,
-        sport: document.querySelector('#sport').value,
-        status: document.querySelector('#status').value,
-        tags: document.querySelector('#tags').value,
-        intro: document.querySelector('#intro').value,
-        body: document.querySelector('#bodyEditor').innerHTML,
-        author: document.querySelector('#authorName').value,
-        email: document.querySelector('#authorEmail').value,
-        urgent: document.querySelector('#urgent').checked,
-        image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'
-      }; 
-      
+      const fileInput = document.querySelector('#photoFile');
+      let imageUrl = 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'; 
+
       try {
+        if (fileInput.files && fileInput.files[0]) {
+          const file = fileInput.files[0];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from('notes-images')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabaseClient.storage
+            .from('notes-images')
+            .getPublicUrl(filePath);
+
+          imageUrl = publicUrlData.publicUrl;
+        }
+
+        const note = {
+          title: document.querySelector('#title').value,
+          sport: document.querySelector('#sport').value,
+          status: document.querySelector('#status').value,
+          tags: document.querySelector('#tags').value,
+          intro: document.querySelector('#intro').value,
+          body: document.querySelector('#bodyEditor').innerHTML,
+          author: document.querySelector('#authorName').value,
+          email: document.querySelector('#authorEmail').value,
+          urgent: document.querySelector('#urgent').checked,
+          image: imageUrl
+        }; 
+        
         let error;
         if (editingId === null) {
           const res = await supabaseClient.from('notes').insert([note]);
