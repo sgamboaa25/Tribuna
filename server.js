@@ -1,43 +1,130 @@
-// Servidor local de TRIBUNA. Para producción, usa HTTPS, una base de datos y un
-// proveedor de autenticación; este archivo conserva las notas en el servidor.
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+const express = require('express');
+const fetch = require('node-fetch');
+const app = express();
 
-const root = __dirname;
-const dataDir = process.env.DATA_DIR || path.join(root, 'data');
-const notesPath = path.join(dataDir, 'notes.json');
-const seedNotesPath = path.join(root, 'seed-notes.json');
-const writerPassword = process.env.WRITER_PASSWORD || '250608$';
-const sessions = new Set();
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const useSupabase = Boolean(supabaseUrl && supabaseKey);
+app.use(express.json());
 
-function dbHeaders(extra={}) { return { apikey:supabaseKey, Authorization:`Bearer ${supabaseKey}`, 'Content-Type':'application/json', ...extra }; }
-async function readNotes() { if (!useSupabase) return JSON.parse(fs.readFileSync(notesPath, 'utf8')); const response=await fetch(`${supabaseUrl}/rest/v1/notes?select=*&order=created_at.asc`,{headers:dbHeaders()}); if(!response.ok) throw new Error('No se pudo leer la base de datos'); return response.json(); }
-async function createNote(note) { if (!useSupabase) { const notes=await readNotes(); note.id=crypto.randomUUID(); note.created_at=new Date().toISOString(); notes.push(note); fs.writeFileSync(notesPath,JSON.stringify(notes,null,2),'utf8'); return note; } const response=await fetch(`${supabaseUrl}/rest/v1/notes`,{method:'POST',headers:dbHeaders({Prefer:'return=representation'}),body:JSON.stringify(note)}); if(!response.ok) throw new Error('No se pudo guardar la nota'); return (await response.json())[0]; }
-async function updateNote(id,note) { if (!useSupabase) { const notes=await readNotes(); const index=notes.findIndex(item=>item.id===id); if(index<0) return null; notes[index]={...notes[index],...note,id}; fs.writeFileSync(notesPath,JSON.stringify(notes,null,2),'utf8'); return notes[index]; } const response=await fetch(`${supabaseUrl}/rest/v1/notes?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:dbHeaders({Prefer:'return=representation'}),body:JSON.stringify(note)}); if(!response.ok) throw new Error('No se pudo actualizar la nota'); return (await response.json())[0] || null; }
-function send(res, status, value) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); }
-function isWriter(req) { const token = req.headers.authorization?.replace(/^Bearer\s+/i, ''); return Boolean(token && sessions.has(token)); }
-function readBody(req) { return new Promise((resolve, reject) => { let body=''; req.on('data', part => { body += part; if (body.length > 1_000_000) reject(new Error('Solicitud demasiado grande')); }); req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch { reject(new Error('JSON inválido')); } }); }); }
-const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml' };
+// ==========================================
+// 1. ENDPOINTS DE AUTENTICACIÓN Y NOTAS
+// ==========================================
+let notes = [
+  {id: 0, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}
+];
 
-if (!useSupabase) { if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive:true }); if (!fs.existsSync(notesPath)) fs.copyFileSync(seedNotesPath, notesPath); }
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  try {
-    if (req.method === 'GET' && url.pathname === '/api/notes') return send(res, 200, await readNotes());
-    if (req.method === 'POST' && url.pathname === '/api/auth') { const { password } = await readBody(req); if (password !== writerPassword) return send(res, 401, { ok:false }); const token=crypto.randomUUID(); sessions.add(token); return send(res, 200, { ok:true, token }); }
-    if (req.method === 'POST' && url.pathname === '/api/notes') { if (!isWriter(req)) return send(res, 401, { error:'Acceso de redacción requerido' }); const note = await readBody(req); return send(res, 201, await createNote(note)); }
-    const match = url.pathname.match(/^\/api\/notes\/([^/]+)$/);
-    if (req.method === 'PUT' && match) { if (!isWriter(req)) return send(res, 401, { error:'Acceso de redacción requerido' }); const note = await readBody(req); const saved=await updateNote(match[1],note); if(!saved) return send(res,404,{error:'Nota no encontrada'}); return send(res,200,saved); }
-    if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { error:'Método no permitido' });
-    const fileName = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
-    const filePath = path.resolve(root, fileName);
-    if (!filePath.startsWith(root + path.sep) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) { res.writeHead(404); return res.end('No encontrado'); }
-    res.writeHead(200, { 'Content-Type': types[path.extname(filePath)] || 'application/octet-stream' }); fs.createReadStream(filePath).pipe(res);
-  } catch (error) { send(res, 400, { error:error.message }); }
+app.post('/api/auth', (req, res) => {
+  const { email, password } = req.body;
+  if (email && password) {
+    res.json({ token: 'mock-token-seguro' });
+  } else {
+    res.status(401).json({ error: 'Credenciales inválidas' });
+  }
 });
-server.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log('TRIBUNA disponible en http://localhost:3000'));
+
+app.get('/api/notes', (req, res) => {
+  res.json(notes);
+});
+
+app.post('/api/notes', (req, res) => {
+  const newNote = { id: notes.length, ...req.body };
+  notes.push(newNote);
+  res.json(newNote);
+});
+
+app.put('/api/notes/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (notes[id]) {
+    notes[id] = { id, ...req.body };
+    res.json(notes[id]);
+  } else {
+    res.status(404).json({ error: 'Nota no encontrada' });
+  }
+});
+
+// ==========================================
+// 2. CONFIGURACIÓN DE LIGAS (API-FOOTBALL)
+// ==========================================
+const LEAGUE_MAP = {
+  'costa-rica': '162',
+  'honduras': '163',
+  'guatemala': '164',
+  'el-salvador': '165',
+  'panama': '166'
+};
+
+const cache = {};
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
+
+app.get('/api/standings/:liga', async (req, res) => {
+  const ligaKey = req.params.liga;
+  const leagueId = LEAGUE_MAP[ligaKey];
+
+  if (!leagueId) {
+    return res.status(400).json({ error: 'Liga no válida.' });
+  }
+
+  const now = Date.now();
+
+  if (cache[ligaKey] && (now - cache[ligaKey].timestamp < CACHE_TTL_MS)) {
+    return res.json({ stale: false, data: cache[ligaKey].data });
+  }
+
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) {
+    console.error('[API ERROR] Falta la variable de entorno API_FOOTBALL_KEY');
+    return res.status(500).json({ error: 'Configuración interna del servidor.' });
+  }
+
+  try {
+    const currentYear = new Date().getFullYear();
+    const url = `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${currentYear}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-apisports-key': apiKey,
+        'x-rapidapi-host': 'v3.football.api-sports.io'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API-Football respondió con código HTTP ${response.status}`);
+    }
+
+    const json = await response.json();
+    
+    if (!json.response || json.response.length === 0) {
+      throw new Error('No se encontraron datos para esta temporada o liga.');
+    }
+
+    const rawStandings = json.response[0].league.standings[0];
+    
+    const transformedData = rawStandings.map(item => ({
+      posicion: item.rank,
+      equipo: item.team.name,
+      jugados: item.all.played,
+      ganados: item.all.win,
+      empatados: item.all.draw,
+      perdidos: item.all.lose,
+      golesFavor: item.all.goals.for,
+      golesContra: item.all.goals.against,
+      diferencia: item.goalsDiff,
+      puntos: item.points
+    }));
+
+    cache[ligaKey] = { timestamp: now, data: transformedData };
+
+    return res.json({ stale: false, data: transformedData });
+
+  } catch (error) {
+    console.error(`[API ERROR] Fallo al obtener tabla para ${ligaKey}:`, error.message);
+
+    if (cache[ligaKey]) {
+      return res.json({ stale: true, data: cache[ligaKey].data });
+    }
+
+    return res.status(503).json({ error: 'No se pudieron recuperar los datos.' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor de Tribuna en ejecución en puerto ${PORT}`));
