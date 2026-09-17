@@ -231,7 +231,7 @@
       <div class="tag" id="detailTag"></div>
       <h1 id="detailTitle"></h1>
       <p class="lead" id="detailIntro"></p>
-      <img id="detailImage" src="" alt="" loading="lazy" decoding="async" />
+      <img id="detailImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="" loading="lazy" decoding="async" />
       <div class="detail-content" id="detailBody"></div>
       <p class="byline" id="detailByline" style="margin-top:36px; border-top:1px solid var(--line); padding-top:20px;"></p>
       <button class="share" id="detailShare" style="margin-top:20px;">Compartir esta nota</button>
@@ -389,7 +389,6 @@
     const dialog = document.querySelector('#loginDialog'), access = document.querySelector('#accessButton'), panel = document.querySelector('#writerPanel'); 
     let writerToken = sessionStorage.getItem('tribuna_writer_token') || '';
     
-    // Mantener la sesión visible si el token ya existía en sessionStorage
     if (writerToken) {
       panel.style.display = 'block';
       access.textContent = 'Redacción activa';
@@ -577,11 +576,12 @@
       document.querySelector('#detailIntro').textContent = note.intro; 
       
       const imgEl = document.querySelector('#detailImage'); 
-      if(note.image){
+      if (note.image && note.image.trim() !== '') {
         imgEl.src = note.image; 
         imgEl.alt = note.title; 
         imgEl.style.display = 'block';
       } else {
+        imgEl.removeAttribute('src');
         imgEl.style.display = 'none';
       } 
       
