@@ -49,16 +49,48 @@ app.post('/api/auth', (req, res) => {
   return res.json({ token, expiresAt });
 });
 
-// GET Público: Obtiene directamente todas las notas de Supabase
+// GET Público: Obtiene solo las notas publicadas
 app.get('/api/notes', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('notes')
       .select('*')
+      .eq('status', 'publicada')
       .order('id', { ascending: false });
       
     if (error) throw error;
     res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET Búsqueda Pública: Filtra por titular, entradilla y etiquetas en notas publicadas
+app.get('/api/notes/search', async (req, res) => {
+  const term = (req.query.q || '').trim().toLowerCase();
+  const sport = (req.query.sport || '').trim().toLowerCase();
+
+  try {
+    let query = supabase.from('notes').select('*').eq('status', 'publicada');
+
+    if (sport) {
+      query = query.ilike('sport', sport);
+    }
+
+    const { data, error } = await query.order('id', { ascending: false });
+    if (error) throw error;
+
+    let results = data || [];
+    if (term) {
+      results = results.filter(note => {
+        const titleMatch = (note.title || '').toLowerCase().includes(term);
+        const introMatch = (note.intro || '').toLowerCase().includes(term);
+        const tagsMatch = (note.tags || '').toLowerCase().includes(term);
+        return titleMatch || introMatch || tagsMatch;
+      });
+    }
+
+    res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -133,7 +165,8 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const { data: notes } = await supabase
       .from('notes')
-      .select('id, created_at, status');
+      .select('id, created_at, status')
+      .eq('status', 'publicada');
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;

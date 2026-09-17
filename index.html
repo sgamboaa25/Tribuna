@@ -62,8 +62,12 @@
     .search-bar { display:grid; grid-template-columns:1fr 200px auto; gap:12px; background:var(--card-bg); border:1px solid var(--line); border-radius:8px; margin-bottom:48px; padding:10px; box-shadow:0 4px 20px rgba(0,0,0,.02); align-items:center; } 
     .search-bar input { margin:0; background:transparent; color:var(--ink); border:0; padding:10px 14px; font-size:.95rem; outline:none; font-family:'Inter', sans-serif; } 
     .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:var(--paper); padding:0 24px; height:44px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
-    .search-status { min-height:1.4em; margin:10px 0 0; color:var(--muted); font-size:.85rem; }
+    .search-status { min-height:1.4em; margin:10px 0 0; color:var(--muted); font-size:.85rem; font-weight:600; }
     
+    .empty-results { text-align:center; padding:60px 20px; border:1px solid var(--line); border-radius:8px; background:var(--card-bg); margin:32px 0; }
+    .empty-results h3 { font-family:'Fraunces', serif; font-size:1.5rem; margin-bottom:8px; }
+    .empty-results p { color:var(--muted); margin-bottom:0; }
+
     .custom-picker { position:relative; min-width:280px; } 
     .search-bar .custom-picker { min-width:100%; width:100%; }
     .custom-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:1px solid var(--ink); border-radius:8px; background:var(--input-bg); color:var(--ink); padding:0 16px; font-family:'Inter', sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; box-sizing:border-box; } 
@@ -90,7 +94,6 @@
     .card img { width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--hover-bg); }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; }
-    .is-hidden { display:none !important; }
 
     a { text-decoration: none; color: inherit; }
     .article-link, .article-link * { color: inherit !important; text-decoration: none !important; display: block; } 
@@ -530,21 +533,50 @@
       });
     }
 
-    setupCustomPicker('publicSport');
+    setupCustomPicker('publicSport', () => executeSearch());
+
+    // Búsqueda en vivo con Debounce (300ms)
+    let searchDebounceTimeout;
+    const searchInput = document.querySelector('#searchInput');
+    const searchStatus = document.querySelector('#searchStatus');
+
+    async function executeSearch() {
+      const term = searchInput.value.trim();
+      const sport = document.getElementById('publicSport').dataset.value;
+
+      try {
+        const response = await fetch(`/api/notes/search?q=${encodeURIComponent(term)}&sport=${encodeURIComponent(sport)}`);
+        if (!response.ok) throw new Error();
+        const results = await response.json();
+
+        publicNotes = results;
+        renderPublicCards();
+
+        if (results.length > 0) {
+          searchStatus.textContent = `${results.length} nota${results.length === 1 ? '' : 's'} encontrada${results.length === 1 ? '' : 's'}.`;
+        } else {
+          searchStatus.textContent = '';
+          document.querySelector('#futbol').innerHTML = `
+            <div class="empty-results" style="grid-column: 1 / -1;">
+              <h3>Sin resultados</h3>
+              <p>No se encontraron historias publicadas para "${term || sport}". Intenta buscar con otros términos.</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        searchStatus.textContent = 'Error al ejecutar la búsqueda.';
+      }
+    }
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimeout);
+      searchDebounceTimeout = setTimeout(executeSearch, 300);
+    });
 
     document.querySelector('#searchForm').onsubmit = e => { 
       e.preventDefault(); 
-      const term = document.querySelector('#searchInput').value.trim().toLowerCase(); 
-      const sport = document.getElementById('publicSport').dataset.value; 
-      const items = [...document.querySelectorAll('.searchable')]; 
-      const shown = items.filter(item => { 
-        const words = item.dataset.search; 
-        const matchesTerm = !term || words.includes(term); 
-        const matchesSport = !sport || item.dataset.sport === sport; 
-        item.classList.toggle('is-hidden', !(matchesTerm && matchesSport)); 
-        return matchesTerm && matchesSport; 
-      }).length; 
-      document.querySelector('#searchStatus').textContent = shown ? `${shown} nota${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'}.` : 'No encontramos notas con esos criterios.'; 
+      clearTimeout(searchDebounceTimeout);
+      executeSearch();
     };
     
     const standingsBody = document.getElementById('standingsBody');
@@ -652,7 +684,6 @@
         ALLOWED_ATTR: ['style'] 
       });
 
-      // Configurar enlaces del grupo de compartir
       const noteUrl = encodeURIComponent(window.location.href);
       const noteText = encodeURIComponent(`${note.title} — TRIBUNA`);
       
