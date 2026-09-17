@@ -21,11 +21,13 @@
       --ink: #111318; --muted: #646a73; --paper: #fbfbfc; 
       --accent: #e03a3e; --line: #eef0f3; --card-bg: #ffffff; 
       --input-bg: #fafafb; --hover-bg: #f4f5f7; 
+      --row-highlight: #f8fafc; --row-relegation: #fdf2f2;
     }
     [data-theme="dark"] {
       --ink: #eef0f3; --muted: #9ba1ab; --paper: #0a0c10; 
       --line: #22262d; --card-bg: #111318; 
       --input-bg: #1a1d24; --hover-bg: #22262d;
+      --row-highlight: #141820; --row-relegation: #2a1515;
     }
     
     * { box-sizing:border-box; }
@@ -74,10 +76,32 @@
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; }
     .share { border:0; background:transparent; color:var(--accent); padding:0; font-size:.75rem; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; align-self:flex-start; font-family:'Inter', sans-serif; } 
     .is-hidden { display:none !important; }
+
+    /* Estilos de la tabla de posiciones */
+    .standings-section { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; }
+    .standings-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+    .standings-header h2 { margin-bottom:0; }
+    .standings-controls { display:flex; align-items:center; gap:16px; }
+    .standings-controls select { margin-bottom:0; width:auto; min-width:260px; padding:8px 12px; }
+    .status-indicator { font-size:.8rem; font-weight:600; color:var(--muted); }
+    .status-error { color:var(--accent); }
     
-    .article-link { color:inherit; text-decoration:none; display:block; } 
-    .article-link:hover h1,.article-link:hover h2 { color:var(--accent); } 
+    .table-responsive { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:8px; background:var(--card-bg); }
+    .standings-table { width:100%; border-collapse:collapse; min-width:600px; text-align:center; font-size:.9rem; }
+    .standings-table th { background:var(--hover-bg); color:var(--muted); font-weight:700; text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; padding:12px; border-bottom:1px solid var(--line); }
+    .standings-table td { padding:14px 12px; border-bottom:1px solid var(--line); color:var(--ink); }
+    .standings-table tr:last-child td { border-bottom:0; }
+    .standings-table .team-col { text-align:left; font-family:'Fraunces', serif; font-weight:700; font-size:1.05rem; }
+    .standings-table .pos-col { font-weight:700; color:var(--muted); width:40px; }
+    .standings-table .pts-col { font-weight:700; background:var(--hover-bg); }
     
+    /* Resaltado de posiciones */
+    .standings-table tbody tr:nth-child(-n+4) td { background:var(--row-highlight); }
+    .standings-table tbody tr:nth-last-child(-n+2) td { background:var(--row-relegation); }
+    
+    .skeleton-row td { background:var(--hover-bg); animation:pulse 1.5s infinite; color:transparent !important; border-bottom:1px solid var(--line); height:50px; }
+    @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:0.3; } 100% { opacity:0.6; } }
+
     #articleDetail { display:none; background:var(--card-bg); border:1px solid var(--line); border-radius:12px; padding:48px; margin:20px 0 48px; box-shadow:0 10px 40px rgba(0,0,0,.03); } 
     #articleDetail h1 { max-width:900px; font-size:3rem; margin-bottom:12px; } 
     #articleDetail .lead { margin-bottom:16px; }
@@ -149,9 +173,6 @@
     .check input { width:auto !important; margin:0; accent-color:var(--accent); } 
     
     #articleForm > .submit { margin-top:24px; background:var(--accent); } 
-    #preview { display:none; background:var(--hover-bg); border:1px solid var(--line); border-radius:8px; margin-top:32px; padding:32px; } 
-    #preview h1 { font-size:2.2rem; font-family:'Fraunces', serif; } 
-    #preview .preview-meta { color:var(--muted); font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
 
     @media (max-width:768px) { 
       .brand { font-size:2.3rem; } 
@@ -162,6 +183,8 @@
       #writerPanel { padding:24px 16px; } 
       .editor-grid { padding:16px; } 
       .newsletter { flex-direction:column; align-items:flex-start; padding:28px; } 
+      .hide-mobile { display:none; }
+      .standings-controls select { width:100%; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -210,6 +233,47 @@
     </article>
     
     <section class="grid" id="futbol"></section>
+
+    <!-- TABLA DE POSICIONES -->
+    <section class="standings-section" id="posiciones">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Datos en vivo</div>
+          <h2>Posiciones de la región</h2>
+        </div>
+        <div class="standings-controls">
+          <select id="leagueSelector" aria-label="Seleccionar liga">
+            <option value="costa-rica">Liga Promerica (Costa Rica)</option>
+            <option value="honduras">Liga Betcris (Honduras)</option>
+            <option value="guatemala">Liga Nacional (Guatemala)</option>
+            <option value="el-salvador">Primera División (El Salvador)</option>
+            <option value="panama">LPF (Panamá)</option>
+          </select>
+          <span id="standingsStatus" class="status-indicator"></span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th class="pos-col">Pos</th>
+              <th class="team-col">Equipo</th>
+              <th>PJ</th>
+              <th>G</th>
+              <th>E</th>
+              <th>P</th>
+              <th class="hide-mobile">GF</th>
+              <th class="hide-mobile">GC</th>
+              <th class="hide-mobile">DIF</th>
+              <th class="pts-col">Pts</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody">
+            <!-- Renderizado por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
     
     <section class="most-read" aria-labelledby="mostReadTitle">
       <div class="tag">Lo más consultado</div>
@@ -358,6 +422,71 @@
     document.addEventListener('click', e => { if(!publicSport.contains(e.target)){ publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded', 'false'); }});
     document.querySelector('#searchForm').onsubmit = e => { e.preventDefault(); const term = document.querySelector('#searchInput').value.trim().toLowerCase(); const sport = publicSport.dataset.value; const items = [...document.querySelectorAll('.searchable')]; const shown = items.filter(item => { const words = item.dataset.search; const matchesTerm = !term || words.includes(term); const matchesSport = !sport || item.dataset.sport === sport; item.classList.toggle('is-hidden', !(matchesTerm && matchesSport)); return matchesTerm && matchesSport; }).length; document.querySelector('#searchStatus').textContent = shown ? `${shown} nota${shown === 1 ? '' : 's'} encontrada${shown === 1 ? '' : 's'}.` : 'No encontramos notas con esos criterios.'; };
     
+    // Lógica para Tabla de Posiciones
+    const leagueSelector = document.getElementById('leagueSelector');
+    const standingsBody = document.getElementById('standingsBody');
+    const standingsStatus = document.getElementById('standingsStatus');
+    let standingsInterval;
+
+    function renderSkeleton() {
+      standingsBody.innerHTML = Array.from({length: 8}).map(() => 
+        `<tr class="skeleton-row"><td>0</td><td>Cargando equipo...</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="hide-mobile">0</td><td class="hide-mobile">0</td><td class="hide-mobile">0</td><td>0</td></tr>`
+      ).join('');
+    }
+
+    async function loadStandings(liga) {
+      standingsStatus.textContent = 'Actualizando...';
+      standingsStatus.classList.remove('status-error');
+      
+      try {
+        const res = await fetch(`/api/standings/${liga}`);
+        if (!res.ok) throw new Error('Error al obtener datos');
+        const dataObj = await res.json();
+        
+        standingsBody.innerHTML = '';
+        if (dataObj.data && dataObj.data.length > 0) {
+          dataObj.data.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="pos-col">${t.posicion}</td>
+              <td class="team-col">${t.equipo}</td>
+              <td>${t.jugados}</td>
+              <td>${t.ganados}</td>
+              <td>${t.empatados}</td>
+              <td>${t.perdidos}</td>
+              <td class="hide-mobile">${t.golesFavor}</td>
+              <td class="hide-mobile">${t.golesContra}</td>
+              <td class="hide-mobile">${t.diferencia > 0 ? '+'+t.diferencia : t.diferencia}</td>
+              <td class="pts-col">${t.puntos}</td>
+            `;
+            standingsBody.appendChild(tr);
+          });
+          
+          standingsStatus.textContent = dataObj.stale ? 'Datos en caché (desactualizados)' : 'En vivo';
+          if(dataObj.stale) standingsStatus.classList.add('status-error');
+        } else {
+          standingsBody.innerHTML = '<tr><td colspan="10" style="padding: 30px;">Datos no disponibles para esta liga.</td></tr>';
+          standingsStatus.textContent = '';
+        }
+      } catch (err) {
+        standingsBody.innerHTML = '<tr><td colspan="10" style="padding: 30px; color: var(--accent);">Ocurrió un error al cargar la tabla de posiciones. Intenta más tarde.</td></tr>';
+        standingsStatus.textContent = 'Fallo de conexión';
+        standingsStatus.classList.add('status-error');
+      }
+    }
+
+    leagueSelector.addEventListener('change', (e) => {
+      renderSkeleton();
+      loadStandings(e.target.value);
+      clearInterval(standingsInterval);
+      standingsInterval = setInterval(() => loadStandings(leagueSelector.value), 300000); // 5 min
+    });
+
+    // Iniciar carga de tabla
+    renderSkeleton();
+    loadStandings(leagueSelector.value);
+    standingsInterval = setInterval(() => loadStandings(leagueSelector.value), 300000);
+
     let notes = [
       {sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'},
       {sport: 'Fútbol', title: 'La grada también juega el partido', intro: 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'crónica, afición', body: 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', image: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80'},
