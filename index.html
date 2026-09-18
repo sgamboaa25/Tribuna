@@ -478,8 +478,8 @@
       access.textContent = 'Redacción activa';
     }
 
-    const liveData = document.querySelector('#liveData');
-    function updateDate(){ liveData.textContent = new Intl.DateTimeFormat('es-ES', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date()); }
+    const liveDate = document.querySelector('#liveDate');
+    function updateDate(){ liveDate.textContent = new Intl.DateTimeFormat('es-ES', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date()); }
     updateDate(); setInterval(updateDate, 30000);
     
     access.onclick = () => dialog.showModal(); 
@@ -879,11 +879,15 @@
       if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
         const sportNameDecoded = decodeURIComponent(sportParam).replace(/-/g, ' ');
-        const originalCapitalized = sportNameDecoded.charAt(0).toUpperCase() + sportNameDecoded.slice(1);
-        categoryHeader.innerHTML = `<div class="category-header"><h1>${originalCapitalized}</h1></div>`;
         
-        currentActiveCategory = originalCapitalized;
-        currentDisplayNotes = await fetchNotesPage(true, originalCapitalized);
+        // Mapear rutas de URL limpias al nombre exacto guardado en la BD (ej. "futbol" -> "Fútbol")
+        let targetCategory = sportNameDecoded;
+        if (normalizeStr(sportNameDecoded) === 'futbol') targetCategory = 'Fútbol';
+        
+        categoryHeader.innerHTML = `<div class="category-header"><h1>${targetCategory}</h1></div>`;
+        
+        currentActiveCategory = targetCategory;
+        currentDisplayNotes = await fetchNotesPage(true, targetCategory);
       } else {
         currentActiveCategory = '';
         currentDisplayNotes = await fetchNotesPage(false);
@@ -966,7 +970,7 @@
             .from('notes-images')
             .upload(filePath, file);
 
-          if (uploadError) throw error;
+          if (uploadError) throw uploadError;
 
           const { data: publicUrlData } = supabaseClient.storage
             .from('notes-images')
