@@ -61,6 +61,11 @@
     .share-btn:hover { color:var(--accent); border-color:var(--accent); background:var(--card-bg); transform:translateY(-1px); }
     .share-btn svg { width:16px; height:16px; fill:currentColor; }
 
+    .reactions-group { display:flex; gap:12px; align-items:center; margin-top:28px; padding-top:20px; border-top:1px solid var(--line); flex-wrap:wrap; }
+    .reaction-btn { background:var(--card-bg); border:1px solid var(--line); border-radius:20px; padding:8px 16px; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; gap:8px; color:var(--ink); font-family:'Inter', sans-serif; transition:all .2s; }
+    .reaction-btn:hover { border-color:var(--accent); background:var(--hover-bg); }
+    .reaction-btn.reacted { border-color:var(--accent); background:var(--hover-bg); font-weight:700; }
+
     .search-bar { display:grid; grid-template-columns:1fr 200px auto; gap:12px; background:var(--card-bg); border:1px solid var(--line); border-radius:8px; margin-bottom:48px; padding:10px; box-shadow:0 4px 20px rgba(0,0,0,.02); align-items:center; } 
     .search-bar input { margin:0; background:transparent; color:var(--ink); border:0; padding:10px 14px; font-size:.95rem; outline:none; font-family:'Inter', sans-serif; } 
     .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:var(--paper); padding:0 24px; height:44px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
@@ -287,6 +292,12 @@
       <div class="detail-content" id="detailBody"></div>
       <p class="byline" id="detailByline" style="margin-top:36px; border-top:1px solid var(--line); padding-top:20px;"></p>
       
+      <div class="reactions-group" id="reactionsGroup">
+        <button type="button" class="reaction-btn" onclick="handleReaction('clap')">👏 <span id="countClap">0</span></button>
+        <button type="button" class="reaction-btn" onclick="handleReaction('wow')">😮 <span id="countWow">0</span></button>
+        <button type="button" class="reaction-btn" onclick="handleReaction('angry')">😡 <span id="countAngry">0</span></button>
+      </div>
+
       <div class="share-group">
         <span class="share-label">Compartir:</span>
         <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
@@ -681,7 +692,7 @@
     loadStandings('PL');
 
     const fallbackNotes = [
-      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'}
+      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80', reactions: { clap: 0, wow: 0, angry: 0 }}
     ];
 
     let allPublicNotes = [];
@@ -691,11 +702,13 @@
     let paginationPage = 0;
     const pageSize = 9;
     let currentActiveCategory = '';
+    let currentNote = null;
     const detail = document.querySelector('#articleDetail');
     
     function openArticle(index){ 
       const note = currentDisplayNotes[index]; 
       if(!note) return; 
+      currentNote = note;
       const title = note.title || 'Sin titular';
       const intro = note.intro || '';
       const sport = note.sport || 'General';
@@ -719,9 +732,54 @@
       document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()} · 1 MIN DE LECTURA`; 
       document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
 
+      updateReactionsUI();
+
       detail.style.display = 'block';
       detail.focus();
       detail.scrollIntoView({behavior: 'smooth', block: 'start'}); 
+    }
+
+    function updateReactionsUI() {
+      if (!currentNote) return;
+      const r = currentNote.reactions || { clap: 0, wow: 0, angry: 0 };
+      document.getElementById('countClap').textContent = r.clap || 0;
+      document.getElementById('countWow').textContent = r.wow || 0;
+      document.getElementById('countAngry').textContent = r.angry || 0;
+
+      const userReacted = localStorage.getItem('tribuna_reacted_' + currentNote.id);
+      document.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.classList.remove('reacted');
+        if (userReacted && btn.getAttribute('onclick').includes(userReacted)) {
+          btn.classList.add('reacted');
+        }
+      });
+    }
+
+    async function handleReaction(type) {
+      if (!currentNote) return;
+      const storageKey = 'tribuna_reacted_' + currentNote.id;
+      if (localStorage.getItem(storageKey)) {
+        alert('Ya has reaccionado a esta historia.');
+        return;
+      }
+
+      currentNote.reactions = currentNote.reactions || { clap: 0, wow: 0, angry: 0 };
+      currentNote.reactions[type] = (currentNote.reactions[type] || 0) + 1;
+
+      try {
+        const { error } = await supabaseClient
+          .from('notes')
+          .update({ reactions: currentNote.reactions })
+          .eq('id', currentNote.id);
+
+        if (error) throw error;
+
+        localStorage.setItem(storageKey, type);
+        updateReactionsUI();
+      } catch (err) {
+        console.error("Error al guardar reacción:", err);
+        currentNote.reactions[type]--; // revert on error
+      }
     }
     
     document.querySelector('#backToCover').onclick = () => {
@@ -993,7 +1051,8 @@
           author: document.querySelector('#authorName').value,
           email: document.querySelector('#authorEmail').value,
           urgent: document.querySelector('#urgent').checked,
-          image: imageUrl
+          image: imageUrl,
+          reactions: { clap: 0, wow: 0, angry: 0 }
         }; 
         
         let error;
