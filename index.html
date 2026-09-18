@@ -89,12 +89,16 @@
     .lead { font:400 1.1rem/1.6 'Fraunces', serif; color:var(--muted); margin-bottom:0; }
     .byline { font-size:.78rem; font-weight:700; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; margin-top:24px; }
     
-    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding:48px 0; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding:48px 0 24px; }
     .card { background:var(--card-bg); border:1px solid var(--line); border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:border-color .2s, transform .2s; } 
     .card:hover { border-color:var(--muted); transform:translateY(-2px); } 
     .card img { width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--hover-bg); }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+    .load-more-container { text-align:center; padding:20px 0 48px; }
+    .load-more-btn { background:var(--card-bg); border:1px solid var(--line); color:var(--ink); padding:12px 32px; font-weight:600; font-size:.9rem; border-radius:6px; cursor:pointer; font-family:'Inter', sans-serif; transition:all .2s; }
+    .load-more-btn:hover { background:var(--hover-bg); border-color:var(--muted); }
 
     a { text-decoration: none; color: inherit; }
     .article-link { display: block; color: inherit; text-decoration: none; } 
@@ -291,6 +295,9 @@
     </article>
     
     <section class="grid" id="futbol"></section>
+    <div class="load-more-container" id="loadMoreContainer" style="display:none;">
+      <button class="load-more-btn" id="loadMoreBtn" type="button">Cargar más</button>
+    </div>
 
     <section class="standings-section" id="posiciones">
       <div class="standings-header">
@@ -545,7 +552,10 @@
       const term = searchInput.value.trim().toLowerCase();
       const sportFilter = normalizeStr(document.getElementById('publicSport').dataset.value);
 
-      const { data, error } = await supabaseClient.from('notes').select('*');
+      let query = supabaseClient.from('notes').select('*');
+      if (sportFilter) query = query.eq('sport', sportFilter);
+
+      const { data, error } = await query;
       if (error) {
         console.error("Error al buscar notas:", error);
         searchStatus.textContent = 'Error al buscar en la base de datos.';
@@ -553,10 +563,6 @@
       }
 
       let results = data || [];
-      if (sportFilter) {
-        results = results.filter(n => normalizeStr(n.sport) === sportFilter);
-      }
-
       if (term) {
         results = results.filter(n => 
           (n.title && n.title.toLowerCase().includes(term)) || 
@@ -567,6 +573,7 @@
 
       currentDisplayNotes = results;
       renderPublicCards();
+      document.getElementById('loadMoreContainer').style.display = 'none';
 
       if (results.length > 0) {
         searchStatus.textContent = `${results.length} nota${results.length === 1 ? '' : 's'} encontrada${results.length === 1 ? '' : 's'}.`;
@@ -678,6 +685,9 @@
     let currentDisplayNotes = [];
     let allPanelNotes = [];
     let editingId = null;
+    let paginationPage = 0;
+    const pageSize = 9;
+    let currentActiveCategory = '';
     const detail = document.querySelector('#articleDetail');
     
     function openArticle(index){ 
@@ -765,7 +775,7 @@
       const ranking = document.querySelector('#rankingContainer');
       const breakingContainer = document.querySelector('#breakingContainer');
 
-      const urgentNotes = currentDisplayNotes.filter(n => n.urgent);
+      const urgentNotes = allPublicNotes.filter(n => n.urgent);
       if (urgentNotes.length > 0) {
         breakingContainer.innerHTML = `
           <div class="breaking-banner">
@@ -801,31 +811,81 @@
       }
 
       ranking.innerHTML = '';
-      currentDisplayNotes.slice(0, 3).forEach((n, id) => {
+      allPublicNotes.slice(0, 3).forEach((n, id) => {
         ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia</span></div></article>`;
       });
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
     }
 
+    async function fetchNotesPage(isCategory = false, categoryName = '') {
+      const from = 0;
+      const to = (paginationPage + 1) * pageSize - 1;
+
+      let query = supabaseClient.from('notes').select('*').order('created_at', { ascending: false }).range(from, to);
+      if (isCategory && categoryName) {
+        query = query.eq('sport', categoryName);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error("Error al paginar notas:", error);
+        return [];
+      }
+      return data || [];
+    }
+
+    async function loadMoreNotes() {
+      const btn = document.getElementById('loadMoreBtn');
+      btn.textContent = 'Cargando...';
+      btn.disabled = true;
+
+      paginationPage++;
+      const moreData = await fetchNotesPage(Boolean(currentActiveCategory), currentActiveCategory);
+      
+      if (moreData.length > currentDisplayNotes.length) {
+        currentDisplayNotes = moreData;
+        renderPublicCards();
+        if (moreData.length < (paginationPage + 1) * pageSize) {
+          document.getElementById('loadMoreContainer').style.display = 'none';
+        }
+      } else {
+        document.getElementById('loadMoreContainer').style.display = 'none';
+      }
+
+      btn.textContent = 'Cargar más';
+      btn.disabled = false;
+    }
+
+    document.getElementById('loadMoreBtn').onclick = loadMoreNotes;
+
     async function handleRoute() {
       const path = window.location.pathname;
       const categoryHeader = document.getElementById('categoryHeaderContainer');
       categoryHeader.innerHTML = '';
+      paginationPage = 0;
 
       if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
         const sportNameDecoded = decodeURIComponent(sportParam).replace(/-/g, ' ');
-        const normalizedTarget = normalizeStr(sportNameDecoded);
-        
         const originalCapitalized = sportNameDecoded.charAt(0).toUpperCase() + sportNameDecoded.slice(1);
         categoryHeader.innerHTML = `<div class="category-header"><h1>${originalCapitalized}</h1></div>`;
         
-        currentDisplayNotes = allPublicNotes.filter(n => normalizeStr(n.sport) === normalizedTarget);
+        currentActiveCategory = originalCapitalized;
+        currentDisplayNotes = await fetchNotesPage(true, originalCapitalized);
       } else {
-        currentDisplayNotes = [...allPublicNotes];
+        currentActiveCategory = '';
+        currentDisplayNotes = await fetchNotesPage(false);
       }
+
       renderPublicCards();
+      
+      const { count } = await supabaseClient.from('notes').select('*', { count: 'exact', head: true });
+      if (count && count > currentDisplayNotes.length) {
+        document.getElementById('loadMoreContainer').style.display = 'block';
+      } else {
+        document.getElementById('loadMoreContainer').style.display = 'none';
+      }
     }
 
     function navigateTo(e, path) {
@@ -838,10 +898,7 @@
 
     async function loadPublicNotes(){ 
       try { 
-        const { data, error } = await supabaseClient
-          .from('notes')
-          .select('*');
-
+        const { data, error } = await supabaseClient.from('notes').select('*');
         if (error) throw error;
         allPublicNotes = (data && data.length > 0) ? data : fallbackNotes;
         handleRoute();
@@ -849,20 +906,6 @@
         console.error("Error al cargar notas de Supabase:", err);
         allPublicNotes = fallbackNotes;
         handleRoute();
-        
-        const grid = document.querySelector('#futbol');
-        if (grid) {
-          const warningDiv = document.createElement('div');
-          warningDiv.className = 'empty-results';
-          warningDiv.style.gridColumn = '1 / -1';
-          warningDiv.style.borderColor = 'var(--accent)';
-          warningDiv.innerHTML = `
-            <h3 style="color: var(--accent);">Aviso de conexión</h3>
-            <p>No se pudieron cargar las notas reales desde Supabase. Mostrando datos de ejemplo.</p>
-            <p style="font-size: 0.8rem; margin-top: 8px; color: var(--muted);">Error técnico: ${err.message || err}</p>
-          `;
-          grid.prepend(warningDiv);
-        }
       } 
     }
 
