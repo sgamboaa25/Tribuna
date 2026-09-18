@@ -267,6 +267,7 @@
             <button class="custom-option" type="button" data-value="fútbol" role="menuitem">Fútbol</button>
             <button class="custom-option" type="button" data-value="baloncesto" role="menuitem">Baloncesto</button>
             <button class="custom-option" type="button" data-value="atletismo" role="menuitem">Atletismo</button>
+            <button class="custom-option" type="button" data-value="otros deportes" role="menuitem">Otros deportes</button>
           </div>
         </div>
         <button type="submit">Buscar</button>
@@ -477,8 +478,8 @@
       access.textContent = 'Redacción activa';
     }
 
-    const liveDate = document.querySelector('#liveDate');
-    function updateDate(){ liveDate.textContent = new Intl.DateTimeFormat('es-ES', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date()); }
+    const liveData = document.querySelector('#liveData');
+    function updateDate(){ liveData.textContent = new Intl.DateTimeFormat('es-ES', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}).format(new Date()); }
     updateDate(); setInterval(updateDate, 30000);
     
     access.onclick = () => dialog.showModal(); 
@@ -552,10 +553,7 @@
       const term = searchInput.value.trim().toLowerCase();
       const sportFilter = normalizeStr(document.getElementById('publicSport').dataset.value);
 
-      let query = supabaseClient.from('notes').select('*');
-      if (sportFilter) query = query.eq('sport', sportFilter);
-
-      const { data, error } = await query;
+      const { data, error } = await supabaseClient.from('notes').select('*');
       if (error) {
         console.error("Error al buscar notas:", error);
         searchStatus.textContent = 'Error al buscar en la base de datos.';
@@ -563,6 +561,10 @@
       }
 
       let results = data || [];
+      if (sportFilter) {
+        results = results.filter(n => normalizeStr(n.sport) === sportFilter);
+      }
+
       if (term) {
         results = results.filter(n => 
           (n.title && n.title.toLowerCase().includes(term)) || 
@@ -819,20 +821,21 @@
     }
 
     async function fetchNotesPage(isCategory = false, categoryName = '') {
-      const from = 0;
-      const to = (paginationPage + 1) * pageSize - 1;
-
-      let query = supabaseClient.from('notes').select('*').order('created_at', { ascending: false }).range(from, to);
-      if (isCategory && categoryName) {
-        query = query.eq('sport', categoryName);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabaseClient.from('notes').select('*');
       if (error) {
-        console.error("Error al paginar notas:", error);
+        console.error("Error al obtener notas:", error);
         return [];
       }
-      return data || [];
+      
+      let list = data || [];
+      if (isCategory && categoryName) {
+        const targetNorm = normalizeStr(categoryName);
+        list = list.filter(n => normalizeStr(n.sport) === targetNorm);
+      }
+
+      const from = 0;
+      const to = (paginationPage + 1) * pageSize;
+      return list.slice(from, to);
     }
 
     async function loadMoreNotes() {
@@ -846,7 +849,15 @@
       if (moreData.length > currentDisplayNotes.length) {
         currentDisplayNotes = moreData;
         renderPublicCards();
-        if (moreData.length < (paginationPage + 1) * pageSize) {
+        
+        const { data: allCatData } = await supabaseClient.from('notes').select('*');
+        let totalFiltered = allCatData || [];
+        if (currentActiveCategory) {
+          const targetNorm = normalizeStr(currentActiveCategory);
+          totalFiltered = totalFiltered.filter(n => normalizeStr(n.sport) === targetNorm);
+        }
+
+        if (currentDisplayNotes.length >= totalFiltered.length) {
           document.getElementById('loadMoreContainer').style.display = 'none';
         }
       } else {
@@ -880,8 +891,14 @@
 
       renderPublicCards();
       
-      const { count } = await supabaseClient.from('notes').select('*', { count: 'exact', head: true });
-      if (count && count > currentDisplayNotes.length) {
+      const { data: allCatData } = await supabaseClient.from('notes').select('*');
+      let totalFiltered = allCatData || [];
+      if (currentActiveCategory) {
+        const targetNorm = normalizeStr(currentActiveCategory);
+        totalFiltered = totalFiltered.filter(n => normalizeStr(n.sport) === targetNorm);
+      }
+
+      if (totalFiltered.length > currentDisplayNotes.length) {
         document.getElementById('loadMoreContainer').style.display = 'block';
       } else {
         document.getElementById('loadMoreContainer').style.display = 'none';
@@ -949,7 +966,7 @@
             .from('notes-images')
             .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) throw error;
 
           const { data: publicUrlData } = supabaseClient.storage
             .from('notes-images')
