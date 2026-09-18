@@ -447,9 +447,6 @@
     // CONFIGURACIÓN DE SUPABASE SEGURA PARA GITHUB
     // ==========================================
     const SUPABASE_URL = 'https://jmsjbbubhyszrbgqrfio.supabase.co';
-    
-    // ATENCIÓN: Esta constante DEBE ser tu clave pública "anon public" de Supabase (Settings -> API).
-    // NUNCA utilices aquí una clave service_role o secret.
     const SUPABASE_ANON_KEY = 'sb_publishable_bVjMSsdVDiGbDGr6k6zXzw_VePdvZHP'; 
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -500,6 +497,11 @@
       }
     };
 
+    function normalizeStr(str) {
+      if (!str) return '';
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    }
+
     function setupCustomPicker(pickerId, onChangeCallback) {
       const picker = document.getElementById(pickerId);
       if (!picker) return;
@@ -541,12 +543,9 @@
 
     async function executeSearch() {
       const term = searchInput.value.trim().toLowerCase();
-      const sport = document.getElementById('publicSport').dataset.value.toLowerCase();
+      const sportFilter = normalizeStr(document.getElementById('publicSport').dataset.value);
 
-      let query = supabaseClient.from('notes').select('*');
-      if (sport) query = query.eq('sport', sport);
-      
-      const { data, error } = await query;
+      const { data, error } = await supabaseClient.from('notes').select('*');
       if (error) {
         console.error("Error al buscar notas:", error);
         searchStatus.textContent = 'Error al buscar en la base de datos.';
@@ -554,6 +553,10 @@
       }
 
       let results = data || [];
+      if (sportFilter) {
+        results = results.filter(n => normalizeStr(n.sport) === sportFilter);
+      }
+
       if (term) {
         results = results.filter(n => 
           (n.title && n.title.toLowerCase().includes(term)) || 
@@ -598,7 +601,6 @@
       ).join('');
     }
 
-    // Carga de posiciones en vivo mediante Edge Function con caché y manejo de errores seguros
     async function loadStandings(liga) {
       standingsStatus.textContent = 'Actualizando...';
       renderSkeleton();
@@ -813,9 +815,13 @@
 
       if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
-        const sportName = decodeURIComponent(sportParam).replace(/-/g, ' ');
-        categoryHeader.innerHTML = `<div class="category-header"><h1>${sportName}</h1></div>`;
-        currentDisplayNotes = allPublicNotes.filter(n => (n.sport || '').toLowerCase() === sportName.toLowerCase());
+        const sportNameDecoded = decodeURIComponent(sportParam).replace(/-/g, ' ');
+        const normalizedTarget = normalizeStr(sportNameDecoded);
+        
+        const originalCapitalized = sportNameDecoded.charAt(0).toUpperCase() + sportNameDecoded.slice(1);
+        categoryHeader.innerHTML = `<div class="category-header"><h1>${originalCapitalized}</h1></div>`;
+        
+        currentDisplayNotes = allPublicNotes.filter(n => normalizeStr(n.sport) === normalizedTarget);
       } else {
         currentDisplayNotes = [...allPublicNotes];
       }
@@ -830,7 +836,6 @@
 
     window.addEventListener('popstate', handleRoute);
 
-    // Carga de notas públicas con manejo explícito de errores y aviso visual en interfaz
     async function loadPublicNotes(){ 
       try { 
         const { data, error } = await supabaseClient
@@ -845,7 +850,6 @@
         allPublicNotes = fallbackNotes;
         handleRoute();
         
-        // Mostrar aviso visual claro en el grid principal de notas
         const grid = document.querySelector('#futbol');
         if (grid) {
           const warningDiv = document.createElement('div');
@@ -862,7 +866,6 @@
       } 
     }
 
-    // Carga de notas para el panel con consola de error detallada
     async function loadAllNotesForPanel(){ 
       try { 
         const { data, error } = await supabaseClient.from('notes').select('*');
