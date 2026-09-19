@@ -59,7 +59,6 @@ const standingsLimiter = rateLimit({
 });
 
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(__dirname));
 
 app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
