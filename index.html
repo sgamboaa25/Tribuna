@@ -218,6 +218,23 @@
     
     #articleForm > .submit { margin-top:24px; background:var(--accent); } 
 
+    /* ===== PÁGINA 404 INTEGRADA ===== */
+    #notFound404 { display:none; text-align:center; padding:60px 0 80px; }
+    #notFound404 .error-code { font:800 clamp(6rem,22vw,11rem)/0.9 'Fraunces', serif; letter-spacing:-.06em; color:var(--ink); margin:0 0 8px; }
+    #notFound404 .error-code span { color:var(--accent); }
+    #notFound404 h1 { font:700 clamp(1.6rem,4vw,2.4rem)/1.1 'Fraunces', serif; margin:0 0 14px; }
+    #notFound404 .not-found-copy { color:var(--muted); font-size:1.05rem; max-width:520px; margin:0 auto 36px; }
+    .actions { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+    .btn-primary { border:0; background:var(--ink); color:var(--paper); padding:13px 28px; font-weight:600; font-size:.9rem; cursor:pointer; border-radius:6px; text-decoration:none; transition:opacity .2s; font-family:'Inter', sans-serif; display:inline-flex; align-items:center; gap:8px; }
+    .btn-primary:hover { opacity:.85; }
+    .btn-secondary { border:1px solid var(--line); background:var(--card-bg); color:var(--ink); padding:13px 28px; font-weight:600; font-size:.9rem; cursor:pointer; border-radius:6px; text-decoration:none; transition:all .2s; font-family:'Inter', sans-serif; display:inline-flex; align-items:center; gap:8px; }
+    .btn-secondary:hover { border-color:var(--muted); background:var(--hover-bg); }
+    .suggestions { margin-top:64px; }
+    .suggestions h2 { font:700 1.2rem/1.2 'Fraunces', serif; color:var(--ink); margin-bottom:20px; }
+    .chip-list { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .chip { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); text-decoration:none; padding:8px 18px; border-radius:20px; font-size:.85rem; font-weight:600; transition:all .2s; }
+    .chip:hover { color:var(--accent); border-color:var(--accent); background:var(--hover-bg); }
+
     @media (max-width:768px) { 
       .brand { font-size:2.3rem; } 
       .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } 
@@ -263,7 +280,7 @@
   <main id="portada">
     <div id="categoryHeaderContainer"></div>
 
-    <section aria-label="Buscar noticias">
+    <section aria-label="Buscar noticias" id="searchSection">
       <form class="search-bar" id="searchForm">
         <input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
         <div class="custom-picker" id="publicSport" data-value="">
@@ -300,10 +317,10 @@
 
       <div class="share-group">
         <span class="share-label">Compartir:</span>
-        <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp" title="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
-        <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X" title="Compartir en X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-        <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook" title="Compartir en Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
-        <button id="shareCopy" type="button" class="share-btn" aria-label="Copiar enlace" title="Copiar enlace"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
+        <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
+        <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
+        <button id="shareCopy" type="button" class="share-btn" aria-label="Copiar enlace"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
       </div>
     </article>
     
@@ -358,8 +375,29 @@
         </table>
       </div>
     </section>
-    
-    <section class="most-read" aria-labelledby="mostReadTitle">
+
+    <!-- ===== PÁGINA 404 (se muestra en rutas desconocidas) ===== -->
+    <section id="notFound404" aria-live="polite">
+      <span class="tag">Error 404</span>
+      <p class="error-code">4<span>0</span>4</p>
+      <h1>Esta página no está en el marcador</h1>
+      <p class="not-found-copy">La historia que buscas no existe, fue movida o el enlace es incorrecto. Sin ruido, pero también sin inventos: mejor vuelve a la portada.</p>
+      <div class="actions">
+        <a href="/" class="btn-primary" onclick="navigateTo(event, '/')">Volver a la portada</a>
+        <a href="#posiciones" class="btn-secondary" onclick="goHomeThen('posiciones')">Ver posiciones</a>
+      </div>
+      <div class="suggestions">
+        <h2>Quizás buscas esto</h2>
+        <div class="chip-list">
+          <a href="/categoria/futbol" class="chip" onclick="navigateTo(event, '/categoria/futbol')">⚽ Fútbol</a>
+          <a href="/categoria/baloncesto" class="chip" onclick="navigateTo(event, '/categoria/baloncesto')">🏀 Baloncesto</a>
+          <a href="/categoria/atletismo" class="chip" onclick="navigateTo(event, '/categoria/atletismo')">🏃 Atletismo</a>
+          <a href="/categoria/otros-deportes" class="chip" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="most-read" id="mostReadSection" aria-labelledby="mostReadTitle">
       <div class="tag">Lo más consultado</div>
       <h2 id="mostReadTitle">Las notas más leídas</h2>
       <p>Las historias que están marcando la conversación deportiva hoy.</p>
@@ -929,11 +967,53 @@
 
     document.getElementById('loadMoreBtn').onclick = loadMoreNotes;
 
+    // ==========================================
+    // MANEJO DE LA PÁGINA 404 (rutas desconocidas)
+    // ==========================================
+    const notFoundSection = document.getElementById('notFound404');
+    const KNOWN_CATEGORIES = ['futbol', 'baloncesto', 'atletismo', 'otros deportes'];
+
+    function set404Visible(show) {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'mostReadSection', 'podcast'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'none' : '';
+      });
+      document.getElementById('breakingContainer').style.display = show ? 'none' : '';
+      notFoundSection.style.display = show ? 'block' : 'none';
+    }
+
+    function goHomeThen(sectionId) {
+      navigateTo(null, '/');
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+
     async function handleRoute() {
       const path = window.location.pathname;
       const categoryHeader = document.getElementById('categoryHeaderContainer');
       categoryHeader.innerHTML = '';
       paginationPage = 0;
+
+      let isNotFound;
+      if (path === '/' || path === '/index.html') {
+        isNotFound = false;
+      } else if (path.startsWith('/categoria/')) {
+        const sportParam = path.replace('/categoria/', '');
+        const normParam = normalizeStr(decodeURIComponent(sportParam).replace(/-/g, ' '));
+        isNotFound = !KNOWN_CATEGORIES.includes(normParam);
+      } else {
+        isNotFound = true;
+      }
+
+      if (isNotFound) {
+        detail.style.display = 'none';
+        set404Visible(true);
+        return;
+      }
+
+      set404Visible(false);
 
       if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
