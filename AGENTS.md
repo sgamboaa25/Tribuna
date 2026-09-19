@@ -34,3 +34,11 @@ Notas de aplicación:
 - URL pública de Supabase: `https://jmsjbbubhyszrbgqrfio.supabase.co`
 - Feed RSS: `/functions/v1/feed-rss`
 - Tablas principales: `notes` (noticias, campo `status` con valores como `publicada`/borrador).
+
+## Variables de entorno del backend (ver `.env.example`)
+
+- `SUPABASE_URL` — URL pública de Supabase (no secreta).
+- `SUPABASE_SERVICE_ROLE_KEY` — service role key (SECRETA; la usa el backend para escribir).
+- `FOOTBALL_DATA_API_KEY` — API key externa de standings (SECRETA).
+- `WRITER_PASSWORD` — contraseña compartida de la redacción (SECRETA).
+- `PORT` — puerto de Express (opcional).

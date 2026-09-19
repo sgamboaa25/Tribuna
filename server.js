@@ -64,7 +64,7 @@ app.use('/api/auth', authLimiter);
 app.use('/api/notes', writeLimiter);
 app.use('/api/standings', standingsLimiter);
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const activeSessions = new Map();
 
