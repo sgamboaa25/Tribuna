@@ -1,0 +1,16 @@
+{
+  "name": "Tribuna",
+  "short_name": "Tribuna",
+  "description": "Periodismo deportivo independiente, sin ruido.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbfbfc",
+  "theme_color": "#111318",
+  "icons": [
+    { "src": "/public/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/public/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/public/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

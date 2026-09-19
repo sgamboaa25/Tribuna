@@ -498,6 +498,9 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 });
 
+// Estáticos explícitos de PWA (solo esta carpeta; no exponer fuentes)
+app.use('/public', express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true }));
+
 // Middleware SPA para soportar rutas dinámicas en el navegador
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
