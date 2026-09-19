@@ -540,9 +540,18 @@
       const email = document.querySelector('#loginEmail').value;
       const pw = document.querySelector('#password').value; 
       const loginMsg = document.querySelector('#loginMessage');
+      loginMsg.textContent = 'Verificando credenciales...';
 
-      if (email && pw) {
-        writerToken = 'web_writer_token_active';
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pw })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.token) throw new Error((data && data.error) || 'Credenciales incorrectas');
+
+        writerToken = data.token;
         sessionStorage.setItem('tribuna_writer_token', writerToken);
         dialog.close(); 
         panel.style.display = 'block'; 
@@ -550,8 +559,10 @@
         loginMsg.textContent = '';
         loadAllNotesForPanel();
         panel.scrollIntoView({ behavior: 'smooth' }); 
-      } else {
-        loginMsg.textContent = 'Credenciales incorrectas';
+      } catch (err) {
+        writerToken = '';
+        sessionStorage.removeItem('tribuna_writer_token');
+        loginMsg.textContent = err.message || 'Credenciales incorrectas';
       }
     };
 
@@ -1073,10 +1084,20 @@
     }
 
     async function loadAllNotesForPanel(){ 
+      if (!writerToken) return;
       try { 
-        const { data, error } = await supabaseClient.from('notes').select('*');
-        if (error) throw error;
-        allPanelNotes = data || [];
+        const response = await fetch('/api/notes/all', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar las notas de redacción.');
+        allPanelNotes = await response.json();
         renderDrafts(); 
       } catch (err) {
         console.error("Error crítico al cargar notas para el panel de redacción:", err);
@@ -1134,17 +1155,25 @@
           image: imageUrl,
           reactions: { clap: 0, wow: 0, angry: 0 }
         }; 
-        
-        let error;
-        if (editingId === null) {
-          const res = await supabaseClient.from('notes').insert([note]);
-          error = res.error;
-        } else {
-          const res = await supabaseClient.from('notes').update(note).eq('id', editingId);
-          error = res.error;
+
+        const isNew = editingId === null;
+        const endpoint = isNew ? '/api/notes' : `/api/notes/${editingId}`;
+        const response = await fetch(endpoint, {
+          method: isNew ? 'POST' : 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${writerToken}` },
+          body: JSON.stringify(note)
+        });
+
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          throw new Error('Sesión expirada. Inicia sesión de nuevo.');
         }
 
-        if (error) throw error;
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error((data && data.error) || `Error HTTP ${response.status}`);
 
         message.textContent = '¡Nota guardada con éxito!';
         editingId = null;

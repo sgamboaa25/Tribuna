@@ -1,11 +1,68 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const sanitizeHtml = require('sanitize-html');
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', "'unsafe-inline'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://jmsjbbubhyszrbgqrfio.supabase.co', 'https://*.supabase.co'],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: []
+    }
+  }
+}));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 400,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas peticiones. Intenta de nuevo en unos minutos.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de acceso. Espera unos minutos.' }
+});
+
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas peticiones de escritura. Intenta de nuevo.' }
+});
+
+const standingsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas peticiones. Intenta de nuevo.' }
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(__dirname));
+
+app.use('/api/', globalLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/notes', writeLimiter);
+app.use('/api/standings', standingsLimiter);
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_ROLE_KEY);
 
@@ -28,6 +85,106 @@ const authenticateWriter = (req, res, next) => {
   req.writer = session.email;
   next();
 };
+
+const NOTE_ALLOWED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'tags', 'body', 'status', 'urgent', 'image', 'reactions'];
+const REQUIRED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'body'];
+const NOTE_LENGTHS = { title: 200, sport: 60, intro: 500, author: 120, email: 120, tags: 300, body: 100000, image: 500 };
+const VALID_STATUSES = ['borrador', 'en revisión', 'publicada'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BODY_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'img', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption', 'span', 'div'];
+const BODY_ALLOWED_ATTRS = { a: ['href', 'title'], img: ['src', 'alt', 'title'] };
+
+function sanitizeText(value) {
+  return sanitizeHtml(String(value), { allowedTags: [], allowedAttributes: {} }).trim();
+}
+
+function sanitizeBody(value) {
+  return sanitizeHtml(String(value), {
+    allowedTags: BODY_ALLOWED_TAGS,
+    allowedAttributes: BODY_ALLOWED_ATTRS,
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' })
+    }
+  });
+}
+
+function validateNote(body, partial) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { error: 'Cuerpo de petición inválido.' };
+  }
+
+  if (!partial) {
+    for (const field of REQUIRED_FIELDS) {
+      if (body[field] === undefined || body[field] === null || String(body[field]).trim() === '') {
+        return { error: `Campo requerido: ${field}.` };
+      }
+    }
+  }
+
+  const clean = {};
+  for (const key of Object.keys(body)) {
+    if (!NOTE_ALLOWED_FIELDS.includes(key)) continue;
+    clean[key] = body[key];
+  }
+
+  for (const field of ['title', 'sport', 'intro', 'author', 'email', 'tags', 'image']) {
+    if (clean[field] === undefined) continue;
+    if (typeof clean[field] !== 'string') return { error: `El campo ${field} debe ser texto.` };
+    clean[field] = (field === 'email' || field === 'image') ? clean[field].trim() : sanitizeText(clean[field]);
+    if (clean[field] === '' && field !== 'tags' && field !== 'image') {
+      return { error: `El campo ${field} no puede estar vacío.` };
+    }
+    if (clean[field].length > NOTE_LENGTHS[field]) {
+      return { error: `El campo ${field} supera la longitud máxima permitida (${NOTE_LENGTHS[field]} caracteres).` };
+    }
+  }
+
+  if (clean.email !== undefined && !EMAIL_RE.test(clean.email)) {
+    return { error: 'El correo electrónico no es válido.' };
+  }
+
+  if (clean.image !== undefined && clean.image !== '') {
+    try {
+      const url = new URL(clean.image);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error();
+    } catch {
+      return { error: 'La URL de la imagen no es válida.' };
+    }
+  }
+
+  if (clean.body !== undefined) {
+    if (typeof clean.body !== 'string') return { error: 'El cuerpo de la nota debe ser texto.' };
+    clean.body = sanitizeBody(clean.body);
+    if (clean.body.length > NOTE_LENGTHS.body) {
+      return { error: 'El cuerpo de la nota supera la longitud máxima permitida.' };
+    }
+  }
+
+  if (clean.status !== undefined && !VALID_STATUSES.includes(clean.status)) {
+    return { error: 'Estado editorial no válido.' };
+  }
+  if (clean.status === undefined && !partial) clean.status = 'borrador';
+
+  if (clean.urgent !== undefined) clean.urgent = Boolean(clean.urgent);
+
+  if (clean.reactions !== undefined) {
+    if (typeof clean.reactions !== 'object' || clean.reactions === null || Array.isArray(clean.reactions)) {
+      return { error: 'Reacciones no válidas.' };
+    }
+    const r = {};
+    for (const k of ['clap', 'wow', 'angry']) {
+      r[k] = Number(clean.reactions[k]) || 0;
+      if (r[k] < 0) return { error: 'Reacciones no válidas.' };
+    }
+    clean.reactions = r;
+  }
+
+  if (Object.keys(clean).length === 0) {
+    return { error: 'No se enviaron campos válidos para guardar.' };
+  }
+
+  return { data: clean };
+}
 
 app.post('/api/auth', (req, res) => {
   const { email, password } = req.body;
@@ -186,19 +343,19 @@ app.get('/api/notes/all', authenticateWriter, async (req, res) => {
 });
 
 app.post('/api/notes', authenticateWriter, async (req, res) => {
-  delete req.body.id;
-  if (!req.body.status) req.body.status = 'borrador';
-  req.body.urgent = Boolean(req.body.urgent);
-  
-  const { data, error } = await supabase.from('notes').insert([req.body]).select();
+  const { data: clean, error: validationError } = validateNote(req.body, false);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  const { data, error } = await supabase.from('notes').insert([clean]).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
 
 app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
-  const id = req.params.id;
-  req.body.urgent = Boolean(req.body.urgent);
-  const { data, error } = await supabase.from('notes').update(req.body).eq('id', id).select();
+  const { data: clean, error: validationError } = validateNote(req.body, true);
+  if (validationError) return res.status(400).json({ error: validationError });
+
+  const { data, error } = await supabase.from('notes').update(clean).eq('id', req.params.id).select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
