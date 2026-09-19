@@ -26,6 +26,8 @@
       --watermark: rgba(17,19,24,.14);
       --badge-revision-bg: #fef3c7; --badge-revision-fg: #92400e;
       --badge-public-bg: #d1fae5; --badge-public-fg: #065f46;
+      --img-placeholder: #e9ebef;
+      --tag-basket: #92400E; --tag-track: #3F6212; --tag-others: #475569;
     }
     [data-theme="dark"] {
       --ink: #eef0f3; --muted: #9ba1ab; --paper: #0a0c10; 
@@ -36,20 +38,31 @@
       --watermark: rgba(238,240,243,.14);
       --badge-revision-bg: #332a15; --badge-revision-fg: #e6c072;
       --badge-public-bg: #14251c; --badge-public-fg: #6fd69b;
+      --img-placeholder: #1c1f26;
+      --tag-basket: #E0A447; --tag-track: #A3D04A; --tag-others: #A6B1C2;
     }
     
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 'Inter', sans-serif; -webkit-font-smoothing:antialiased; transition: background-color 0.3s, color 0.3s; }
+    ::selection { background:var(--accent); color:var(--on-accent); }
     .topline { height:3px; background:var(--ink); }
-    header { max-width:1200px; margin:auto; padding:28px 24px 0; }
-    .utility { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:14px; color:var(--muted); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 'Inter', sans-serif; -webkit-font-smoothing:antialiased; transition: background-color 0.3s, color 0.3s; }
+    header { max-width:1200px; margin:auto; padding:28px 24px 0; position:sticky; top:0; z-index:30; background:var(--paper); transition:padding .25s ease, box-shadow .25s ease; }
+    .utility { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:14px; color:var(--muted); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; transition:padding .25s ease, opacity .25s ease; }
+    .utility > div:first-child > span:first-child { transition:opacity .25s ease; }
+    body.is-scrolled header { padding-top:10px; box-shadow:0 6px 24px rgba(0,0,0,.05); }
+    body.is-scrolled .brand-row { padding:12px 0; }
+    body.is-scrolled .brand { font-size:2.2rem; }
+    body.is-scrolled nav { padding-top:10px; padding-bottom:10px; }
+    body.is-scrolled .utility > div:first-child > span:first-child { opacity:0; }
     .theme-toggle { background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:1.1rem; padding:0; display:flex; align-items:center; }
     .theme-toggle:hover { color:var(--ink); }
-    .brand-row { display:flex; align-items:center; justify-content:space-between; padding:24px 0; }
-    .brand { font-family:'Fraunces', serif; font-size:2.8rem; font-weight:800; letter-spacing:-.06em; text-decoration:none; color:var(--ink); }
+    .brand-row { display:flex; align-items:center; justify-content:space-between; padding:24px 0; transition:padding .25s ease; }
+    .brand { font-family:'Fraunces', serif; font-size:2.8rem; font-weight:800; letter-spacing:-.06em; text-decoration:none; color:var(--ink); transition:font-size .25s ease; }
     .brand span { color:var(--accent); }
-    nav { display:flex; gap:28px; border-top:1px solid var(--line); padding:16px 0; font-weight:600; font-size:.82rem; letter-spacing:.03em; text-transform:uppercase; }
-    nav a { color:var(--muted); text-decoration:none; transition:color .2s; cursor:pointer; } nav a:hover, nav a.active { color:var(--ink); }
+    .site-nav { display:flex; align-items:center; border-top:1px solid var(--line); padding:16px 0; font-weight:600; font-size:.82rem; letter-spacing:.03em; text-transform:uppercase; transition:padding .25s ease; }
+    .nav-links { display:flex; gap:28px; }
+    .nav-links a { color:var(--muted); text-decoration:none; transition:color .2s; cursor:pointer; } .nav-links a:hover, .nav-links a.active { color:var(--ink); }
+    .nav-toggle { display:none; background:transparent; border:0; color:var(--ink); font:inherit; font-size:.85rem; letter-spacing:.04em; text-transform:uppercase; font-weight:700; cursor:pointer; padding:10px 14px; margin-left:auto; align-items:center; gap:8px; border-radius:6px; }
     .access { border:0; background:var(--ink); color:var(--paper); padding:12px 28px; font-weight:600; font-size:.85rem; cursor:pointer; border-radius:6px; transition:opacity .2s; font-family:'Inter', sans-serif; } .access:hover { opacity:.85; }
     main { max-width:1200px; margin:auto; padding:32px 24px; }
 
@@ -101,9 +114,12 @@
     .custom-option.is-selected { background:var(--hover-bg); font-weight:700; }
     
     .tag { color:var(--accent-strong); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; display:inline-block; }
+    .tag[data-sport="baloncesto"] { color:var(--tag-basket); }
+    .tag[data-sport="atletismo"] { color:var(--tag-track); }
+    .tag[data-sport="otros deportes"] { color:var(--tag-others); }
     
     .hero { display:grid; grid-template-columns:1.6fr 1fr; gap:48px; padding-bottom:54px; border-bottom:1px solid var(--line); align-items:center; }
-    .hero-image { min-height:440px; border-radius:8px; background-position:center; background-size:cover; background-color:var(--hover-bg); }
+    .hero-image { min-height:440px; border-radius:8px; background-position:center; background-size:cover; background-color:var(--img-placeholder); aspect-ratio:16/10; }
     h1,h2,h3,p { margin-top:0; } 
     h1 { font: 800 clamp(2.2rem,4.5vw,4rem)/1.05 'Fraunces', serif; letter-spacing:-.04em; margin:.2rem 0 1.2rem; color:var(--ink); }
     .hero-copy { display:flex; flex-direction:column; justify-content:center; } 
@@ -113,7 +129,8 @@
     .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding:48px 0 24px; }
     .card { background:var(--card-bg); border:1px solid var(--line); border-radius:8px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:border-color .2s, transform .2s; } 
     .card:hover { border-color:var(--muted); transform:translateY(-2px); } 
-    .card img { width:100%; height:200px; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--hover-bg); }
+    .card img { width:100%; height:auto; aspect-ratio:16/10; object-fit:cover; border-radius:6px; margin-bottom:16px; background:var(--img-placeholder); filter:blur(12px) scale(1.05); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
+    .card img.loaded { filter:none; opacity:1; }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 
@@ -155,7 +172,8 @@
     #articleDetail { display:none; background:var(--card-bg); border:1px solid var(--line); border-radius:12px; padding:40px; margin:20px 0 48px; box-shadow:0 10px 40px rgba(0,0,0,.03); } 
     #articleDetail h1 { max-width:900px; font-size:3rem; margin-bottom:12px; } 
     #articleDetail .lead { margin-bottom:16px; }
-    #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:8px; margin:16px 0 24px; display:none; background:var(--hover-bg); } 
+    #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:8px; margin:16px 0 24px; display:none; background:var(--img-placeholder); filter:blur(12px) scale(1.02); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
+    #detailImage.loaded { filter:none; opacity:1; } 
     .detail-content { max-width:36em; font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; } 
     .detail-content p { margin-bottom:1.2em; margin-top:0; }
     .detail-content blockquote { font:700 clamp(1.35rem,3vw,1.6rem)/1.35 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); text-align:left; margin:1.8em 0; padding:.2em 0 .2em 1.1em; border-left:3px solid var(--accent); }
@@ -182,6 +200,7 @@
     .rank-item a { color:var(--ink); text-decoration:none; font:700 1.1rem/1.25 'Fraunces', serif; } 
     .rank-item a:hover { color:var(--accent-strong); } 
     .reads { display:block; color:var(--muted); font-size:.72rem; margin-top:8px; text-transform:uppercase; letter-spacing:.06em; font-family:'Inter', sans-serif; }
+    .meta-date { display:block; color:var(--muted); font-size:.78rem; font-family:'Inter', sans-serif; margin-top:10px; }
 
     footer { background:var(--ink); color:var(--paper); padding:40px 24px; margin-top:60px; } 
     footer div.footer-content { max-width:1200px; margin:auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; font-size:.85rem; }
@@ -255,6 +274,9 @@
     .btn-secondary { border:1px solid var(--line); background:var(--card-bg); color:var(--ink); padding:12px 28px; font-weight:600; font-size:.9rem; cursor:pointer; border-radius:6px; text-decoration:none; transition:all .2s; font-family:'Inter', sans-serif; display:inline-flex; align-items:center; gap:8px; }
     .btn-secondary:hover { border-color:var(--muted); background:var(--hover-bg); }
     .suggestions { margin-top:64px; }
+
+    .to-top { position:fixed; right:20px; bottom:20px; z-index:40; width:48px; height:48px; border-radius:50%; border:0; background:var(--ink); color:var(--paper); font-size:1.15rem; cursor:pointer; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease; box-shadow:0 8px 24px rgba(0,0,0,.18); font-family:'Inter', sans-serif; }
+    .to-top.is-visible { opacity:1; pointer-events:auto; transform:translateY(0); }
     .suggestions h2 { font:700 1.2rem/1.2 'Fraunces', serif; color:var(--ink); margin-bottom:20px; }
     .chip-list { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .chip { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); text-decoration:none; padding:8px 18px; border-radius:20px; font-size:.85rem; font-weight:600; transition:all .2s; }
@@ -267,7 +289,11 @@
       .hero { gap:28px; }
       .grid { gap:24px; }
       .hero-image { min-height:280px; } 
-      nav { gap:16px; overflow-x:auto; padding-bottom:10px; } 
+      .site-nav { flex-wrap:wrap; padding:10px 0; }
+      .nav-toggle { display:flex; }
+      .nav-links { display:none; flex-direction:column; gap:0; width:100%; }
+      .nav-links a { padding:14px 4px; border-top:1px solid var(--line); }
+      .site-nav.is-open .nav-links { display:flex; }
       .search-bar { grid-template-columns:1fr; } 
       #writerPanel { padding:24px 16px; } 
       .editor-grid { padding:16px; } 
@@ -297,6 +323,8 @@
       .editor-btn { padding:5px 8px; font-size:.72rem; }
       .newsletter { padding:24px; }
       .modal-body { padding:24px; }
+      body.is-scrolled .brand { font-size:1.55rem; }
+      .to-top { right:14px; bottom:14px; width:44px; height:44px; }
     }
 
     ::view-transition-old(root) { animation: viewOut .18s ease-in; }
@@ -315,7 +343,7 @@
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, dialog { display:none !important; }
+      .theme-toggle, .category-header, dialog, .to-top { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
       a { color:inherit; text-decoration:none; }
@@ -338,12 +366,15 @@
       <a href="/" class="brand" onclick="navigateTo(event, '/')">TRIB<span>U</span>NA</a>
       <button class="access" id="accessButton" aria-haspopup="dialog" aria-controls="loginDialog">Acceso redacción</button>
     </div>
-    <nav aria-label="Navegación principal">
-      <a href="/" onclick="navigateTo(event, '/')">Portada</a>
-      <a href="/categoria/futbol" onclick="navigateTo(event, '/categoria/futbol')">Fútbol</a>
-      <a href="/categoria/baloncesto" onclick="navigateTo(event, '/categoria/baloncesto')">Baloncesto</a>
-      <a href="/categoria/atletismo" onclick="navigateTo(event, '/categoria/atletismo')">Atletismo</a>
-      <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+    <nav class="site-nav" aria-label="Navegación principal">
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menú de navegación">☰ Menú</button>
+      <div class="nav-links" id="navLinks">
+        <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+        <a href="/categoria/futbol" onclick="navigateTo(event, '/categoria/futbol')">Fútbol</a>
+        <a href="/categoria/baloncesto" onclick="navigateTo(event, '/categoria/baloncesto')">Baloncesto</a>
+        <a href="/categoria/atletismo" onclick="navigateTo(event, '/categoria/atletismo')">Atletismo</a>
+        <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+      </div>
     </nav>
   </header>
   
@@ -605,6 +636,8 @@
     <div class="modal-body legal-text" id="legalContent"></div>
   </dialog>
 
+  <button class="to-top" id="toTop" type="button" aria-label="Volver arriba" title="Volver arriba">↑</button>
+
   <script>
     // ==========================================
     // CONFIGURACIÓN DE SUPABASE SEGURA PARA GITHUB
@@ -862,6 +895,68 @@
 
     const runView = (fn) => document.startViewTransition ? document.startViewTransition(fn) : fn();
 
+    function timeAgo(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const secs = Math.max(0, (Date.now() - d.getTime()) / 1000);
+      const mins = Math.floor(secs / 60);
+      if (mins < 1) return 'Ahora mismo';
+      const hours = Math.floor(mins / 60);
+      if (hours < 1) return `Hace ${mins} ${mins === 1 ? 'minuto' : 'minutos'}`;
+      const days = Math.floor(hours / 24);
+      if (days < 1) return `Hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+      const weeks = Math.floor(days / 7);
+      if (weeks < 1) return `Hace ${days} ${days === 1 ? 'día' : 'días'}`;
+      const months = Math.floor(days / 30);
+      if (months < 1) return `Hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
+      const years = Math.floor(days / 365);
+      if (years < 1) return `Hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
+      return `Hace ${years} ${years === 1 ? 'año' : 'años'}`;
+    }
+
+    function formatFullDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' });
+    }
+
+    const noteDate = (iso) => iso
+      ? `<time datetime="${iso}" title="${formatFullDate(iso)}">${timeAgo(iso)}</time>`
+      : '';
+
+    const siteNav = document.getElementById('siteNav');
+    const navToggle = document.getElementById('navToggle');
+    const closeNav = () => {
+      siteNav.classList.remove('is-open');
+      navToggle.setAttribute('aria-expanded', 'false');
+      navToggle.setAttribute('aria-label', 'Abrir menú de navegación');
+    };
+    navToggle.addEventListener('click', () => {
+      const open = siteNav.classList.toggle('is-open');
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.setAttribute('aria-label', open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+    });
+    document.addEventListener('click', (e) => {
+      if (siteNav.classList.contains('is-open') && !siteNav.contains(e.target)) closeNav();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && siteNav.classList.contains('is-open')) closeNav();
+    });
+    const toTop = document.getElementById('toTop');
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        document.body.classList.toggle('is-scrolled', window.scrollY > 120);
+        toTop.classList.toggle('is-visible', window.scrollY > 600);
+        ticking = false;
+      });
+    }, { passive: true });
+
     function insertScore() {
       const el = document.getElementById('bodyEditor');
       el.focus();
@@ -886,15 +981,18 @@
         document.querySelector('#detailIntro').textContent = intro; 
         
         const imgEl = document.querySelector('#detailImage'); 
+        imgEl.classList.remove('loaded');
         if (image) {
           imgEl.src = image; 
           imgEl.alt = title; 
           imgEl.style.display = 'block';
+          imgEl.onload = () => imgEl.classList.add('loaded');
         } else {
           imgEl.style.display = 'none';
+          imgEl.removeAttribute('src');
         } 
         
-        document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()} · 1 MIN DE LECTURA`; 
+        document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · 1 MIN DE LECTURA`; 
         document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
 
         updateReactionsUI();
@@ -1024,7 +1122,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-image" style="background-image: url('${n.image || ''}');"></div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}</p></a></article>`;
+        hero.innerHTML = `<div class="hero-image" style="background-image: url('${n.image || ''}');"></div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -1036,10 +1134,11 @@
           const id = idx + 1;
           grid.innerHTML += `<article class="card">
             <a class="article-link open-article" href="#lectura" data-id="${id}">
-              <img src="${n.image || ''}" alt="${n.title}" loading="lazy" onerror="this.style.display='none'" />
-              <div><span class="tag">${n.sport}</span></div>
+              <img src="${n.image || ''}" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span></div>
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
+              <span class="meta-date">${noteDate(n.created_at)}</span>
             </a>
           </article>`;
         });
@@ -1196,11 +1295,12 @@
 
     function navigateTo(e, path) {
       if (e) e.preventDefault();
+      closeNav();
       window.history.pushState({}, '', path);
       runView(() => handleRoute());
     }
 
-    window.addEventListener('popstate', () => runView(() => handleRoute()));
+    window.addEventListener('popstate', () => { closeNav(); runView(() => handleRoute()); });
 
     async function loadPublicNotes(){ 
       try { 
