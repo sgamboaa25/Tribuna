@@ -98,20 +98,36 @@ const NOTE_LENGTHS = { title: 200, sport: 60, intro: 500, author: 120, email: 12
 const VALID_STATUSES = ['borrador', 'en revisión', 'publicada'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BODY_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'img', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption', 'span', 'div'];
-const BODY_ALLOWED_ATTRS = { a: ['href', 'title'], img: ['src', 'alt', 'title'] };
+const BODY_ALLOWED_ATTRS = {
+  a: ['href', 'title'],
+  img: ['src', 'alt', 'title'],
+  blockquote: ['class'],
+  div: ['class'],
+  span: ['class'],
+  strong: ['class']
+};
+const SCORE_CLASSES = ['match-score', 'ms-team', 'ms-result', 'ms-meta'];
+
+function restrictClasses(html) {
+  const allowed = new Set(SCORE_CLASSES);
+  return html.replace(/\sclass="([^"]*)"/g, (match, cls) => {
+    const kept = cls.split(/\s+/).filter((c) => allowed.has(c)).join(' ');
+    return kept ? ` class="${kept}"` : '';
+  });
+}
 
 function sanitizeText(value) {
   return sanitizeHtml(String(value), { allowedTags: [], allowedAttributes: {} }).trim();
 }
 
 function sanitizeBody(value) {
-  return sanitizeHtml(String(value), {
+  return restrictClasses(sanitizeHtml(String(value), {
     allowedTags: BODY_ALLOWED_TAGS,
     allowedAttributes: BODY_ALLOWED_ATTRS,
     transformTags: {
       a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' })
     }
-  });
+  }));
 }
 
 function validateNote(body, partial) {

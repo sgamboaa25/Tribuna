@@ -156,8 +156,14 @@
     #articleDetail h1 { max-width:900px; font-size:3rem; margin-bottom:12px; } 
     #articleDetail .lead { margin-bottom:16px; }
     #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:8px; margin:16px 0 24px; display:none; background:var(--hover-bg); } 
-    .detail-content { max-width:780px; font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; } 
+    .detail-content { max-width:36em; font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; } 
     .detail-content p { margin-bottom:1.2em; margin-top:0; }
+    .detail-content blockquote { font:700 clamp(1.35rem,3vw,1.6rem)/1.35 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); text-align:left; margin:1.8em 0; padding:.2em 0 .2em 1.1em; border-left:3px solid var(--accent); }
+    .detail-content blockquote::before { content:'\201C'; color:var(--accent-strong); font-size:1.2em; }
+    .match-score { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1.5rem; border-top:2px solid var(--accent); border-bottom:1px solid var(--line); background:var(--card-bg); padding:1.2rem .25rem; margin:1.6rem 0; }
+    .match-score .ms-team { font:700 1.05rem/1.25 'Fraunces', serif; }
+    .match-score .ms-result { font:700 2rem/1 'Fraunces', serif; color:var(--accent-strong); margin:0 .25rem; }
+    .match-score .ms-meta { flex-basis:100%; color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
     .back { border:0; background:transparent; color:var(--muted); padding:0 0 24px; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:6px; font-family:'Inter', sans-serif; }
     .back:hover { color:var(--ink); }
 
@@ -291,6 +297,29 @@
       .editor-btn { padding:5px 8px; font-size:.72rem; }
       .newsletter { padding:24px; }
       .modal-body { padding:24px; }
+    }
+
+    ::view-transition-old(root) { animation: viewOut .18s ease-in; }
+    ::view-transition-new(root) { animation: viewIn .22s ease-out; }
+    @keyframes viewOut { to { opacity:0; } }
+    @keyframes viewIn { from { opacity:0; } }
+
+    :focus-visible,
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline:3px solid currentColor;
+      outline-offset:3px;
+    }
+
+    @media print {
+      body { background:#fff; color:#000; }
+      header, .utility, .breaking-banner, .hero, .search-bar, .grid,
+      .load-more-container, #posiciones, .most-read, .newsletter, footer,
+      #writerPanel, #notFound404, .reactions-group, .share-group, .back,
+      .theme-toggle, .category-header, dialog { display:none !important; }
+      #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
+      .detail-content { text-align:left; opacity:1; }
+      a { color:inherit; text-decoration:none; }
+      @page { margin:1.5cm; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -520,6 +549,8 @@
               <button type="button" class="editor-btn" aria-label="Alinear a la izquierda" onclick="document.execCommand('justifyLeft', false, null)">Izq</button>
               <button type="button" class="editor-btn" aria-label="Centrar" onclick="document.execCommand('justifyCenter', false, null)">Cen</button>
               <button type="button" class="editor-btn" aria-label="Justificar" onclick="document.execCommand('justifyFull', false, null)">Jus</button>
+              <button type="button" class="editor-btn" aria-label="Cita destacada" onclick="document.execCommand('formatBlock', false, 'blockquote')">Cita</button>
+              <button type="button" class="editor-btn" aria-label="Marcador destacado" onclick="insertScore()">Marcador</button>
             </div>
             <div id="bodyEditor" class="rich-textarea" contenteditable="true" aria-labelledby="bodyLabel" placeholder="Escribe o pega la historia aquí..."></div>
           </div>
@@ -828,39 +859,50 @@
     let currentActiveCategory = '';
     let currentNote = null;
     const detail = document.querySelector('#articleDetail');
+
+    const runView = (fn) => document.startViewTransition ? document.startViewTransition(fn) : fn();
+
+    function insertScore() {
+      const el = document.getElementById('bodyEditor');
+      el.focus();
+      document.execCommand('insertHTML', false,
+        '<div class="match-score"><span class="ms-team"><strong>Equipo local</strong></span><span class="ms-result">2&ndash;1</span><span class="ms-team"><strong>Equipo visitante</strong></span><span class="ms-meta">Competición · Jornada</span></div><p><br></p>');
+    }
     
     function openArticle(index){ 
-      const note = currentDisplayNotes[index]; 
-      if(!note) return; 
-      currentNote = note;
-      const title = note.title || 'Sin titular';
-      const intro = note.intro || '';
-      const sport = note.sport || 'General';
-      const author = note.author || 'Redacción';
-      const body = note.body || '';
-      const image = note.image || '';
+      runView(() => {
+        const note = currentDisplayNotes[index]; 
+        if(!note) return; 
+        currentNote = note;
+        const title = note.title || 'Sin titular';
+        const intro = note.intro || '';
+        const sport = note.sport || 'General';
+        const author = note.author || 'Redacción';
+        const body = note.body || '';
+        const image = note.image || '';
 
-      document.querySelector('#detailTag').textContent = sport; 
-      document.querySelector('#detailTitle').textContent = title; 
-      document.querySelector('#detailIntro').textContent = intro; 
-      
-      const imgEl = document.querySelector('#detailImage'); 
-      if (image) {
-        imgEl.src = image; 
-        imgEl.alt = title; 
-        imgEl.style.display = 'block';
-      } else {
-        imgEl.style.display = 'none';
-      } 
-      
-      document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()} · 1 MIN DE LECTURA`; 
-      document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
+        document.querySelector('#detailTag').textContent = sport; 
+        document.querySelector('#detailTitle').textContent = title; 
+        document.querySelector('#detailIntro').textContent = intro; 
+        
+        const imgEl = document.querySelector('#detailImage'); 
+        if (image) {
+          imgEl.src = image; 
+          imgEl.alt = title; 
+          imgEl.style.display = 'block';
+        } else {
+          imgEl.style.display = 'none';
+        } 
+        
+        document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()} · 1 MIN DE LECTURA`; 
+        document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
 
-      updateReactionsUI();
+        updateReactionsUI();
 
-      detail.style.display = 'block';
-      detail.focus();
-      detail.scrollIntoView({behavior: 'smooth', block: 'start'}); 
+        detail.style.display = 'block';
+        detail.focus();
+        detail.scrollIntoView({behavior: 'smooth', block: 'start'});
+      });
     }
 
     function updateReactionsUI() {
@@ -907,8 +949,10 @@
     }
     
     document.querySelector('#backToCover').onclick = () => {
-      detail.style.display = 'none'; 
-      document.querySelector('#portada').scrollIntoView({behavior: 'smooth'});
+      runView(() => {
+        detail.style.display = 'none'; 
+        document.querySelector('#portada').scrollIntoView({behavior: 'smooth'});
+      });
     };
     
     function renderDrafts(){ 
@@ -1153,10 +1197,10 @@
     function navigateTo(e, path) {
       if (e) e.preventDefault();
       window.history.pushState({}, '', path);
-      handleRoute();
+      runView(() => handleRoute());
     }
 
-    window.addEventListener('popstate', handleRoute);
+    window.addEventListener('popstate', () => runView(() => handleRoute()));
 
     async function loadPublicNotes(){ 
       try { 
