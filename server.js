@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
@@ -63,6 +65,11 @@ app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/notes', writeLimiter);
 app.use('/api/standings', standingsLimiter);
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Faltan variables de entorno de Supabase. Copia .env.example a .env y completa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (service-role: Supabase > Settings > API keys).');
+  process.exit(1);
+}
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
