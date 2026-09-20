@@ -2,7 +2,7 @@
 <html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#111318" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0c10" />
   <title>Tribuna | Periodismo deportivo</title>
@@ -56,10 +56,10 @@
     ::-webkit-scrollbar-thumb { background:color-mix(in srgb, var(--muted) 45%, transparent); border-radius:var(--radius-md); border:3px solid var(--paper); }
     ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
     body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 'Inter', sans-serif; -webkit-font-smoothing:antialiased; transition: background-color 0.3s, color 0.3s; }
-    header { max-width:1200px; margin:auto; padding:28px 24px 0; position:sticky; top:0; z-index:30; background:var(--paper); transition:padding .25s ease, box-shadow .25s ease; }
+    header { max-width:1200px; margin:auto; padding:calc(env(safe-area-inset-top) + 28px) 24px 0; position:sticky; top:0; z-index:30; background:var(--paper); transition:padding .25s ease, box-shadow .25s ease; }
     .utility { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:14px; color:var(--muted); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; transition:padding .25s ease, opacity .25s ease; }
     .utility > div:first-child > span:first-child { transition:opacity .25s ease; }
-    body.is-scrolled header { padding-top:10px; box-shadow:0 6px 24px rgba(0,0,0,.05); }
+    body.is-scrolled header { padding-top:calc(env(safe-area-inset-top) + 10px); box-shadow:0 6px 24px rgba(0,0,0,.05); }
     body.is-scrolled .brand-row { padding:12px 0; }
     body.is-scrolled .brand { font-size:2.2rem; }
     body.is-scrolled nav { padding-top:10px; padding-bottom:10px; }
@@ -129,7 +129,7 @@
     .tag[data-sport="otros deportes"] { color:var(--tag-others); }
     
     .hero { display:grid; grid-template-columns:1.6fr 1fr; gap:48px; padding-bottom:54px; border-bottom:1px solid var(--line); align-items:center; }
-    .hero-image { min-height:440px; border-radius:var(--radius-lg); background-position:center; background-size:cover; background-color:var(--img-placeholder); aspect-ratio:16/10; }
+    .hero-image { width:100%; height:auto; display:block; min-height:440px; border-radius:var(--radius-lg); object-fit:cover; background-color:var(--img-placeholder); aspect-ratio:16/10; }
     h1,h2,h3,p { margin-top:0; } 
     h1 { font: 800 clamp(2.2rem,4.5vw,4rem)/1.05 'Fraunces', serif; letter-spacing:-.04em; margin:.2rem 0 1.2rem; color:var(--ink); }
     .hero-copy { display:flex; flex-direction:column; justify-content:center; } 
@@ -185,7 +185,19 @@
     #articleDetail .lead { margin-bottom:16px; }
     #detailImage { width:100%; max-height:520px; object-fit:cover; border-radius:var(--radius-lg); margin:16px 0 24px; display:none; background:var(--img-placeholder); filter:blur(12px) scale(1.02); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
     #detailImage.loaded { filter:none; opacity:1; } 
-    .detail-content { max-width:36em; font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; } 
+    .detail-content { max-width:36em; font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; }
+    #articleDetail .tag,
+    #articleDetail h1,
+    #articleDetail .lead,
+    #articleDetail .detail-content,
+    #articleDetail .detail-byline,
+    #articleDetail .reactions-group,
+    #articleDetail .share-group {
+      max-width:36em;
+      margin-left:auto;
+      margin-right:auto;
+    }
+    #articleDetail .tag { display:block; width:fit-content; } 
     .detail-content p { margin-bottom:1.2em; margin-top:0; }
     .detail-content blockquote { font:700 clamp(1.35rem,3vw,1.6rem)/1.35 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); text-align:left; margin:1.8em 0; padding:.2em 0 .2em 1.1em; border-left:3px solid var(--accent); }
     .detail-content blockquote::before { content:'\201C'; color:var(--accent-strong); font-size:1.2em; }
@@ -286,14 +298,31 @@
     .btn-secondary:hover { border-color:var(--muted); background:var(--hover-bg); }
     .suggestions { margin-top:64px; }
 
-    .to-top { position:fixed; right:20px; bottom:20px; z-index:40; width:48px; height:48px; border-radius:50%; border:0; background:var(--ink); color:var(--paper); font-size:1.15rem; cursor:pointer; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease; box-shadow:0 8px 24px rgba(0,0,0,.18); font-family:'Inter', sans-serif; }
+    .to-top { position:fixed; right:max(20px, env(safe-area-inset-right)); bottom:max(20px, env(safe-area-inset-bottom)); z-index:40; width:48px; height:48px; border-radius:50%; border:0; background:var(--ink); color:var(--paper); font-size:1.15rem; cursor:pointer; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease; box-shadow:0 8px 24px rgba(0,0,0,.18); font-family:'Inter', sans-serif; }
     .to-top.is-visible { opacity:1; pointer-events:auto; transform:translateY(0); }
+    .conn-banner { position:fixed; left:max(16px, env(safe-area-inset-left)); bottom:max(16px, env(safe-area-inset-bottom)); z-index:45; max-width:calc(100% - 32px); background:var(--accent); color:#fff; padding:10px 16px; border-radius:var(--radius-md); font-size:.85rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.18); opacity:0; transform:translateY(12px); pointer-events:none; transition:opacity .25s ease, transform .25s ease; font-family:'Inter', sans-serif; }
+    .conn-banner.is-visible { opacity:1; transform:translateY(0); }
     .suggestions h2 { font:700 1.2rem/1.2 'Fraunces', serif; color:var(--ink); margin-bottom:20px; }
     .chip-list { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .chip { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); text-decoration:none; padding:8px 18px; border-radius:20px; font-size:.85rem; font-weight:600; transition:all .2s; }
     .chip:hover { color:var(--accent-strong); border-color:var(--accent-strong); background:var(--hover-bg); }
 
     @media (max-width:768px) { 
+      input, select, textarea { font-size:16px; }
+      .search-bar input { font-size:16px; }
+      .status-select { font-size:16px !important; padding:8px 12px !important; min-height:44px; }
+      .theme-toggle { padding:12px; margin:-12px; min-width:44px; min-height:44px; }
+      .nav-toggle { padding:13px 14px; }
+      .share-btn { width:44px; height:44px; }
+      .reaction-btn { padding:12px 16px; }
+      .editor-btn { min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; padding:10px 12px; }
+      .close { padding:12px; margin:-12px; }
+      .edit-note { padding:13px 16px; }
+      .footer-links button { padding:12px 0; min-height:44px; }
+      .chip { padding:12px 18px; }
+      .breaking-banner { padding:13px 24px; }
+      .breaking-title { align-self:stretch; display:flex; align-items:center; }
+      .check { min-height:44px; }
       .utility { flex-wrap:wrap; gap:8px; }
       .brand { font-size:2.3rem; } 
       .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } 
@@ -321,8 +350,8 @@
       .utility .sep-inline { display:none; }
       .brand-row { gap:12px; }
       .brand { font-size:1.9rem; }
-      .access { padding:10px 18px; font-size:.78rem; }
-      header { padding:20px 16px 0; }
+      .access { padding:13px 18px; font-size:.78rem; }
+      header { padding:calc(env(safe-area-inset-top) + 20px) 16px 0; }
       main { padding:24px 16px; }
       .hero { gap:20px; }
       .hero-image { min-height:220px; }
@@ -331,11 +360,49 @@
       #articleDetail { padding:28px 16px; }
       #articleDetail h1 { font-size:2rem; }
       .editor-toolbar { padding:6px; }
-      .editor-btn { padding:5px 8px; font-size:.72rem; }
+      .editor-btn { padding:10px 8px; font-size:.72rem; }
       .newsletter { padding:24px; }
       .modal-body { padding:24px; }
       body.is-scrolled .brand { font-size:1.55rem; }
-      .to-top { right:14px; bottom:14px; width:44px; height:44px; }
+      .to-top { right:max(14px, env(safe-area-inset-right)); bottom:max(14px, env(safe-area-inset-bottom)); width:44px; height:44px; }
+    }
+
+    @media (max-width:380px) {
+      .brand-row { gap:8px; }
+      .brand { font-size:1.6rem; }
+      .access { padding:10px 14px; font-size:.72rem; min-height:44px; display:inline-flex; align-items:center; }
+      main { padding:20px 14px; }
+      .hero-image { min-height:180px; }
+      .card h2 { font-size:1.15rem; }
+      #articleDetail { padding:20px 14px; }
+      #articleDetail h1 { font-size:1.7rem; }
+      #writerPanel { padding:20px 14px; }
+      .editor-grid { padding:12px; }
+      .newsletter { padding:22px; }
+      .modal-body { padding:20px; }
+      dialog { width:calc(100% - 24px); }
+    }
+
+    @media (orientation:landscape) and (max-height:480px) {
+      .utility { justify-content:flex-end; padding-bottom:6px; }
+      .utility > div:first-child { display:none; }
+      .theme-toggle { margin-left:auto; }
+      .brand-row { padding:6px 0; }
+      .brand { font-size:1.5rem; }
+      body.is-scrolled .brand { font-size:1.3rem; }
+      .site-nav { padding:4px 0; }
+      .nav-links a { padding:6px 4px; }
+      main { padding:12px 24px 8px; }
+      .hero-image { min-height:200px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .card:hover, .share-btn:hover { transform:none; }
     }
 
     ::view-transition-old(root) { animation: viewOut .18s ease-in; }
@@ -390,13 +457,14 @@
   </header>
   
   <div id="breakingContainer"></div>
+  <div id="connBanner" class="conn-banner" role="status" aria-live="polite">Sin conexión — revisa tu conexión a internet.</div>
 
   <main id="portada">
     <div id="categoryHeaderContainer"></div>
 
     <section aria-label="Buscar noticias" id="searchSection">
       <form class="search-bar" id="searchForm">
-        <input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
+        <input id="searchInput" type="search" inputmode="search" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
         <div class="custom-picker" id="publicSport" data-value="">
           <button type="button" class="custom-toggle" id="publicSportToggle" aria-expanded="false" aria-haspopup="menu">Todos los deportes</button>
           <div class="custom-menu" role="menu">
@@ -440,6 +508,7 @@
 
       <div class="share-group">
         <span class="share-label">Compartir:</span>
+        <button id="shareNative" type="button" class="share-btn" aria-label="Compartir artículo"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
         <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
         <a id="shareX" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
         <a id="shareFb" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
@@ -579,7 +648,7 @@
               <option value="publicada">Publicada</option>
             </select>
           </div>
-          <div class="wide"><label for="tags">Etiquetas</label><input id="tags" placeholder="Liga, equipo, atleta…" /></div>
+          <div class="wide"><label for="tags">Etiquetas</label><input id="tags" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Liga, equipo, atleta…" /></div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." class="field-textarea"></textarea></div>
           
           <div class="wide">
@@ -597,8 +666,8 @@
             <div id="bodyEditor" class="rich-textarea" contenteditable="true" aria-labelledby="bodyLabel" placeholder="Escribe o pega la historia aquí..."></div>
           </div>
 
-          <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" placeholder="Tu nombre y apellidos" /></div>
-          <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" placeholder="nombre@ejemplo.com" /></div>
+          <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" autocapitalize="words" placeholder="Tu nombre y apellidos" /></div>
+          <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nombre@ejemplo.com" /></div>
           <div class="wide"><label for="photoFile">Fotografía principal</label><input id="photoFile" type="file" accept="image/*" /></div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
         </div>
@@ -631,7 +700,7 @@
     <form class="modal-body" id="loginForm">
       <p class="modal-intro">Ingresa tus credenciales de redactor.</p>
       <label for="loginEmail">Correo electrónico</label>
-      <input id="loginEmail" type="email" autocomplete="email" required placeholder="tu@correo.com" />
+      <input id="loginEmail" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="tu@correo.com" />
       <label for="password">Contraseña</label>
       <input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" />
       <button class="submit">Entrar a redacción</button>
@@ -657,6 +726,18 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_bVjMSsdVDiGbDGr6k6zXzw_VePdvZHP'; 
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+    const connBanner = document.getElementById('connBanner');
+    if (connBanner) {
+      const showConnBanner = () => connBanner.classList.add('is-visible');
+      const hideConnBanner = () => connBanner.classList.remove('is-visible');
+      window.addEventListener('offline', showConnBanner);
+      window.addEventListener('online', hideConnBanner);
+      if (navigator.onLine === false) showConnBanner();
+    }
 
     const themeToggle = document.getElementById('themeToggle');
     const root = document.documentElement;
@@ -708,7 +789,7 @@
         access.textContent = 'Redacción activa'; 
         loginMsg.textContent = '';
         loadAllNotesForPanel();
-        panel.scrollIntoView({ behavior: 'smooth' }); 
+        panel.scrollIntoView({ behavior: scrollBehavior }); 
       } catch (err) {
         writerToken = '';
         sessionStorage.removeItem('tribuna_writer_token');
@@ -934,6 +1015,51 @@
       return d.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' });
     }
 
+    const isMobileLayout = () => window.matchMedia('(max-width:768px)').matches;
+    const fitImage = (url) => {
+      if (!url || !url.includes('images.unsplash.com')) return url;
+      return url.replace(/([?&])w=\d+/i, '$1w=' + (isMobileLayout() ? '768' : '1200'));
+    };
+    const imgSrcset = (url) => {
+      if (!url || !url.includes('images.unsplash.com')) return '';
+      return ['480','768','1200'].map(w => url.replace(/([?&])w=\d+/i, '$1w=' + w) + ' ' + w + 'w').join(', ');
+    };
+
+    let currentShareUrl = window.location.href;
+    let currentShareTitle = 'Tribuna | Periodismo deportivo';
+
+    const shareNative = document.querySelector('#shareNative');
+    const shareCopy = document.querySelector('#shareCopy');
+    const shareSocials = document.querySelectorAll('#shareWa, #shareX, #shareFb');
+
+    if (navigator.share && shareNative) {
+      shareSocials.forEach(btn => { btn.style.display = 'none'; });
+      shareNative.addEventListener('click', () => {
+        navigator.share({ title: currentShareTitle, url: currentShareUrl })
+          .catch(() => {});
+      });
+    } else if (shareNative) {
+      shareNative.style.display = 'none';
+    }
+
+    function setupShare(title, url) {
+      if (navigator.share) return;
+      const enc = encodeURIComponent;
+      const shareWa = document.querySelector('#shareWa');
+      const shareX = document.querySelector('#shareX');
+      const shareFb = document.querySelector('#shareFb');
+      if (shareWa) shareWa.href = `https://wa.me/?text=${enc(title + ' — ' + url)}`;
+      if (shareX) shareX.href = `https://twitter.com/intent/tweet?text=${enc(title)}&url=${enc(url)}`;
+      if (shareFb) shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`;
+      if (shareCopy) shareCopy.onclick = () => {
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(url).then(() => {
+          shareCopy.setAttribute('aria-label', 'Enlace copiado');
+          setTimeout(() => shareCopy.setAttribute('aria-label', 'Copiar enlace'), 2000);
+        }).catch(() => {});
+      };
+    }
+
     const noteDate = (iso) => iso
       ? `<time datetime="${iso}" title="${formatFullDate(iso)}">${timeAgo(iso)}</time>`
       : '';
@@ -976,7 +1102,7 @@
       if (e.key === 'Escape' && siteNav.classList.contains('is-open')) closeNav();
     });
     const toTop = document.getElementById('toTop');
-    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: scrollBehavior }));
     let ticking = false;
     window.addEventListener('scroll', () => {
       if (ticking) return;
@@ -1001,6 +1127,9 @@
         if(!note) return; 
         currentNote = note;
         const title = note.title || 'Sin titular';
+        currentShareUrl = window.location.href;
+        currentShareTitle = title;
+        setupShare(title, currentShareUrl);
         const intro = note.intro || '';
         const sport = note.sport || 'General';
         const author = note.author || 'Redacción';
@@ -1014,13 +1143,18 @@
         const imgEl = document.querySelector('#detailImage'); 
         imgEl.classList.remove('loaded');
         if (image) {
-          imgEl.src = image; 
+          imgEl.src = fitImage(image); 
+          const srcset = imgSrcset(image);
+          if (srcset) { imgEl.srcset = srcset; imgEl.sizes = '(max-width:768px) 100vw, 1100px'; }
+          else { imgEl.removeAttribute('srcset'); imgEl.removeAttribute('sizes'); }
           imgEl.alt = title; 
           imgEl.style.display = 'block';
           imgEl.onload = () => imgEl.classList.add('loaded');
         } else {
           imgEl.style.display = 'none';
           imgEl.removeAttribute('src');
+          imgEl.removeAttribute('srcset');
+          imgEl.removeAttribute('sizes');
         } 
         
         document.querySelector('#detailByline').innerHTML = `POR ${author.toUpperCase()}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · 1 MIN DE LECTURA`; 
@@ -1030,7 +1164,7 @@
 
         detail.style.display = 'block';
         detail.focus();
-        detail.scrollIntoView({behavior: 'smooth', block: 'start'});
+        detail.scrollIntoView({behavior: scrollBehavior, block: 'start'});
       });
     }
 
@@ -1080,7 +1214,7 @@
     document.querySelector('#backToCover').onclick = () => {
       runView(() => {
         detail.style.display = 'none'; 
-        document.querySelector('#portada').scrollIntoView({behavior: 'smooth'});
+        document.querySelector('#portada').scrollIntoView({behavior: scrollBehavior});
       });
     };
     
@@ -1153,7 +1287,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-image" style="background-image: url('${n.image || ''}');"></div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
+        hero.innerHTML = `<img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" /><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -1165,7 +1299,7 @@
           const id = idx + 1;
           grid.innerHTML += `<article class="card">
             <a class="article-link open-article" href="#lectura" data-id="${id}">
-              <img src="${n.image || ''}" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
               <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span></div>
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
@@ -1259,12 +1393,15 @@
       navigateTo(null, '/');
       setTimeout(() => {
         const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (el) el.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
       }, 100);
     }
 
     async function handleRoute() {
       const path = window.location.pathname;
+      currentShareUrl = window.location.href;
+      currentShareTitle = 'Tribuna | Periodismo deportivo';
+      setupShare(currentShareTitle, currentShareUrl);
       const categoryHeader = document.getElementById('categoryHeaderContainer');
       categoryHeader.innerHTML = '';
       paginationPage = 0;
