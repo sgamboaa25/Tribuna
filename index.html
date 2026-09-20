@@ -232,6 +232,7 @@
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
     .newsletter-msg { margin:.2rem 0 0; font-size:.85rem; min-height:1.3em; opacity:1; }
     .newsletter-msg.error { color:#ffb3a7; }
+    .hp-field { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; }
 
     .most-read { border-top:1px solid var(--line); margin:40px 0; padding-top:40px; } 
     .most-read h2 { font-size:2rem; margin-bottom:6px; font-family:'Fraunces', serif; } 
@@ -652,6 +653,7 @@
         <div class="newsletter-fields">
           <label class="sr-only" for="newsletterEmail">Tu correo electrónico</label>
           <input id="newsletterEmail" type="email" name="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="tu@correo.com" />
+          <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <button type="submit">Suscribirme</button>
         </div>
         <p class="newsletter-msg" id="newsletterMsg" aria-live="polite"></p>
@@ -1718,10 +1720,12 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       msg.textContent = 'Guardando suscripción...';
       msg.className = 'newsletter-msg';
       try {
+        const hp = document.querySelector('#newsletterForm input[name="website"]');
+        const honeypot = hp ? hp.value.trim() : '';
         const response = await fetch('/api/newsletter/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({ email, website: honeypot })
         });
         const data = await response.json().catch(() => ({}));
         if (response.status === 409) {
@@ -1748,6 +1752,38 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     loadPublicNotes();
     if (writerToken) loadAllNotesForPanel();
     
+    async function compressImage(file, maxWidth = 1600, quality = 0.8) {
+      if (!file || !file.type || !file.type.startsWith('image/')) return file;
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = () => reject(new Error('Imagen no decodificable'));
+          im.src = objectUrl;
+        });
+        const scale = Math.min(1, maxWidth / img.naturalWidth);
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+        if (!blob) return file;
+        if (blob.size >= file.size) return file;
+        return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+      } catch (err) {
+        console.warn('No se pudo comprimir la imagen; se sube el original.', err);
+        return file;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
     document.querySelector('#articleForm').onsubmit = async e => { 
       e.preventDefault(); 
       const message = document.querySelector('#saveMessage');
@@ -1764,8 +1800,8 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
 
       try {
         if (fileInput.files && fileInput.files[0]) {
-          const file = fileInput.files[0];
-          const fileExt = file.name.split('.').pop();
+          const file = await compressImage(fileInput.files[0], 1600, 0.8);
+          const fileExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
           const fileName = `${Date.now()}.${fileExt}`;
           const filePath = `${fileName}`;
 

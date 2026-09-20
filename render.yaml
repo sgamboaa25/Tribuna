@@ -1,0 +1,27 @@
+# Render Blueprint — Tribuna
+# Entorno: servicios ya desplegados se re-crearán con auto-deploy desde GitHub.
+# Las variables marcadas con `sync: false` NO se suben a Git: rellénalas una vez
+# desde el dashboard de Render (Dashboard > Services > env vars).
+
+services:
+  - type: web
+    name: tribuna
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /robots.txt
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FOOTBALL_DATA_API_KEY
+        sync: false
+      - key: WRITER_PASSWORD
+        sync: false

@@ -3,4 +3,6 @@ node_modules/
 .env.local
 *.log
 npm-debug.log*
-.DS_Storesupabase/.temp/
+.DS_Store
+supabase/.temp/
+newsletter-cron.sql

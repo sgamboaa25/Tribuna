@@ -84,6 +84,51 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 const activeSessions = new Map();
 
+const loginAttempts = new Map();
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_BLOCK_MS = 15 * 60 * 1000;
+
+function loginClientKey(req) {
+  return `ip::${req.ip || req.socket.remoteAddress || 'unknown'}`;
+}
+
+function loginEmailKey(email) {
+  return `mail::${String(email || '').trim().toLowerCase()}`;
+}
+
+function loginState(key) {
+  const now = Date.now();
+  const rec = loginAttempts.get(key);
+  if (!rec) return { blocked: false, failures: 0 };
+  if (rec.blockedUntil && now < rec.blockedUntil) {
+    return { blocked: true, retryAfter: Math.ceil((rec.blockedUntil - now) / 1000) };
+  }
+  if (now - rec.firstFailAt >= LOGIN_WINDOW_MS) {
+    loginAttempts.delete(key);
+    return { blocked: false, failures: 0 };
+  }
+  return { blocked: false, failures: rec.failures };
+}
+
+function registerLoginFailure(key) {
+  const now = Date.now();
+  let rec = loginAttempts.get(key);
+  if (!rec || now - rec.firstFailAt >= LOGIN_WINDOW_MS || (rec.blockedUntil && now >= rec.blockedUntil)) {
+    rec = { failures: 0, firstFailAt: now };
+  }
+  rec.failures += 1;
+  if (rec.failures >= LOGIN_MAX_FAILURES) {
+    rec.blockedUntil = now + LOGIN_BLOCK_MS;
+    rec.firstFailAt = now;
+  }
+  loginAttempts.set(key, rec);
+}
+
+function clearLoginState(key) {
+  loginAttempts.delete(key);
+}
+
 const authenticateWriter = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -229,16 +274,36 @@ function validateNote(body, partial) {
 }
 
 app.post('/api/auth', (req, res) => {
-  const { email, password } = req.body;
   const serverPassword = process.env.WRITER_PASSWORD;
-
   if (!serverPassword) {
     return res.status(500).json({ error: 'Configuración interna del servidor incompleta.' });
   }
 
-  if (!email || password !== serverPassword) {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+
+  const ipKey = loginClientKey(req);
+  const emailKey = email ? loginEmailKey(email) : null;
+
+  const ipState = loginState(ipKey);
+  if (ipState.blocked) {
+    return res.status(429).json({ error: 'Demasiados intentos de acceso. Espera unos minutos.', retryAfter: ipState.retryAfter });
+  }
+  if (emailKey) {
+    const emailState = loginState(emailKey);
+    if (emailState.blocked) {
+      return res.status(429).json({ error: 'Demasiados intentos para esta cuenta. Espera unos minutos.', retryAfter: emailState.retryAfter });
+    }
+  }
+
+  if (!email || !password || password !== serverPassword) {
+    registerLoginFailure(ipKey);
+    if (emailKey) registerLoginFailure(emailKey);
     return res.status(401).json({ error: 'Credenciales incorrectas.' });
   }
+
+  clearLoginState(ipKey);
+  if (emailKey) clearLoginState(emailKey);
 
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
@@ -443,7 +508,12 @@ app.delete('/api/notes/:id', authenticateWriter, async (req, res) => {
 // El envío semanal lo hace la Edge Function; esta ruta solo guarda
 // el correo en subscribers con confirmed = true (doble opt-in futuro).
 app.post('/api/newsletter/subscribe', async (req, res) => {
-  const { email } = req.body || {};
+  const body = req.body || {};
+  const honeypot = String(body.website || '').trim();
+  if (honeypot) {
+    return res.status(201).json({ ok: true });
+  }
+  const { email } = body;
   if (typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
     return res.status(400).json({ error: 'Correo electrónico no válido.' });
   }
