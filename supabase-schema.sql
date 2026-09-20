@@ -11,10 +11,14 @@ create table if not exists public.notes (
   video_url text,
   status text not null default 'borrador',
   urgent boolean not null default false,
+  archived boolean not null default false,
   reactions jsonb not null default '{"clap":0,"wow":0,"angry":0}'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Migración para bases ya existentes (idempotente).
+alter table public.notes add column if not exists archived boolean not null default false;
 
 -- Row Level Security:
 -- El cliente público (rol anon) solo puede leer notas publicadas y
@@ -26,13 +30,13 @@ drop policy if exists "Lectura pública de notas publicadas" on public.notes;
 create policy "Lectura pública de notas publicadas"
   on public.notes for select
   to anon
-  using (status = 'publicada');
+  using (status = 'publicada' and archived = false);
 
 drop policy if exists "Reacciones públicas sobre notas publicadas" on public.notes;
 create policy "Reacciones públicas sobre notas publicadas"
   on public.notes for update
   to anon
-  using (status = 'publicada');
+  using (status = 'publicada' and archived = false);
 
 revoke all on table public.notes from anon;
 grant select on table public.notes to anon;

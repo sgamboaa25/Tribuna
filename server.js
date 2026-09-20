@@ -245,6 +245,7 @@ app.get('/api/notes', async (req, res) => {
       .from('notes')
       .select('*')
       .eq('status', 'publicada')
+      .eq('archived', false)
       .order('id', { ascending: false });
       
     if (error) throw error;
@@ -263,6 +264,7 @@ app.get('/api/notes/category/:sport', async (req, res) => {
       .from('notes')
       .select('*')
       .eq('status', 'publicada')
+      .eq('archived', false)
       .order('id', { ascending: false });
 
     if (error) throw error;
@@ -288,6 +290,7 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
       .from('notes')
       .select('*')
       .eq('status', 'publicada')
+      .eq('archived', false)
       .order('id', { ascending: false });
 
     if (error) throw error;
@@ -312,6 +315,7 @@ app.get('/api/notes/author/:author', async (req, res) => {
       .from('notes')
       .select('*')
       .eq('status', 'publicada')
+      .eq('archived', false)
       .order('id', { ascending: false });
 
     if (error) throw error;
@@ -334,7 +338,7 @@ app.get('/api/notes/search', async (req, res) => {
   const sport = (req.query.sport || '').trim().toLowerCase();
 
   try {
-    let query = supabase.from('notes').select('*').eq('status', 'publicada');
+    let query = supabase.from('notes').select('*').eq('status', 'publicada').eq('archived', false);
 
     if (sport) {
       query = query.ilike('sport', sport);
@@ -410,6 +414,21 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   res.json(data[0]);
 });
 
+// DELETE Soft delete: mueve la nota a la papelera (archived = true).
+// Desaparece de la web pública y en el panel se muestra como archivada.
+// Nunca se borra físicamente.
+app.delete('/api/notes/:id', authenticateWriter, async (req, res) => {
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ archived: true })
+    .eq('id', req.params.id)
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+  res.json(data[0]);
+});
+
 // SEO
 app.get('/robots.txt', (req, res) => {
   const host = req.get('host');
@@ -428,7 +447,8 @@ app.get('/sitemap.xml', async (req, res) => {
     const { data: notes } = await supabase
       .from('notes')
       .select('id, created_at, status')
-      .eq('status', 'publicada');
+      .eq('status', 'publicada')
+      .eq('archived', false);
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
