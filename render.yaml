@@ -1,7 +1,6 @@
-# Render Blueprint — Tribuna
-# Entorno: servicios ya desplegados se re-crearán con auto-deploy desde GitHub.
-# Las variables marcadas con `sync: false` NO se suben a Git: rellénalas una vez
-# desde el dashboard de Render (Dashboard > Services > env vars).
+# Render Blueprint - Tribuna
+# Las variables con `sync: false` no se suben a Git: Render te las pide una vez
+# en el dashboard durante la creacion del Blueprint.
 
 services:
   - type: web
@@ -12,11 +11,10 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /robots.txt
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
         value: "20"
-        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
