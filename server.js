@@ -786,9 +786,34 @@ app.use(
   express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true })
 );
 
+// 404 JSON para cualquier /api/* no registrada (evita que caiga al catch-all HTML)
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Ruta de API no encontrada.' });
+});
+
 // Middleware SPA para soportar rutas dinámicas en el navegador
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Manejador de errores centralizado de Express (4 argumentos, va siempre al final).
+// Atrapa cualquier error que llegue a next(err): INCLUDING body JSON inválido
+// (express.json) y rechazos no capturados de rutas async. Devuelve JSON, nunca HTML.
+// eslint-disable-next-line no-unused-vars -- los 4 parámetros son la firma requerida por Express
+app.use((err, req, res, next) => {
+  if (req.path.startsWith('/api') || req.originalUrl?.startsWith('/api')) {
+    const status = err.status || err.statusCode || 500;
+    const message =
+      err.type === 'entity.parse.failed'
+        ? 'JSON inválido en el cuerpo de la petición.'
+        : 'Error interno del servidor.';
+    if (status >= 500)
+      console.error(`[API ${status}]`, req.method, req.originalUrl, err.message || err);
+    return res.status(status).json({ error: message });
+  }
+  if (err.status === 404) return res.status(404).send('Recurso no encontrado');
+  if (err.status >= 500) console.error('[Error]', req.method, req.originalUrl, err.message || err);
+  res.status(500).send('Error interno del servidor');
 });
 
 const PORT = process.env.PORT || 3000;
