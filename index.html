@@ -868,6 +868,7 @@
       }
     };
 
+    // ===== SECCIÓN ● 1 · Utilidades y formateo de texto =====
     function normalizeStr(str) {
       if (!str) return '';
       return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -1001,6 +1002,7 @@
     const standingsBody = document.getElementById('standingsBody');
     const standingsStatus = document.getElementById('standingsStatus');
 
+    // ===== SECCIÓN ● 2 · Skeleton, picker y preinicio de UI =====
     function renderSkeleton() {
       standingsBody.innerHTML = Array.from({length: 8}).map(() => 
         `<tr class="skeleton-row"><td>0</td><td>Cargando equipo...</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="hide-mobile">0</td><td class="hide-mobile">0</td><td class="hide-mobile">0</td><td>0</td></tr>`
@@ -1226,6 +1228,7 @@
         '<div class="match-score"><span class="ms-team"><strong>Equipo local</strong></span><span class="ms-result">2&ndash;1</span><span class="ms-team"><strong>Equipo visitante</strong></span><span class="ms-meta">Competición · Jornada</span></div><p><br></p>');
     }
     
+    // ===== SECCIÓN ● 3 · Artículos: nota individual y lectura =====
     function openArticle(index){ 
       runView(() => {
         const note = currentDisplayNotes[index]; 
@@ -1535,6 +1538,7 @@
     const notFoundSection = document.getElementById('notFound404');
     const KNOWN_CATEGORIES = ['futbol', 'baloncesto', 'atletismo', 'otros deportes'];
 
+    // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
       ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'mostReadSection', 'podcast'].forEach(id => {
         const el = document.getElementById(id);
