@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificación de sintaxis
+        run: node --check server.js && node --check public/service-worker.js
+
+      - name: Tests unitarios
+        run: npm run test:unit
+        env:
+          SUPABASE_URL: http://127.0.0.1:9
+          SUPABASE_SERVICE_ROLE_KEY: test-key
+          FOOTBALL_DATA_API_KEY: test-key
+          WRITER_PASSWORD: testpass
+
+      - name: Tests de regresión (HTTP real)
+        run: npm run test:regression
+        env:
+          SUPABASE_URL: http://127.0.0.1:9
+          SUPABASE_SERVICE_ROLE_KEY: test-key
+          FOOTBALL_DATA_API_KEY: test-key
+          WRITER_PASSWORD: testpass
