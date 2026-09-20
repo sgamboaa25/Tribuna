@@ -115,7 +115,8 @@
     .grid .empty-results { grid-column:1/-1; }
 
     .custom-picker { position:relative; min-width:280px; } 
-    .search-bar .custom-picker { min-width:100%; width:100%; }
+    .search-bar .custom-picker { min-width:100%; width:100%; } 
+    #writerPanel .custom-picker { width:100%; min-width:0; }
     .custom-toggle { display:flex; width:100%; height:100%; min-height:44px; align-items:center; justify-content:space-between; border:1px solid var(--ink); border-radius:var(--radius-lg); background:var(--input-bg); color:var(--ink); padding:0 16px; font-family:'Inter', sans-serif; font-size:.9rem; font-weight:600; cursor:pointer; box-sizing:border-box; } 
     .custom-toggle::after { content:'⌄'; color:var(--muted); font-size:1.1rem; margin-left:12px; } 
     .custom-menu { display:none; position:absolute; z-index:20; top:calc(100% + 8px); right:0; left:0; overflow:hidden; padding:6px; border:1px solid var(--line); border-radius:var(--radius-xl); background:var(--card-bg); box-shadow:0 10px 30px rgba(0,0,0,.08); max-height:320px; overflow-y:auto; } 
@@ -634,20 +635,31 @@
         <div class="editor-grid">
           <div class="wide"><label for="title">Titular</label><input id="title" required placeholder="Escribe un titular claro" /></div>
           <div>
-            <label for="sport">Deporte</label>
-            <select id="sport" required>
-              <option value="">Elige un deporte</option>
-              <option>Fútbol</option><option>Baloncesto</option><option>Atletismo</option>
-              <option>Ciclismo</option><option>Tenis</option><option>Motor</option><option>Natación</option><option>Otros deportes</option>
-            </select>
+            <label for="sportPickerToggle">Deporte</label>
+            <div class="custom-picker" id="sportPicker" data-value="">
+              <button type="button" class="custom-toggle" id="sportPickerToggle" aria-expanded="false" aria-haspopup="menu">Elige un deporte</button>
+              <div class="custom-menu" role="menu">
+                <button class="custom-option" type="button" data-value="Fútbol" role="menuitem">Fútbol</button>
+                <button class="custom-option" type="button" data-value="Baloncesto" role="menuitem">Baloncesto</button>
+                <button class="custom-option" type="button" data-value="Atletismo" role="menuitem">Atletismo</button>
+                <button class="custom-option" type="button" data-value="Ciclismo" role="menuitem">Ciclismo</button>
+                <button class="custom-option" type="button" data-value="Tenis" role="menuitem">Tenis</button>
+                <button class="custom-option" type="button" data-value="Motor" role="menuitem">Motor</button>
+                <button class="custom-option" type="button" data-value="Natación" role="menuitem">Natación</button>
+                <button class="custom-option" type="button" data-value="Otros deportes" role="menuitem">Otros deportes</button>
+              </div>
+            </div>
           </div>
           <div>
-            <label for="status">Estado Editorial</label>
-            <select id="status" required>
-              <option value="borrador" selected>Borrador</option>
-              <option value="en revisión">En revisión</option>
-              <option value="publicada">Publicada</option>
-            </select>
+            <label for="statusPickerToggle">Estado Editorial</label>
+            <div class="custom-picker" id="statusPicker" data-value="borrador">
+              <button type="button" class="custom-toggle" id="statusPickerToggle" aria-expanded="false" aria-haspopup="menu">Borrador</button>
+              <div class="custom-menu" role="menu">
+                <button class="custom-option is-selected" type="button" data-value="borrador" role="menuitem">Borrador</button>
+                <button class="custom-option" type="button" data-value="en revisión" role="menuitem">En revisión</button>
+                <button class="custom-option" type="button" data-value="publicada" role="menuitem">Publicada</button>
+              </div>
+            </div>
           </div>
           <div class="wide"><label for="tags">Etiquetas</label><input id="tags" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Liga, equipo, atleta…" /></div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." class="field-textarea"></textarea></div>
@@ -844,7 +856,29 @@
       });
     }
 
+    function setCustomPickerValue(pickerId, value) {
+      const picker = document.getElementById(pickerId);
+      if (!picker) return;
+      const toggle = picker.querySelector('.custom-toggle');
+      const options = picker.querySelectorAll('.custom-option');
+      const match = [...options].find(opt => opt.dataset.value === value);
+      if (!match) return;
+      picker.dataset.value = value;
+      toggle.textContent = match.textContent;
+      options.forEach(opt => opt.classList.toggle('is-selected', opt === match));
+    }
+
+    function resetCustomPicker(pickerId, placeholder) {
+      const picker = document.getElementById(pickerId);
+      if (!picker) return;
+      picker.dataset.value = '';
+      picker.querySelector('.custom-toggle').textContent = placeholder;
+      picker.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('is-selected'));
+    }
+
     setupCustomPicker('publicSport', () => executeSearch());
+    setupCustomPicker('sportPicker', () => {});
+    setupCustomPicker('statusPicker', () => {});
 
     let searchDebounceTimeout;
     const searchInput = document.querySelector('#searchInput');
@@ -1252,8 +1286,8 @@
         button.onclick = () => {
           editingId = note.id; 
           document.querySelector('#title').value = note.title; 
-          document.querySelector('#sport').value = note.sport; 
-          document.querySelector('#status').value = note.status || 'borrador'; 
+          setCustomPickerValue('sportPicker', note.sport);
+          setCustomPickerValue('statusPicker', note.status || 'borrador'); 
           document.querySelector('#tags').value = note.tags || ''; 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
@@ -1540,6 +1574,10 @@
     document.querySelector('#articleForm').onsubmit = async e => { 
       e.preventDefault(); 
       const message = document.querySelector('#saveMessage');
+      if (!document.getElementById('sportPicker').dataset.value) {
+        message.textContent = 'Elige un deporte antes de guardar.';
+        return;
+      }
       message.textContent = 'Subiendo imagen y guardando nota...';
 
       const fileInput = document.querySelector('#photoFile');
@@ -1567,8 +1605,8 @@
 
         const note = {
           title: document.querySelector('#title').value,
-          sport: document.querySelector('#sport').value,
-          status: document.querySelector('#status').value,
+          sport: document.getElementById('sportPicker').dataset.value,
+          status: document.getElementById('statusPicker').dataset.value,
           tags: document.querySelector('#tags').value,
           intro: document.querySelector('#intro').value,
           body: document.querySelector('#bodyEditor').innerHTML,
@@ -1601,6 +1639,8 @@
         message.textContent = '¡Nota guardada con éxito!';
         editingId = null;
         e.target.reset();
+        resetCustomPicker('sportPicker', 'Elige un deporte');
+        setCustomPickerValue('statusPicker', 'borrador');
         document.querySelector('#bodyEditor').innerHTML = '';
         await loadAllNotesForPanel();
         await loadPublicNotes();
