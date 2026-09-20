@@ -57,3 +57,62 @@ where not exists (select 1 from public.notes where title = 'El talento joven ya 
 insert into public.notes (sport, title, intro, author, email, tags, body, status)
 select 'Atletismo', 'La victoria tiene más de una medida', 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', 'Sofía Campos', 'sofia@tribuna.test', 'opinión, atletismo', 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', 'publicada'
 where not exists (select 1 from public.notes where title = 'La victoria tiene más de una medida');
+
+-- ============================================================
+-- NEWSLETTER SEMANAL
+-- ============================================================
+
+-- Suscriptores del boletín. El campo `confirmed` permite activar
+-- más adelante un doble opt-in: hoy se inserta ya activo (true).
+-- Toda escritura pasa por el backend (server.js) o la Edge Function,
+-- que usan service_role y saltan la RLS. Por eso la RLS queda
+-- cerrada para el cliente público (anon).
+create table if not exists public.subscribers (
+  id uuid primary key default gen_random_uuid(),
+  email text not null unique,
+  confirmed boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table public.subscribers enable row level security;
+
+revoke all on table public.subscribers from anon;
+revoke all on table public.subscribers from authenticated;
+
+-- Audit log de cada envío del boletín (la escribe la Edge Function).
+create table if not exists public.newsletter_sends (
+  id uuid primary key default gen_random_uuid(),
+  week_start date not null,
+  sent_at timestamptz not null default now(),
+  notes_count int not null default 0,
+  recipients_count int not null default 0,
+  status text not null default 'ok',
+  error text
+);
+
+alter table public.newsletter_sends enable row level security;
+
+revoke all on table public.newsletter_sends from anon;
+revoke all on table public.newsletter_sends from authenticated;
+
+-- ============================================================
+-- PROGRAMACIÓN SEMANAL (pg_cron -> Edge Function) — DESPUÉS
+-- de desplegar functions/newsletter-send/index.ts y guardar en Vault
+-- el secreto CRON_SECRET. Ejecutar una sola vez en el SQL editor.
+-- Domingos 08:00 UTC. Si quieres otra hora local, ajusta la zona: p.ej.
+-- domingo 10:00 en verano madrileño (CEST) = 08:00 UTC -> '0 8 * * 0'.
+-- select cron.schedule(
+--   'newsletter-semanal',
+--   '0 8 * * 0',
+--   $$
+--   select net.http_post(
+--     url := 'https://jmsjbbubhyszrbgqrfio.supabase.co/functions/v1/newsletter-send',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'x-tribuna-cron', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')
+--     ),
+--     body := '{}',
+--     timeout_milliseconds := 10000
+--   );
+--   $$
+-- );

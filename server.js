@@ -59,12 +59,21 @@ const standingsLimiter = rateLimit({
   message: { error: 'Demasiadas peticiones. Intenta de nuevo.' }
 });
 
+const newsletterLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas suscripciones. Espera unos minutos.' }
+});
+
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/notes', writeLimiter);
 app.use('/api/standings', standingsLimiter);
+app.use('/api/newsletter', newsletterLimiter);
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Faltan variables de entorno de Supabase. Copia .env.example a .env y completa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (service-role: Supabase > Settings > API keys).');
@@ -428,6 +437,66 @@ app.delete('/api/notes/:id', authenticateWriter, async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
   res.json(data[0]);
+});
+
+// Newsletter: alta de suscriptor (público, limitado por rate limiter).
+// El envío semanal lo hace la Edge Function; esta ruta solo guarda
+// el correo en subscribers con confirmed = true (doble opt-in futuro).
+app.post('/api/newsletter/subscribe', async (req, res) => {
+  const { email } = req.body || {};
+  if (typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
+    return res.status(400).json({ error: 'Correo electrónico no válido.' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  try {
+    const { data: existing } = await supabase
+      .from('subscribers')
+      .select('id')
+      .eq('email', normalized)
+      .maybeSingle();
+
+    if (existing) {
+      return res.status(409).json({ error: 'Ya estás suscrito a la newsletter.' });
+    }
+
+    const { data, error } = await supabase
+      .from('subscribers')
+      .insert({ email: normalized, confirmed: true })
+      .select();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Ya estás suscrito a la newsletter.' });
+      }
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(201).json({ ok: true, email: data[0].email });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Newsletter: baja (se llama desde el enlace del boletín).
+app.get('/api/newsletter/unsubscribe', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).type('text/plain').send('Enlace de baja no válido.');
+  }
+
+  try {
+    const { error } = await supabase
+      .from('subscribers')
+      .update({ confirmed: false })
+      .eq('email', email);
+
+    if (error) return res.status(500).type('text/plain').send('Error interno al procesar la baja.');
+
+    res.type('html').send('<!doctype html><html lang="es"><meta charset="utf-8"><title>Baja de la newsletter</title><body style="font-family:Inter,sans-serif;max-width:560px;margin:48px auto;color:#1a1a1a"><p><strong>TRIBUNA</strong></p><h1>Has sido dado de baja correctamente.</h1><p>No volverás a recibir nuestro boletín semanal. Si fue un error, siempre puedes volver a suscribirte desde la web.</p></body></html>');
+  } catch (error) {
+    res.status(500).type('text/plain').send('Error interno al procesar la baja.');
+  }
 });
 
 // SEO
