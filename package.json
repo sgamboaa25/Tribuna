@@ -6,7 +6,10 @@
     "start": "node server.js",
     "test": "npm run test:unit && npm run test:regression",
     "test:unit": "node --test \"test/*.test.js\"",
-    "test:regression": "node tests/regression.js"
+    "test:regression": "node tests/regression.js",
+    "lint": "eslint server.js",
+    "lint:fix": "eslint server.js --fix",
+    "format": "prettier --write server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -17,6 +20,11 @@
     "sanitize-html": "^2.17.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^15.15.0",
+    "prettier": "^3.9.8",
     "supertest": "^7.2.2"
   }
 }

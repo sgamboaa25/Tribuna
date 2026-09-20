@@ -10,22 +10,29 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', "'unsafe-inline'"],
-      scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://jmsjbbubhyszrbgqrfio.supabase.co', 'https://*.supabase.co'],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"],
-      upgradeInsecureRequests: []
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          'https://cdn.jsdelivr.net',
+          'https://cdnjs.cloudflare.com',
+          "'unsafe-inline'"
+        ],
+        scriptSrcAttr: ["'unsafe-inline'"],
+        styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://jmsjbbubhyszrbgqrfio.supabase.co', 'https://*.supabase.co'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: []
+      }
     }
-  }
-}));
+  })
+);
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -76,7 +83,9 @@ app.use('/api/standings', standingsLimiter);
 app.use('/api/newsletter', newsletterLimiter);
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Faltan variables de entorno de Supabase. Copia .env.example a .env y completa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (service-role: Supabase > Settings > API keys).');
+  console.error(
+    'Faltan variables de entorno de Supabase. Copia .env.example a .env y completa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (service-role: Supabase > Settings > API keys).'
+  );
   process.exit(1);
 }
 
@@ -94,7 +103,9 @@ function loginClientKey(req) {
 }
 
 function loginEmailKey(email) {
-  return `mail::${String(email || '').trim().toLowerCase()}`;
+  return `mail::${String(email || '')
+    .trim()
+    .toLowerCase()}`;
 }
 
 function loginState(key) {
@@ -114,7 +125,11 @@ function loginState(key) {
 function registerLoginFailure(key) {
   const now = Date.now();
   let rec = loginAttempts.get(key);
-  if (!rec || now - rec.firstFailAt >= LOGIN_WINDOW_MS || (rec.blockedUntil && now >= rec.blockedUntil)) {
+  if (
+    !rec ||
+    now - rec.firstFailAt >= LOGIN_WINDOW_MS ||
+    (rec.blockedUntil && now >= rec.blockedUntil)
+  ) {
     rec = { failures: 0, firstFailAt: now };
   }
   rec.failures += 1;
@@ -147,12 +162,59 @@ const authenticateWriter = (req, res, next) => {
   next();
 };
 
-const NOTE_ALLOWED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'tags', 'body', 'status', 'urgent', 'image', 'reactions', 'video_url'];
+const NOTE_ALLOWED_FIELDS = [
+  'title',
+  'sport',
+  'intro',
+  'author',
+  'email',
+  'tags',
+  'body',
+  'status',
+  'urgent',
+  'image',
+  'reactions',
+  'video_url'
+];
 const REQUIRED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'body'];
-const NOTE_LENGTHS = { title: 200, sport: 60, intro: 500, author: 120, email: 120, tags: 300, body: 100000, image: 500, video_url: 500 };
+const NOTE_LENGTHS = {
+  title: 200,
+  sport: 60,
+  intro: 500,
+  author: 120,
+  email: 120,
+  tags: 300,
+  body: 100000,
+  image: 500,
+  video_url: 500
+};
 const VALID_STATUSES = ['borrador', 'en revisión', 'publicada'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const BODY_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'img', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption', 'span', 'div'];
+const BODY_ALLOWED_TAGS = [
+  'p',
+  'br',
+  'strong',
+  'em',
+  'b',
+  'i',
+  'u',
+  's',
+  'a',
+  'img',
+  'h2',
+  'h3',
+  'h4',
+  'blockquote',
+  'ul',
+  'ol',
+  'li',
+  'pre',
+  'code',
+  'figure',
+  'figcaption',
+  'span',
+  'div'
+];
 const BODY_ALLOWED_ATTRS = {
   a: ['href', 'title'],
   img: ['src', 'alt', 'title'],
@@ -166,7 +228,10 @@ const SCORE_CLASSES = ['match-score', 'ms-team', 'ms-result', 'ms-meta'];
 function restrictClasses(html) {
   const allowed = new Set(SCORE_CLASSES);
   return html.replace(/\sclass="([^"]*)"/g, (match, cls) => {
-    const kept = cls.split(/\s+/).filter((c) => allowed.has(c)).join(' ');
+    const kept = cls
+      .split(/\s+/)
+      .filter((c) => allowed.has(c))
+      .join(' ');
     return kept ? ` class="${kept}"` : '';
   });
 }
@@ -176,13 +241,15 @@ function sanitizeText(value) {
 }
 
 function sanitizeBody(value) {
-  return restrictClasses(sanitizeHtml(String(value), {
-    allowedTags: BODY_ALLOWED_TAGS,
-    allowedAttributes: BODY_ALLOWED_ATTRS,
-    transformTags: {
-      a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' })
-    }
-  }));
+  return restrictClasses(
+    sanitizeHtml(String(value), {
+      allowedTags: BODY_ALLOWED_TAGS,
+      allowedAttributes: BODY_ALLOWED_ATTRS,
+      transformTags: {
+        a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer' })
+      }
+    })
+  );
 }
 
 function validateNote(body, partial) {
@@ -204,15 +271,29 @@ function validateNote(body, partial) {
     clean[key] = body[key];
   }
 
-  for (const field of ['title', 'sport', 'intro', 'author', 'email', 'tags', 'image', 'video_url']) {
+  for (const field of [
+    'title',
+    'sport',
+    'intro',
+    'author',
+    'email',
+    'tags',
+    'image',
+    'video_url'
+  ]) {
     if (clean[field] === undefined) continue;
     if (typeof clean[field] !== 'string') return { error: `El campo ${field} debe ser texto.` };
-    clean[field] = (field === 'email' || field === 'image' || field === 'video_url') ? clean[field].trim() : sanitizeText(clean[field]);
+    clean[field] =
+      field === 'email' || field === 'image' || field === 'video_url'
+        ? clean[field].trim()
+        : sanitizeText(clean[field]);
     if (clean[field] === '' && field !== 'tags' && field !== 'image' && field !== 'video_url') {
       return { error: `El campo ${field} no puede estar vacío.` };
     }
     if (clean[field].length > NOTE_LENGTHS[field]) {
-      return { error: `El campo ${field} supera la longitud máxima permitida (${NOTE_LENGTHS[field]} caracteres).` };
+      return {
+        error: `El campo ${field} supera la longitud máxima permitida (${NOTE_LENGTHS[field]} caracteres).`
+      };
     }
   }
 
@@ -232,7 +313,8 @@ function validateNote(body, partial) {
   if (clean.video_url !== undefined && clean.video_url !== '') {
     try {
       const url = new URL(clean.video_url);
-      if ((url.protocol !== 'http:' && url.protocol !== 'https:') || !/\.mp4$/i.test(url.pathname)) throw new Error();
+      if ((url.protocol !== 'http:' && url.protocol !== 'https:') || !/\.mp4$/i.test(url.pathname))
+        throw new Error();
     } catch {
       return { error: 'La URL del video no es válida (debe apuntar a un archivo MP4).' };
     }
@@ -255,7 +337,11 @@ function validateNote(body, partial) {
   if (clean.urgent !== undefined) clean.urgent = Boolean(clean.urgent);
 
   if (clean.reactions !== undefined) {
-    if (typeof clean.reactions !== 'object' || clean.reactions === null || Array.isArray(clean.reactions)) {
+    if (
+      typeof clean.reactions !== 'object' ||
+      clean.reactions === null ||
+      Array.isArray(clean.reactions)
+    ) {
       return { error: 'Reacciones no válidas.' };
     }
     const r = {};
@@ -287,12 +373,18 @@ app.post('/api/auth', (req, res) => {
 
   const ipState = loginState(ipKey);
   if (ipState.blocked) {
-    return res.status(429).json({ error: 'Demasiados intentos de acceso. Espera unos minutos.', retryAfter: ipState.retryAfter });
+    return res.status(429).json({
+      error: 'Demasiados intentos de acceso. Espera unos minutos.',
+      retryAfter: ipState.retryAfter
+    });
   }
   if (emailKey) {
     const emailState = loginState(emailKey);
     if (emailState.blocked) {
-      return res.status(429).json({ error: 'Demasiados intentos para esta cuenta. Espera unos minutos.', retryAfter: emailState.retryAfter });
+      return res.status(429).json({
+        error: 'Demasiados intentos para esta cuenta. Espera unos minutos.',
+        retryAfter: emailState.retryAfter
+      });
     }
   }
 
@@ -322,7 +414,7 @@ app.get('/api/notes', async (req, res) => {
       .eq('status', 'publicada')
       .eq('archived', false)
       .order('id', { ascending: false });
-      
+
     if (error) throw error;
     res.json(data || []);
   } catch (error) {
@@ -344,10 +436,12 @@ app.get('/api/notes/category/:sport', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => {
+    const filtered = (data || []).filter((note) => {
       const noteSport = (note.sport || note.deporte || '').toLowerCase();
-      return noteSport.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
-             sportParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return (
+        noteSport.normalize('NFD').replace(/[\u0300-\u036f]/g, '') ===
+        sportParam.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      );
     });
 
     res.json(filtered);
@@ -370,7 +464,7 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => {
+    const filtered = (data || []).filter((note) => {
       const tags = (note.tags || note.etiquetas || '').toLowerCase();
       return tags.includes(tagParam);
     });
@@ -395,10 +489,12 @@ app.get('/api/notes/author/:author', async (req, res) => {
 
     if (error) throw error;
 
-    const filtered = (data || []).filter(note => {
+    const filtered = (data || []).filter((note) => {
       const author = (note.author || note.autor || '').toLowerCase();
-      return author.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 
-             authorParam.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return (
+        author.normalize('NFD').replace(/[\u0300-\u036f]/g, '') ===
+        authorParam.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      );
     });
 
     res.json(filtered);
@@ -424,7 +520,7 @@ app.get('/api/notes/search', async (req, res) => {
 
     let results = data || [];
     if (term) {
-      results = results.filter(note => {
+      results = results.filter((note) => {
         const title = (note.title || note.titulo || '').toLowerCase();
         const intro = (note.intro || note.entradilla || '').toLowerCase();
         const tags = (note.tags || note.etiquetas || '').toLowerCase();
@@ -445,7 +541,7 @@ app.get('/api/notes/all', authenticateWriter, async (req, res) => {
       .from('notes')
       .select('*')
       .order('id', { ascending: false });
-      
+
     if (error) throw error;
     res.json(data || []);
   } catch (error) {
@@ -466,7 +562,11 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const { data: clean, error: validationError } = validateNote(req.body, true);
   if (validationError) return res.status(400).json({ error: validationError });
 
-  const { data, error } = await supabase.from('notes').update(clean).eq('id', req.params.id).select();
+  const { data, error } = await supabase
+    .from('notes')
+    .update(clean)
+    .eq('id', req.params.id)
+    .select();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
@@ -474,17 +574,13 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
 app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
-  
+
   if (!['borrador', 'en revisión', 'publicada'].includes(status)) {
     return res.status(400).json({ error: 'Estado editorial no válido.' });
   }
 
-  const { data, error } = await supabase
-    .from('notes')
-    .update({ status })
-    .eq('id', id)
-    .select();
-    
+  const { data, error } = await supabase.from('notes').update({ status }).eq('id', id).select();
+
   if (error) return res.status(500).json({ error: error.message });
   res.json(data[0]);
 });
@@ -550,7 +646,9 @@ app.post('/api/newsletter/subscribe', async (req, res) => {
 
 // Newsletter: baja (se llama desde el enlace del boletín).
 app.get('/api/newsletter/unsubscribe', async (req, res) => {
-  const email = String(req.query.email || '').trim().toLowerCase();
+  const email = String(req.query.email || '')
+    .trim()
+    .toLowerCase();
   if (!EMAIL_RE.test(email)) {
     return res.status(400).type('text/plain').send('Enlace de baja no válido.');
   }
@@ -563,8 +661,12 @@ app.get('/api/newsletter/unsubscribe', async (req, res) => {
 
     if (error) return res.status(500).type('text/plain').send('Error interno al procesar la baja.');
 
-    res.type('html').send('<!doctype html><html lang="es"><meta charset="utf-8"><title>Baja de la newsletter</title><body style="font-family:Inter,sans-serif;max-width:560px;margin:48px auto;color:#1a1a1a"><p><strong>TRIBUNA</strong></p><h1>Has sido dado de baja correctamente.</h1><p>No volverás a recibir nuestro boletín semanal. Si fue un error, siempre puedes volver a suscribirte desde la web.</p></body></html>');
-  } catch (error) {
+    res
+      .type('html')
+      .send(
+        '<!doctype html><html lang="es"><meta charset="utf-8"><title>Baja de la newsletter</title><body style="font-family:Inter,sans-serif;max-width:560px;margin:48px auto;color:#1a1a1a"><p><strong>TRIBUNA</strong></p><h1>Has sido dado de baja correctamente.</h1><p>No volverás a recibir nuestro boletín semanal. Si fue un error, siempre puedes volver a suscribirte desde la web.</p></body></html>'
+      );
+  } catch {
     res.status(500).type('text/plain').send('Error interno al procesar la baja.');
   }
 });
@@ -592,12 +694,14 @@ app.get('/sitemap.xml', async (req, res) => {
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-    
+
     xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
 
     if (notes && notes.length > 0) {
-      notes.forEach(note => {
-        const date = note.created_at ? new Date(note.created_at).toISOString() : new Date().toISOString();
+      notes.forEach((note) => {
+        const date = note.created_at
+          ? new Date(note.created_at).toISOString()
+          : new Date().toISOString();
         xml += `  <url>\n    <loc>${baseUrl}/#note-${note.id}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
       });
     }
@@ -606,15 +710,23 @@ app.get('/sitemap.xml', async (req, res) => {
 
     res.type('application/xml');
     res.send(xml);
-  } catch (error) {
+  } catch {
     res.status(500).send('Error al generar el sitemap');
   }
 });
 
 const LEAGUE_MAP = {
-  'cl': 'CL', 'bl1': 'BL1', 'ded': 'DED', 'bsa': 'BSA',
-  'pd': 'PD', 'fl1': 'FL1', 'elc': 'ELC', 'ppl': 'PPL',
-  'ec': 'EC', 'sa': 'SA', 'pl': 'PL'
+  cl: 'CL',
+  bl1: 'BL1',
+  ded: 'DED',
+  bsa: 'BSA',
+  pd: 'PD',
+  fl1: 'FL1',
+  elc: 'ELC',
+  ppl: 'PPL',
+  ec: 'EC',
+  sa: 'SA',
+  pl: 'PL'
 };
 
 const cache = {};
@@ -627,7 +739,7 @@ app.get('/api/standings/:liga', async (req, res) => {
   if (!leagueCode) return res.status(400).json({ error: 'Liga no válida.' });
 
   const now = Date.now();
-  if (cache[ligaKey] && (now - cache[ligaKey].timestamp < CACHE_TTL_MS)) {
+  if (cache[ligaKey] && now - cache[ligaKey].timestamp < CACHE_TTL_MS) {
     return res.json({ stale: false, data: cache[ligaKey].data });
   }
 
@@ -643,10 +755,10 @@ app.get('/api/standings/:liga', async (req, res) => {
       throw new Error(json.message || `Error HTTP: ${response.status}`);
     }
 
-    const standingObj = json.standings.find(s => s.type === 'TOTAL') || json.standings[0];
+    const standingObj = json.standings.find((s) => s.type === 'TOTAL') || json.standings[0];
     const rawStandings = standingObj ? standingObj.table : [];
 
-    const transformedData = rawStandings.map(item => ({
+    const transformedData = rawStandings.map((item) => ({
       posicion: item.position,
       equipo: item.team.name,
       escudo: item.team.crest,
@@ -669,7 +781,10 @@ app.get('/api/standings/:liga', async (req, res) => {
 });
 
 // Estáticos explícitos de PWA (solo esta carpeta; no exponer fuentes)
-app.use('/public', express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true }));
+app.use(
+  '/public',
+  express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true })
+);
 
 // Middleware SPA para soportar rutas dinámicas en el navegador
 app.get('*', (req, res) => {
