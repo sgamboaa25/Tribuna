@@ -143,6 +143,10 @@
     .card:hover { border-color:var(--muted); transform:translateY(-2px); } 
     .card img { width:100%; height:auto; aspect-ratio:16/10; object-fit:cover; border-radius:var(--radius-md); margin-bottom:16px; background:var(--img-placeholder); filter:blur(12px) scale(1.05); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
     .card img.loaded { filter:none; opacity:1; }
+    .card .card-media { display:block; position:relative; }
+    .hero-media { position:relative; }
+    .media-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:54px; height:54px; border-radius:50%; background:rgba(0,0,0,.55); border:2px solid rgba(255,255,255,.85); z-index:2; }
+    .media-play::before { content:''; position:absolute; top:50%; left:calc(50% + 2px); transform:translate(-50%,-50%); width:0; height:0; border-style:solid; border-width:9px 0 9px 16px; border-color:transparent transparent transparent #fff; }
     h2 { font: 700 1.4rem/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin-bottom:10px; } 
     .card p { color:var(--muted); font-size:.92rem; line-height:1.5; margin-bottom:20px; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 
@@ -186,7 +190,13 @@
     #articleDetail h1 { font-size:3rem; margin-bottom:12px; } 
     #articleDetail .lead { margin-bottom:16px; }
     #detailImage { width:100%; max-width:var(--col-reading); max-height:520px; object-fit:cover; border-radius:var(--radius-lg); margin:16px auto 24px; display:none; background:var(--img-placeholder); filter:blur(12px) scale(1.02); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
-    #detailImage.loaded { filter:none; opacity:1; } 
+    #detailImage.loaded { filter:none; opacity:1; }
+    .detail-video { width:100%; max-width:var(--col-reading); max-height:520px; display:none; margin:16px auto 24px; border-radius:var(--radius-lg); background:var(--img-placeholder); }
+    .file-drop { position:relative; display:flex; align-items:center; min-height:44px; padding:12px 14px; border:1px dashed var(--line); border-radius:var(--radius-md); background:var(--input-bg); color:var(--muted); font-family:'Inter', sans-serif; font-size:.9rem; cursor:pointer; transition:border-color .2s; }
+    .file-drop:hover { border-color:var(--accent); }
+    .file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .file-drop .file-name { pointer-events:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .field-hint { margin:6px 0 0; font-size:.8rem; color:var(--muted); } 
     .detail-content { max-width:var(--col-reading); font:400 1.1rem/1.85 'Fraunces', serif; color:var(--ink); text-align:justify; }
     #articleDetail .tag,
     #articleDetail h1,
@@ -499,6 +509,7 @@
       <h1 id="detailTitle"></h1>
       <p class="lead" id="detailIntro"></p>
       <img id="detailImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'" />
+      <video id="detailVideo" class="detail-video" controls playsinline preload="metadata"></video>
       <div class="detail-content" id="detailBody"></div>
       <p class="byline detail-byline" id="detailByline"></p>
       
@@ -681,7 +692,21 @@
 
           <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" autocapitalize="words" placeholder="Tu nombre y apellidos" /></div>
           <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nombre@ejemplo.com" /></div>
-          <div class="wide"><label for="photoFile">Fotografía principal</label><input id="photoFile" type="file" accept="image/*" /></div>
+          <div class="wide">
+            <label for="photoFile">Fotografía principal</label>
+            <label class="file-drop" for="photoFile">
+              <input id="photoFile" type="file" accept="image/*" />
+              <span class="file-name">Seleccionar imagen…</span>
+            </label>
+          </div>
+          <div class="wide">
+            <label for="videoFile">Video (opcional, MP4)</label>
+            <label class="file-drop" for="videoFile">
+              <input id="videoFile" type="file" accept="video/mp4" />
+              <span class="file-name">Seleccionar video…</span>
+            </label>
+            <p class="field-hint">Sube una imagen o un video como medio principal, no ambos. Si eliges video, idealmente un clip de 15-30 s y máx. 50 MB.</p>
+          </div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
         </div>
         <button class="submit" type="submit">Guardar nota</button> 
@@ -880,6 +905,17 @@
     setupCustomPicker('sportPicker', () => {});
     setupCustomPicker('statusPicker', () => {});
 
+    const wireFileName = (inputId, placeholder) => {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('change', () => {
+        const name = input.files && input.files[0] ? input.files[0].name : '';
+        input.closest('.file-drop').querySelector('.file-name').textContent = name || placeholder;
+      });
+    };
+    wireFileName('photoFile', 'Seleccionar imagen…');
+    wireFileName('videoFile', 'Seleccionar video…');
+
     let searchDebounceTimeout;
     const searchInput = document.querySelector('#searchInput');
     const searchStatus = document.querySelector('#searchStatus');
@@ -1023,6 +1059,7 @@
     let currentDisplayNotes = [];
     let allPanelNotes = [];
     let editingId = null;
+    let editingVideoUrl = '';
     let paginationPage = 0;
     const pageSize = 9;
     let currentActiveCategory = '';
@@ -1178,6 +1215,17 @@
         const author = note.author || 'Redacción';
         const body = note.body || '';
         const image = note.image || '';
+        const videoUrl = note.video_url || '';
+
+        const videoEl = document.querySelector('#detailVideo');
+        if (videoUrl) {
+          videoEl.src = videoUrl;
+          if (typeof videoEl.load === 'function') videoEl.load();
+          videoEl.style.display = 'block';
+        } else {
+          videoEl.removeAttribute('src');
+          videoEl.style.display = 'none';
+        }
 
         document.querySelector('#detailTag').textContent = sport; 
         document.querySelector('#detailTitle').textContent = title; 
@@ -1285,6 +1333,7 @@
         button.textContent = 'Editar'; 
         button.onclick = () => {
           editingId = note.id; 
+          editingVideoUrl = note.video_url || '';
           document.querySelector('#title').value = note.title; 
           setCustomPickerValue('sportPicker', note.sport);
           setCustomPickerValue('statusPicker', note.status || 'borrador'); 
@@ -1330,12 +1379,13 @@
       const hero = document.querySelector('#heroContainer');
       const grid = document.querySelector('#futbol');
       const ranking = document.querySelector('#rankingContainer');
+      const playBadge = (n) => (n && n.video_url) ? '<span class="media-play" aria-hidden="true"></span>' : '';
 
       renderBreakingBanner();
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" /><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -1347,7 +1397,10 @@
           const id = idx + 1;
           grid.innerHTML += `<article class="card">
             <a class="article-link open-article" href="#lectura" data-id="${id}">
-              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              <div class="card-media">
+                <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+                ${playBadge(n)}
+              </div>
               <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span></div>
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
@@ -1578,10 +1631,12 @@
         message.textContent = 'Elige un deporte antes de guardar.';
         return;
       }
-      message.textContent = 'Subiendo imagen y guardando nota...';
+      message.textContent = 'Subiendo archivos y guardando nota...';
 
       const fileInput = document.querySelector('#photoFile');
+      const videoInput = document.querySelector('#videoFile');
       let imageUrl = 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'; 
+      let videoUrl = editingId !== null ? editingVideoUrl : ''; 
 
       try {
         if (fileInput.files && fileInput.files[0]) {
@@ -1603,6 +1658,26 @@
           imageUrl = publicUrlData.publicUrl;
         }
 
+        if (videoInput.files && videoInput.files[0]) {
+          const file = videoInput.files[0];
+          if (file.type !== 'video/mp4') throw new Error('El video debe estar en formato MP4.');
+          if (file.size > 50 * 1024 * 1024) throw new Error('El video supera el máximo de 50 MB.');
+          const fileExt = (file.name.split('.').pop() || 'mp4').toLowerCase();
+          const filePath = `videos/${Date.now()}.${fileExt}`;
+
+          const { error: videoUploadError } = await supabaseClient.storage
+            .from('notes-images')
+            .upload(filePath, file, { contentType: 'video/mp4' });
+
+          if (videoUploadError) throw videoUploadError;
+
+          const { data: videoPublicUrlData } = supabaseClient.storage
+            .from('notes-images')
+            .getPublicUrl(filePath);
+
+          videoUrl = videoPublicUrlData.publicUrl;
+        }
+
         const note = {
           title: document.querySelector('#title').value,
           sport: document.getElementById('sportPicker').dataset.value,
@@ -1614,6 +1689,7 @@
           email: document.querySelector('#authorEmail').value,
           urgent: document.querySelector('#urgent').checked,
           image: imageUrl,
+          video_url: videoUrl,
           reactions: { clap: 0, wow: 0, angry: 0 }
         }; 
 
@@ -1638,9 +1714,12 @@
 
         message.textContent = '¡Nota guardada con éxito!';
         editingId = null;
+        editingVideoUrl = '';
         e.target.reset();
         resetCustomPicker('sportPicker', 'Elige un deporte');
         setCustomPickerValue('statusPicker', 'borrador');
+        document.querySelector('#photoFile').closest('.file-drop').querySelector('.file-name').textContent = 'Seleccionar imagen…';
+        document.querySelector('#videoFile').closest('.file-drop').querySelector('.file-name').textContent = 'Seleccionar video…';
         document.querySelector('#bodyEditor').innerHTML = '';
         await loadAllNotesForPanel();
         await loadPublicNotes();

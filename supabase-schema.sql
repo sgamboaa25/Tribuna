@@ -8,6 +8,7 @@ create table if not exists public.notes (
   tags text default '',
   body text not null,
   image text,
+  video_url text,
   status text not null default 'borrador',
   urgent boolean not null default false,
   reactions jsonb not null default '{"clap":0,"wow":0,"angry":0}'::jsonb,

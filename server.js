@@ -92,9 +92,9 @@ const authenticateWriter = (req, res, next) => {
   next();
 };
 
-const NOTE_ALLOWED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'tags', 'body', 'status', 'urgent', 'image', 'reactions'];
+const NOTE_ALLOWED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'tags', 'body', 'status', 'urgent', 'image', 'reactions', 'video_url'];
 const REQUIRED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'body'];
-const NOTE_LENGTHS = { title: 200, sport: 60, intro: 500, author: 120, email: 120, tags: 300, body: 100000, image: 500 };
+const NOTE_LENGTHS = { title: 200, sport: 60, intro: 500, author: 120, email: 120, tags: 300, body: 100000, image: 500, video_url: 500 };
 const VALID_STATUSES = ['borrador', 'en revisión', 'publicada'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BODY_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'img', 'h2', 'h3', 'h4', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'figure', 'figcaption', 'span', 'div'];
@@ -149,11 +149,11 @@ function validateNote(body, partial) {
     clean[key] = body[key];
   }
 
-  for (const field of ['title', 'sport', 'intro', 'author', 'email', 'tags', 'image']) {
+  for (const field of ['title', 'sport', 'intro', 'author', 'email', 'tags', 'image', 'video_url']) {
     if (clean[field] === undefined) continue;
     if (typeof clean[field] !== 'string') return { error: `El campo ${field} debe ser texto.` };
-    clean[field] = (field === 'email' || field === 'image') ? clean[field].trim() : sanitizeText(clean[field]);
-    if (clean[field] === '' && field !== 'tags' && field !== 'image') {
+    clean[field] = (field === 'email' || field === 'image' || field === 'video_url') ? clean[field].trim() : sanitizeText(clean[field]);
+    if (clean[field] === '' && field !== 'tags' && field !== 'image' && field !== 'video_url') {
       return { error: `El campo ${field} no puede estar vacío.` };
     }
     if (clean[field].length > NOTE_LENGTHS[field]) {
@@ -173,6 +173,16 @@ function validateNote(body, partial) {
       return { error: 'La URL de la imagen no es válida.' };
     }
   }
+
+  if (clean.video_url !== undefined && clean.video_url !== '') {
+    try {
+      const url = new URL(clean.video_url);
+      if ((url.protocol !== 'http:' && url.protocol !== 'https:') || !/\.mp4$/i.test(url.pathname)) throw new Error();
+    } catch {
+      return { error: 'La URL del video no es válida (debe apuntar a un archivo MP4).' };
+    }
+  }
+  if (clean.video_url === '') delete clean.video_url;
 
   if (clean.body !== undefined) {
     if (typeof clean.body !== 'string') return { error: 'El cuerpo de la nota debe ser texto.' };
