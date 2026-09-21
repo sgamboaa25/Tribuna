@@ -267,6 +267,124 @@ function mapNoteToPublicApi(note, baseUrl) {
   };
 }
 
+// ============ Autopublicación en X ============
+// Firma OAuth 1.0a (User Context) sin dependencias externas:
+// HMAC-SHA1 sobre el "signature base string" del estándar (RFC 5849).
+const X_API_URL = 'https://api.x.com/2/tweets';
+const X_TCO_URL_LENGTH = 23;
+
+function xPercentEncode(value) {
+  return encodeURIComponent(String(value)).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+}
+
+// `params` admite objeto o array de pares [clave, valor] (RFC 5849 permite
+// nombres repetidos, p. ej. los parámetros de consulta y cuerpo combinados).
+function oauth1SignatureBase(method, url, params) {
+  const pairs = (Array.isArray(params) ? params : Object.entries(params || {}))
+    .map(([k, v]) => `${xPercentEncode(k)}=${xPercentEncode(v)}`);
+  pairs.sort();
+  return [method.toUpperCase(), xPercentEncode(url), xPercentEncode(pairs.join('&'))].join('&');
+}
+
+function oauth1Signature(method, url, params, consumerSecret, tokenSecret) {
+  const baseString = oauth1SignatureBase(method, url, params);
+  const signingKey = `${xPercentEncode(consumerSecret || '')}&${xPercentEncode(tokenSecret || '')}`;
+  return crypto.createHmac('sha1', signingKey).update(baseString).digest('base64');
+}
+
+function oauth1Authorization({
+  method,
+  url,
+  params,
+  consumerKey,
+  consumerSecret,
+  token,
+  tokenSecret,
+  nonce,
+  timestamp
+}) {
+  const oauthParams = [
+    ['oauth_consumer_key', consumerKey],
+    ['oauth_nonce', nonce || crypto.randomBytes(16).toString('hex')],
+    ['oauth_signature_method', 'HMAC-SHA1'],
+    ['oauth_timestamp', timestamp || String(Math.floor(Date.now() / 1000))],
+    ['oauth_token', token],
+    ['oauth_version', '1.0']
+  ];
+
+  const extraParams = Array.isArray(params) ? params : Object.entries(params || {});
+  const signature = oauth1Signature(method, url, [...oauthParams, ...extraParams], consumerSecret, tokenSecret);
+
+  const headerParams = [...oauthParams, ['oauth_signature', signature]];
+  return `OAuth ${headerParams.map(([k, v]) => `${xPercentEncode(k)}="${xPercentEncode(v)}"`).join(', ')}`;
+}
+
+const xAutopostEnabled =
+  process.env.X_AUTOPOST_ENABLED === 'true' &&
+  Boolean(process.env.X_CONSUMER_KEY && process.env.X_CONSUMER_SECRET && process.env.X_ACCESS_TOKEN && process.env.X_ACCESS_SECRET);
+
+function truncateToBytes(str, max) {
+  let out = '';
+  for (const ch of str) {
+    if (Buffer.byteLength(out + ch, 'utf8') > max) break;
+    out += ch;
+  }
+  return out;
+}
+
+async function publishToX({ title, id }, baseUrl) {
+  const link = `${baseUrl}/#note-${id}`;
+  // X cuenta un enlace como 23 caracteres (t.co) y el límite son 280.
+  const maxTitle = 280 - 1 - X_TCO_URL_LENGTH;
+  const text = `${truncateToBytes(title, maxTitle)}\n${link}`;
+
+  const authorization = oauth1Authorization({
+    method: 'POST',
+    url: X_API_URL,
+    consumerKey: process.env.X_CONSUMER_KEY,
+    consumerSecret: process.env.X_CONSUMER_SECRET,
+    token: process.env.X_ACCESS_TOKEN,
+    tokenSecret: process.env.X_ACCESS_SECRET
+  });
+
+  const response = await fetch(X_API_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization },
+    body: JSON.stringify({ text })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`X API ${response.status}: ${detail.slice(0, 200)}`);
+  }
+
+  const body = await response.json();
+  return body && body.data ? { id: body.data.id, text: body.data.text } : { id: null };
+}
+
+// Publica en X solo cuando la nota es publicada + urgente y aún no se envió.
+// Falla silencioso: nunca rompe el guardado de la nota original.
+async function maybeAutopostNote(note, baseUrl) {
+  if (!xAutopostEnabled) return;
+  if (!note || !note.id) return;
+  if (note.status !== 'publicada' || note.urgent !== true) return;
+  if (note.x_post_id || note.x_posted_at) return;
+
+  try {
+    const posted = await publishToX({ title: note.title, id: note.id }, baseUrl);
+    await supabase
+      .from('notes')
+      .update({ x_post_id: posted.id, x_posted_at: new Date().toISOString() })
+      .eq('id', note.id);
+    console.log(`[x-autopost] nota ${note.id} publicada en X (post ${posted.id})`);
+  } catch (error) {
+    console.error('[x-autopost] no se pudo publicar en X:', error.message);
+  }
+}
+
 function restrictClasses(html) {
   const allowed = new Set(SCORE_CLASSES);
   return html.replace(/\sclass="([^"]*)"/g, (match, cls) => {
@@ -666,6 +784,7 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
 
   const { data, error } = await supabase.from('notes').insert([clean]).select();
   if (error) return res.status(500).json({ error: error.message });
+  await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
 
@@ -679,6 +798,7 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
     .eq('id', req.params.id)
     .select();
   if (error) return res.status(500).json({ error: error.message });
+  await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
 
@@ -693,6 +813,7 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   const { data, error } = await supabase.from('notes').update({ status }).eq('id', id).select();
 
   if (error) return res.status(500).json({ error: error.message });
+  await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
 
@@ -934,3 +1055,7 @@ if (require.main === module) {
 
 module.exports = app;
 module.exports.toPublicNote = mapNoteToPublicApi;
+module.exports.oauth1SignatureBase = oauth1SignatureBase;
+module.exports.oauth1Signature = oauth1Signature;
+module.exports.oauth1Authorization = oauth1Authorization;
+module.exports.maybeAutopostNote = maybeAutopostNote;

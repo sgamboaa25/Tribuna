@@ -42,3 +42,5 @@ Notas de aplicación:
 - `FOOTBALL_DATA_API_KEY` — API key externa de standings (SECRETA).
 - `WRITER_PASSWORD` — contraseña compartida de la redacción (SECRETA).
 - `PORT` — puerto de Express (opcional).
+- `X_AUTOPOST_ENABLED` — activa la autopublicación en X de notas urgentes (`true`/`false`, por defecto desactivada).
+- `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` — credenciales de la X API (OAuth 1.0a, SECRETAS; solo viven en el backend).

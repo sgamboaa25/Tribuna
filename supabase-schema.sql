@@ -12,6 +12,10 @@ create table if not exists public.notes (
   status text not null default 'borrador',
   urgent boolean not null default false,
   archived boolean not null default false,
+  -- Autopublicación en X: id y fecha del post enviado (anti doble envío).
+  -- Los rellena el backend (server.js) tras publicar una nota urgente.
+  x_post_id text,
+  x_posted_at timestamptz,
   -- reactions: contadores de clap/wow/angry más, opcionalmente, la encuesta
   -- rápida (poll: {question, options:[2..4]} + poll_votes: {indice: votos}).
   -- Los lectores actualizan esta columna vía RLS (grant update (reactions)
@@ -23,6 +27,8 @@ create table if not exists public.notes (
 
 -- Migración para bases ya existentes (idempotente).
 alter table public.notes add column if not exists archived boolean not null default false;
+alter table public.notes add column if not exists x_post_id text;
+alter table public.notes add column if not exists x_posted_at timestamptz;
 
 -- Row Level Security:
 -- El cliente público (rol anon) solo puede leer notas publicadas y
