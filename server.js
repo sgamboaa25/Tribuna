@@ -224,6 +224,35 @@ const BODY_ALLOWED_ATTRS = {
   strong: ['class']
 };
 const SCORE_CLASSES = ['match-score', 'ms-team', 'ms-result', 'ms-meta'];
+const POLL_QUESTION_MAX = 140;
+const POLL_OPTION_MAX = 80;
+
+function normalizePoll(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (typeof value.question !== 'string') return null;
+  const question = sanitizeText(value.question).slice(0, POLL_QUESTION_MAX);
+  if (!question) return null;
+  if (!Array.isArray(value.options) || value.options.length < 2 || value.options.length > 4) {
+    return null;
+  }
+  const options = value.options
+    .map((o) => sanitizeText(o).slice(0, POLL_OPTION_MAX))
+    .filter(Boolean);
+  if (options.length < 2) return null;
+  return { question, options };
+}
+
+function validatePollVotes(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const votes = {};
+  for (const k of Object.keys(value)) {
+    if (Number.isNaN(Number(k))) return null;
+    const n = Number(value[k]);
+    if (!Number.isInteger(n) || n < 0) return null;
+    votes[k] = n;
+  }
+  return votes;
+}
 
 function restrictClasses(html) {
   const allowed = new Set(SCORE_CLASSES);
@@ -348,6 +377,16 @@ function validateNote(body, partial) {
     for (const k of ['clap', 'wow', 'angry']) {
       r[k] = Number(clean.reactions[k]) || 0;
       if (r[k] < 0) return { error: 'Reacciones no válidas.' };
+    }
+    const poll = normalizePoll(clean.reactions.poll);
+    if (clean.reactions.poll !== undefined && poll === null) {
+      return { error: 'Encuesta no válida: pregunta y entre 2 y 4 opciones.' };
+    }
+    if (poll) r.poll = poll;
+    if (clean.reactions.poll_votes !== undefined) {
+      const votes = validatePollVotes(clean.reactions.poll_votes);
+      if (votes === null) return { error: 'Votos de la encuesta no válidos.' };
+      r.poll_votes = votes;
     }
     clean.reactions = r;
   }

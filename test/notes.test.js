@@ -60,3 +60,25 @@ test('notes: nota completa no crashea ante DB no disponible', async () => {
   assert.equal(res.status, 500);
   assert.ok(res.body.error);
 });
+
+test('notes: encuesta inválida → 400', async () => {
+  const token = await loginToken();
+  const base = { title: 'T', sport: 'Fútbol', intro: 'I', author: 'A', email: 'a@x.com', body: 'B' };
+  const cases = [
+    { ...base, reactions: { poll: { question: '', options: ['A', 'B'] } } },
+    { ...base, reactions: { poll: { question: '¿Quién gana?', options: ['A'] } } },
+    { ...base, reactions: { poll: { question: '¿Quién gana?', options: ['A', 'B', 'C', 'D', 'E'] } } },
+    { ...base, reactions: { poll: { question: '¿Quién gana?' } } },
+    { ...base, reactions: { poll: 'no-es-objeto' } },
+    { ...base, reactions: { poll_votes: { a: -1 } } },
+    { ...base, reactions: { poll: { question: '¿Quién gana?', options: ['A', 'B'] }, poll_votes: { 0: 'x' } } }
+  ];
+  for (const c of cases) {
+    const res = await request(app)
+      .post('/api/notes')
+      .set('Authorization', `Bearer ${token}`)
+      .send(c);
+    assert.equal(res.status, 400, 'esperando 400');
+    assert.match(res.body.error, /encuesta|voto/i, 'error debe mencionar la encuesta');
+  }
+});

@@ -12,6 +12,10 @@ create table if not exists public.notes (
   status text not null default 'borrador',
   urgent boolean not null default false,
   archived boolean not null default false,
+  -- reactions: contadores de clap/wow/angry más, opcionalmente, la encuesta
+  -- rápida (poll: {question, options:[2..4]} + poll_votes: {indice: votos}).
+  -- Los lectores actualizan esta columna vía RLS (grant update (reactions)
+  -- to anon), por eso poll y poll_votes viven aquí y NO requieren migración.
   reactions jsonb not null default '{"clap":0,"wow":0,"angry":0}'::jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

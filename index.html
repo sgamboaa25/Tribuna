@@ -98,6 +98,45 @@
     .reaction-btn:hover { border-color:var(--accent); background:var(--hover-bg); }
     .reaction-btn.reacted { border-color:var(--accent); background:var(--hover-bg); font-weight:700; }
 
+    /* ===== GUARDAR PARA DESPUÉS ===== */
+    .utility-actions { display:flex; align-items:center; gap:6px; }
+    .bookmarks-toggle { display:inline-flex; align-items:center; gap:7px; background:transparent; border:0; color:var(--muted); cursor:pointer; font:inherit; font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:8px 10px; border-radius:var(--radius-md); transition:color .2s, background .2s; }
+    .bookmarks-toggle:hover { color:var(--ink); background:var(--hover-bg); }
+    .bookmarks-toggle svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; }
+    .bookmarks-toggle.has-saved { color:var(--accent-strong); }
+    .bookmarks-toggle.has-saved svg { fill:currentColor; }
+    .bookmarks-toggle .count-badge { background:var(--accent); color:var(--paper); border-radius:10px; font-size:.65rem; font-weight:800; min-width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; padding:0 4px; }
+    .bookmarks-toggle .count-badge:empty { display:none; }
+
+    .bookmark-btn { position:absolute; top:12px; right:12px; z-index:3; width:38px; height:38px; border-radius:50%; border:0; background:rgba(0,0,0,.5); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; -webkit-tap-highlight-color:transparent; transition:all .2s; }
+    .card:hover .bookmark-btn { background:rgba(0,0,0,.65); }
+    .bookmark-btn:hover { background:var(--accent); transform:scale(1.08); }
+    .bookmark-btn svg { width:18px; height:18px; fill:transparent; stroke:currentColor; stroke-width:2; }
+    .bookmark-btn.saved { background:var(--accent); box-shadow:0 4px 14px rgba(0,0,0,.3); }
+    .bookmark-btn.saved svg { fill:currentColor; }
+
+    .bookmark-outline svg { fill:transparent !important; stroke:currentColor !important; stroke-width:2 !important; }
+    .bookmark-outline.is-saved { color:var(--accent-strong); border-color:var(--accent-strong); }
+    .bookmark-outline.is-saved svg { fill:currentColor !important; }
+
+    .bookmarks-count { padding:20px 32px 0; margin:0; color:var(--muted); font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .bookmarks-body { padding:0 !important; }
+    .bookmarks-body .modal-intro { padding:20px 32px 0; margin:0 0 0; color:var(--muted); font-size:.9rem; }
+    .bookmark-item { display:flex; align-items:center; gap:16px; padding:16px 32px; border-bottom:1px solid var(--line); }
+    .bookmark-item:last-child { border-bottom:0; }
+    .bookmark-item img { width:76px; height:54px; object-fit:cover; border-radius:var(--radius-md); background:var(--img-placeholder); flex-shrink:0; }
+    .bookmark-item .bookmark-info { flex:1; min-width:0; }
+    .bookmark-item .bookmark-info .tag { margin-bottom:4px; }
+    .bookmark-item .bookmark-info strong { display:block; font-family:'Fraunces', serif; font-size:1.05rem; line-height:1.25; margin-bottom:4px; }
+    .bookmark-item .bookmark-info .meta-date { margin-top:0; margin-bottom:0; }
+    .bookmark-actions { display:flex; gap:8px; flex-shrink:0; }
+    .bookmark-action { border:1px solid var(--line); border-radius:var(--radius-md); background:var(--card-bg); color:var(--ink); font-family:'Inter', sans-serif; font-weight:600; font-size:.8rem; cursor:pointer; padding:8px 14px; transition:all .2s; white-space:nowrap; min-height:44px; }
+    .bookmark-action:hover { border-color:var(--accent); color:var(--accent-strong); }
+    .bookmark-action.is-muted { color:var(--muted); }
+    .bookmarks-empty { text-align:center; padding:48px 32px; }
+    .bookmarks-empty p { color:var(--muted); margin:6px 0 0; }
+    .bookmarks-empty .btn-primary { margin-top:18px; }
+
     .search-bar { display:grid; grid-template-columns:1fr 200px auto; gap:12px; background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); margin-bottom:48px; padding:10px; box-shadow:0 4px 20px rgba(0,0,0,.02); align-items:center; } 
     .search-bar input { margin:0; background:transparent; color:var(--ink); border:0; padding:10px 14px; font-size:.95rem; outline:none; font-family:'Inter', sans-serif; } 
     .search-bar > button { border:0; border-radius:var(--radius-md); background:var(--ink); color:var(--paper); padding:0 24px; height:44px; cursor:pointer; font-weight:600; font-size:.85rem; font-family:'Inter', sans-serif; } 
@@ -140,7 +179,7 @@
     .byline { font-size:.78rem; font-weight:700; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; margin-top:24px; }
     
     .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; padding:48px 0 24px; }
-    .card { background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:border-color .2s, transform .2s; } 
+    .card { position:relative; background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition:border-color .2s, transform .2s; } 
     .card:hover { border-color:var(--muted); transform:translateY(-2px); } 
     .card img { width:100%; height:auto; aspect-ratio:16/10; object-fit:cover; border-radius:var(--radius-md); margin-bottom:16px; background:var(--img-placeholder); filter:blur(12px) scale(1.05); opacity:.45; transition:filter .5s ease, opacity .5s ease; }
     .card img.loaded { filter:none; opacity:1; }
@@ -220,6 +259,42 @@
     .match-score .ms-meta { flex-basis:100%; color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
     .back { border:0; background:transparent; color:var(--muted); padding:0 0 24px; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:6px; font-family:'Inter', sans-serif; }
     .back:hover { color:var(--ink); }
+
+    /* ===== MODO LECTURA ===== */
+    .detail-topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:28px; }
+    .detail-topbar .back { padding:0; }
+    .reading-toggle { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:var(--card-bg); color:var(--muted); padding:10px 16px; border-radius:var(--radius-md); font-weight:700; font-size:.78rem; cursor:pointer; letter-spacing:.03em; text-transform:uppercase; font-family:'Inter', sans-serif; min-height:44px; transition:all .2s; }
+    .reading-toggle:hover { border-color:var(--muted); color:var(--ink); }
+    .reading-toggle[aria-pressed="true"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+    body.reading-mode #articleDetail { background:transparent; border:0; box-shadow:none; padding:24px 0; }
+    body.reading-mode #detailImage,
+    body.reading-mode .detail-video { display:none !important; }
+    body.reading-mode .reactions-group,
+    body.reading-mode .share-group { display:none !important; }
+    body.reading-mode .detail-content { font-size:1.4rem; line-height:1.95; text-align:left; }
+    body.reading-mode .detail-content p { margin-bottom:1.5em; }
+    body.reading-mode #articleDetail h1 { font-size:clamp(2rem,5vw,3.2rem); margin-bottom:18px; }
+    body.reading-mode #articleDetail .lead { font-size:1.3rem; line-height:1.6; }
+    body.reading-mode #articleDetail .detail-byline { margin-top:28px; }
+
+    /* ===== ENCUESTA RÁPIDA ===== */
+    .poll-fields { display:none; }
+    .poll-fields.is-visible { display:block; margin-top:18px; padding:20px; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--paper); }
+    .poll-block .field-hint { margin-top:12px; }
+    .poll-card { max-width:var(--col-reading); margin:36px auto 0; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); padding:28px; }
+    .poll-card .tag { margin-bottom:6px; }
+    .poll-card h3 { font:700 1.35rem/1.3 'Fraunces', serif; letter-spacing:-.01em; margin:0 0 20px; }
+    .poll-option { display:block; width:100%; border:1px solid var(--line); background:var(--input-bg); color:var(--ink); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:10px; cursor:pointer; font-family:'Inter', sans-serif; font-size:.92rem; text-align:left; transition:border-color .2s, background .2s; -webkit-tap-highlight-color:transparent; }
+    .poll-option:hover { border-color:var(--accent); }
+    .poll-option:disabled { cursor:default; }
+    .poll-option.is-voted { border-color:var(--accent); font-weight:700; }
+    .poll-option .poll-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .poll-option .poll-pct { font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .poll-option.is-voted .poll-pct, .poll-option.is-winner .poll-pct { color:var(--accent-strong); }
+    .poll-result-bar { display:block; height:6px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:10px; }
+    .poll-result-bar i { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .45s ease; }
+    .poll-meta { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; color:var(--muted); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .poll-meta .poll-note { color:var(--accent-strong); }
 
     .newsletter { background:var(--ink); color:var(--paper); border-radius:var(--radius-xl); padding:40px; display:flex; justify-content:space-between; align-items:center; gap:30px; margin:20px 0 54px; }
     .newsletter h2 { font-size:2rem; margin:0; font-family:'Fraunces', serif; } 
@@ -340,6 +415,7 @@
       .theme-toggle { padding:12px; margin:-12px; min-width:44px; min-height:44px; }
       .nav-toggle { padding:13px 14px; }
       .share-btn { width:44px; height:44px; }
+      .bookmark-btn { width:44px; height:44px; top:12px; right:12px; }
       .reaction-btn { padding:12px 16px; }
       .editor-btn { min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; padding:10px 12px; }
       .close { padding:12px; margin:-12px; }
@@ -392,6 +468,9 @@
       .editor-btn { padding:10px 8px; font-size:.72rem; }
       .newsletter { padding:24px; }
       .modal-body { padding:24px; }
+      .bookmarks-count, .bookmark-item { padding-left:20px; padding-right:20px; }
+      .bookmark-item { flex-wrap:wrap; gap:12px; }
+      .bookmark-actions { width:100%; justify-content:flex-end; }
       body.is-scrolled .brand { font-size:1.55rem; }
       .to-top { right:max(14px, env(safe-area-inset-right)); bottom:max(14px, env(safe-area-inset-bottom)); width:44px; height:44px; }
     }
@@ -467,7 +546,14 @@
   <header>
     <div class="utility">
       <div><span id="liveDate" aria-live="polite"></span><span class="sep-inline">Periodismo deportivo independiente</span></div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Alternar modo oscuro">🌓</button>
+      <div class="utility-actions">
+        <button class="bookmarks-toggle" id="bookmarksToggle" aria-haspopup="dialog" aria-controls="bookmarksDialog" title="Notas guardadas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>
+          <span class="hide-mobile">Guardados</span>
+          <span class="count-badge" id="bookmarkCount" aria-live="polite"></span>
+        </button>
+        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Alternar modo oscuro">🌓</button>
+      </div>
     </div>
     <div class="brand-row">
       <a href="/" class="brand" onclick="navigateTo(event, '/')">TRIB<span>U</span>NA</a>
@@ -521,7 +607,10 @@
     </section>
     
     <article id="articleDetail" aria-live="polite" tabindex="-1">
-      <button class="back" id="backToCover">← Volver a portada</button>
+      <div class="detail-topbar">
+        <button class="back" id="backToCover">← Volver a portada</button>
+        <button type="button" class="reading-toggle" id="readingModeToggle" aria-pressed="false">Modo lectura</button>
+      </div>
       <div class="tag" id="detailTag"></div>
       <h1 id="detailTitle"></h1>
       <p class="lead" id="detailIntro"></p>
@@ -529,7 +618,9 @@
       <video id="detailVideo" class="detail-video" controls playsinline preload="metadata"></video>
       <div class="detail-content" id="detailBody"></div>
       <p class="byline detail-byline" id="detailByline"></p>
-      
+
+      <div id="detailPoll"></div>
+
       <div class="reactions-group" id="reactionsGroup">
         <button type="button" class="reaction-btn" onclick="handleReaction('clap')">👏 <span id="countClap">0</span></button>
         <button type="button" class="reaction-btn" onclick="handleReaction('wow')">😮 <span id="countWow">0</span></button>
@@ -537,6 +628,8 @@
       </div>
 
       <div class="share-group">
+        <span class="share-label">Guardar:</span>
+        <button id="detailBookmark" type="button" class="share-btn bookmark-outline" aria-pressed="false" aria-label="Guardar nota para después" title="Guardar para después"><svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg></button>
         <span class="share-label">Compartir:</span>
         <button id="shareNative" type="button" class="share-btn" aria-label="Compartir artículo"><svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
         <a id="shareWa" href="#" target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en WhatsApp"><svg viewBox="0 0 24 24"><path d="M12.031 2c-5.514 0-9.989 4.475-9.989 9.989 0 1.761.459 3.477 1.332 4.996l-1.413 5.163 5.281-1.385c1.464.798 3.119 1.215 4.788 1.215 5.515 0 9.99-4.475 9.99-9.989 0-2.668-1.039-5.176-2.924-7.062-1.886-1.885-4.394-2.927-7.065-2.927zm6.012 14.129c-.251.706-1.461 1.348-2.028 1.432-.527.078-1.218.113-1.956-.123-.448-.143-1.026-.334-1.777-.66-3.136-1.363-5.179-4.526-5.337-4.736-.157-.21-1.272-1.691-1.272-3.228 0-1.537.803-2.293 1.088-2.605.286-.312.624-.391.832-.391.208 0 .416.002.598.01.192.008.452-.073.708.541.26.624.884 2.158.962 2.314.078.156.13.338.026.546-.104.208-.156.338-.312.52-.156.182-.328.406-.468.546-.156.156-.318.326-.136.638.182.312.809 1.335 1.737 2.162 1.192 1.062 2.197 1.391 2.509 1.547.312.156.495.13.677-.078.182-.208.781-.911.989-1.223.208-.312.416-.26.702-.156.286.104 1.82.858 2.132 1.014.312.156.52.234.598.364.078.13.078.754-.173 1.46z"/></svg></a>
@@ -648,6 +741,13 @@
       <div class="ranking" id="rankingContainer"></div>
     </section>
 
+    <section class="most-read" id="trendingSection" style="display:none;" aria-labelledby="trendingTitle">
+      <div class="tag">En tendencia</div>
+      <h2 id="trendingTitle">Lo que está reaccionando la gente ahora</h2>
+      <p>Las notas con más reacciones de las últimas 24 horas, según leen y reaccionan quienes las han visto.</p>
+      <div class="ranking" id="trendingContainer"></div>
+    </section>
+
     <section class="newsletter" id="podcast">
       <div><h2>El deporte, sin ruido.</h2><p>Recibe cada domingo nuestra selección de historias esenciales.</p></div>
       <form id="newsletterForm" class="newsletter-form" novalidate>
@@ -733,6 +833,19 @@
             <p class="field-hint">Sube una imagen o un video como medio principal, no ambos. Si eliges video, idealmente un clip de 15-30 s y máx. 50 MB.</p>
           </div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
+          <div class="wide poll-block">
+            <label class="check"><input id="pollEnabled" type="checkbox" /> Añadir una encuesta rápida</label>
+            <div id="pollFields" class="poll-fields">
+              <label for="pollQuestion">Pregunta</label>
+              <input id="pollQuestion" maxlength="140" placeholder="¿Quién gana el próximo clásico?" />
+              <label for="pollOption1">Opciones (mínimo 2, máximo 4)</label>
+              <input id="pollOption1" maxlength="80" placeholder="Opción 1" />
+              <input id="pollOption2" maxlength="80" placeholder="Opción 2" />
+              <input id="pollOption3" maxlength="80" placeholder="Opción 3 (opcional)" />
+              <input id="pollOption4" maxlength="80" placeholder="Opción 4 (opcional)" />
+              <p class="field-hint">Los lectores verán los resultados en porcentaje tras votar, y cada navegador solo podrá votar una vez.</p>
+            </div>
+          </div>
         </div>
         <button class="submit" type="submit">Guardar nota</button> 
         <p class="message" id="saveMessage" aria-live="polite"></p>
@@ -769,6 +882,14 @@
       <button class="submit">Entrar a redacción</button>
       <p class="message" id="loginMessage" aria-live="assertive"></p>
     </form>
+  </dialog>
+
+  <dialog id="bookmarksDialog" aria-labelledby="bookmarksTitle">
+    <div class="modal-head">
+      <h2 id="bookmarksTitle">Guardado para después</h2>
+      <button class="close" type="button" onclick="document.getElementById('bookmarksDialog').close()" aria-label="Cerrar ventana">×</button>
+    </div>
+    <div class="modal-body bookmarks-body" id="bookmarksList"></div>
   </dialog>
 
   <dialog id="legalDialog" aria-labelledby="legalTitle">
@@ -1280,6 +1401,9 @@
         document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
 
         updateReactionsUI();
+        updateBookmarkUI();
+        syncReadingModeUI();
+        renderPoll();
 
         detail.style.display = 'block';
         detail.focus();
@@ -1305,6 +1429,279 @@
     }
 
     window.addEventListener('hashchange', openNoteFromHash);
+
+    // ===== SECCIÓN ● 3b · Guardado para después (localStorage) =====
+    const BOOKMARKS_KEY = 'tribuna_saved_notes';
+
+    function getSavedNotes() {
+      try {
+        const raw = localStorage.getItem(BOOKMARKS_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveNotesList(list) {
+      try {
+        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list));
+      } catch (err) {
+        console.warn("No se pudo guardar en localStorage:", err);
+      }
+    }
+
+    function isNoteSaved(id) {
+      return getSavedNotes().some(n => String(n.id) === String(id));
+    }
+
+    function toggleBookmark(note) {
+      if (!note) return;
+      const list = getSavedNotes();
+      const id = String(note.id);
+      let saved = false;
+      if (list.some(x => String(x.id) === id)) {
+        saveNotesList(list.filter(x => String(x.id) !== id));
+      } else {
+        list.unshift({
+          id: note.id,
+          sport: note.sport || '',
+          title: note.title || 'Sin titular',
+          intro: note.intro || '',
+          image: note.image || '',
+          created_at: note.created_at || null,
+          author: note.author || '',
+          saved_at: Date.now()
+        });
+        saveNotesList(list);
+        saved = true;
+      }
+      updateBookmarkUI();
+      return saved;
+    }
+
+    function updateBookmarkUI() {
+      const list = getSavedNotes();
+      const countEl = document.getElementById('bookmarkCount');
+      const toggle = document.getElementById('bookmarksToggle');
+      if (countEl) countEl.textContent = list.length ? String(list.length) : '';
+      if (toggle) toggle.classList.toggle('has-saved', list.length > 0);
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        const saved = list.some(x => String(x.id) === String(btn.dataset.id));
+        btn.classList.toggle('saved', saved);
+        btn.setAttribute('aria-pressed', String(saved));
+        btn.setAttribute('aria-label', saved ? 'Quitar de guardados' : 'Guardar para después');
+      });
+      const detailBtn = document.getElementById('detailBookmark');
+      if (detailBtn && currentNote) {
+        const saved = list.some(x => String(x.id) === String(currentNote.id));
+        detailBtn.classList.toggle('is-saved', saved);
+        detailBtn.setAttribute('aria-pressed', String(saved));
+        detailBtn.setAttribute('aria-label', saved ? 'Quitar de guardados' : 'Guardar para después');
+      }
+    }
+
+    function renderBookmarksDialog() {
+      const container = document.getElementById('bookmarksList');
+      if (!container) return;
+      const list = getSavedNotes();
+      const countLabel = `${list.length} nota${list.length === 1 ? '' : 's'} guardada${list.length === 1 ? '' : 's'}`;
+      const countP = `<p class="modal-intro">${list.length ? countLabel : 'Sin notas guardadas'}</p>`;
+
+      if (list.length === 0) {
+        container.innerHTML = countP + `
+          <div class="bookmarks-empty">
+            <p>Toca el marcador <strong>🔖</strong> en cualquier historia para leerla cuando quieras, incluso sin conexión.</p>
+            <button type="button" class="btn-primary" onclick="document.getElementById('bookmarksDialog').close()">Volver a la portada</button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = countP + list.map(item => {
+        const img = item.image
+          ? `<img src="${fitImage(item.image)}" alt="" loading="lazy" onerror="this.style.display='none'" />`
+          : '';
+        return `<div class="bookmark-item">
+          ${img}
+          <div class="bookmark-info">
+            <span class="tag" data-sport="${String(item.sport || '').toLowerCase()}">${item.sport || 'Nota'}</span>
+            <strong>${item.title}</strong>
+            <span class="meta-date">Guardada ${timeAgo(item.saved_at)}</span>
+          </div>
+          <div class="bookmark-actions">
+            <button type="button" class="bookmark-action" data-action="open" data-id="${item.id}">Leer</button>
+            <button type="button" class="bookmark-action is-muted" data-action="remove" data-id="${item.id}">Quitar</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      container.querySelectorAll('.bookmark-action').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.id;
+          if (btn.dataset.action === 'remove') {
+            saveNotesList(getSavedNotes().filter(x => String(x.id) !== String(id)));
+            updateBookmarkUI();
+            renderBookmarksDialog();
+          } else {
+            const opened = openNoteById(id);
+            if (opened) {
+              document.getElementById('bookmarksDialog').close();
+            } else {
+              alert('Esta nota ya no está disponible en el sitio.');
+            }
+          }
+        };
+      });
+    }
+
+    const bookmarksDialog = document.getElementById('bookmarksDialog');
+    const bookmarksToggle = document.getElementById('bookmarksToggle');
+    if (bookmarksToggle && bookmarksDialog) {
+      bookmarksToggle.onclick = () => {
+        renderBookmarksDialog();
+        bookmarksDialog.showModal();
+      };
+    }
+    const detailBookmarkBtn = document.getElementById('detailBookmark');
+    if (detailBookmarkBtn) {
+      detailBookmarkBtn.onclick = () => toggleBookmark(currentNote);
+    }
+
+    // ===== SECCIÓN ● 3c · Modo lectura =====
+    const READING_MODE_KEY = 'tribuna_reading_mode';
+    const readingModeToggle = document.getElementById('readingModeToggle');
+
+    function isReadingMode() {
+      return document.body.classList.contains('reading-mode');
+    }
+
+    function syncReadingModeUI() {
+      readingModeToggle.setAttribute('aria-pressed', String(isReadingMode()));
+      readingModeToggle.textContent = isReadingMode() ? 'Modo lectura activo' : 'Modo lectura';
+    }
+
+    function toggleReadingMode() {
+      document.body.classList.toggle('reading-mode');
+      try {
+        localStorage.setItem(READING_MODE_KEY, isReadingMode() ? 'on' : 'off');
+      } catch (err) {}
+      syncReadingModeUI();
+    }
+
+    if (readingModeToggle) {
+      readingModeToggle.onclick = toggleReadingMode;
+      try {
+        if (localStorage.getItem(READING_MODE_KEY) === 'on') {
+          document.body.classList.add('reading-mode');
+        }
+      } catch (err) {}
+      syncReadingModeUI();
+    }
+
+    // ===== SECCIÓN ● 3d · Encuesta rápida =====
+    function getPollDef(note) {
+      const r = (note && note.reactions) || {};
+      const p = r.poll;
+      if (!p || typeof p !== 'object') return null;
+      if (typeof p.question !== 'string' || !p.question.trim()) return null;
+      if (!Array.isArray(p.options) || p.options.length < 2 || p.options.length > 4) return null;
+      const options = p.options.filter(o => o && String(o).trim()).map(o => String(o).trim());
+      if (options.length < 2) return null;
+      return { question: String(p.question).trim(), options };
+    }
+
+    function getPollVotes(note) {
+      const v = ((note && note.reactions) || {}).poll_votes;
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+      const out = {};
+      for (const k of Object.keys(v)) {
+        if (!Number.isNaN(Number(k))) out[k] = Math.max(0, Number(v[k]) || 0);
+      }
+      return out;
+    }
+
+    function votedPollIndex(noteId) {
+      try {
+        const v = localStorage.getItem('tribuna_poll_' + noteId);
+        return v === null ? -1 : Number(v);
+      } catch (err) {
+        return -1;
+      }
+    }
+
+    function renderPoll() {
+      const container = document.getElementById('detailPoll');
+      if (!container) return;
+      const poll = getPollDef(currentNote);
+      if (!poll) {
+        container.innerHTML = '';
+        return;
+      }
+      const noteId = currentNote.id;
+      const votes = getPollVotes(currentNote);
+      const total = Object.keys(votes).reduce((a, k) => a + (Number(votes[k]) || 0), 0);
+      const pcts = poll.options.map((_, i) => (total > 0 ? Math.round(((Number(votes[i]) || 0) / total) * 100) : 0));
+      const maxPct = Math.max.apply(null, pcts);
+      const myVote = votedPollIndex(noteId);
+      const hasVoted = Number.isInteger(myVote) && myVote >= 0 && myVote < poll.options.length;
+
+      const optionsHtml = poll.options.map((opt, i) => {
+        if (!hasVoted) {
+          return `<button type="button" class="poll-option" onclick="votePoll(${i})">${opt}</button>`;
+        }
+        const isMine = myVote === i;
+        const isWinner = maxPct > 0 && pcts[i] === maxPct;
+        return `<button type="button" class="poll-option${isMine ? ' is-voted' : ''}${isWinner ? ' is-winner' : ''}" disabled>
+          <span class="poll-row"><span>${opt}</span><span class="poll-pct">${pcts[i]}%</span></span>
+          <span class="poll-result-bar"><i style="width:${pcts[i]}%"></i></span>
+        </button>`;
+      }).join('');
+
+      container.innerHTML = `<div class="poll-card">
+        <span class="tag">Encuesta</span>
+        <h3>${poll.question}</h3>
+        ${optionsHtml}
+        <div class="poll-meta">
+          <span>${total} voto${total === 1 ? '' : 's'}</span>
+          ${hasVoted ? '<span class="poll-note">Tu voto está registrado</span>' : '<span>¿Tu opción?</span>'}
+        </div>
+      </div>`;
+    }
+
+    async function votePoll(index) {
+      if (!currentNote) return;
+      const poll = getPollDef(currentNote);
+      if (!poll || index < 0 || index >= poll.options.length) return;
+      const noteId = currentNote.id;
+      try {
+        if (localStorage.getItem('tribuna_poll_' + noteId)) {
+          alert('Ya has votado en esta encuesta.');
+          return;
+        }
+      } catch (err) {}
+
+      const reactions = currentNote.reactions || {};
+      const votes = getPollVotes(currentNote);
+      votes[index] = (Number(votes[index]) || 0) + 1;
+      const next = Object.assign({}, reactions, { poll_votes: votes });
+
+      try {
+        const { error } = await supabaseClient
+          .from('notes')
+          .update({ reactions: next })
+          .eq('id', noteId);
+        if (error) throw error;
+        currentNote.reactions = next;
+        const pubNote = (allPublicNotes || []).find(x => String(x.id) === String(noteId));
+        if (pubNote) pubNote.reactions = next;
+        localStorage.setItem('tribuna_poll_' + noteId, String(index));
+        renderPoll();
+        renderTrending();
+      } catch (err) {
+        console.error('Error al registrar el voto:', err);
+        alert('No se pudo registrar tu voto. Inténtalo de nuevo.');
+      }
+    }
 
     function updateReactionsUI() {
       if (!currentNote) return;
@@ -1343,6 +1740,7 @@
 
         localStorage.setItem(storageKey, type);
         updateReactionsUI();
+        renderTrending();
       } catch (err) {
         console.error("Error al guardar reacción:", err);
         currentNote.reactions[type]--; // revert on error
@@ -1391,6 +1789,15 @@
           document.querySelector('#authorName').value = note.author; 
           document.querySelector('#authorEmail').value = note.email; 
           document.querySelector('#urgent').checked = Boolean(note.urgent);
+          const poll = (note.reactions || {}).poll || null;
+          if (pollEnabledInput) pollEnabledInput.checked = Boolean(poll);
+          if (pollFieldsBox) {
+            pollFieldsBox.classList.toggle('is-visible', Boolean(poll));
+          }
+          document.querySelector('#pollQuestion').value = poll ? poll.question : '';
+          [1, 2, 3, 4].forEach((i, ix) => {
+            document.querySelector('#pollOption' + i).value = (poll && poll.options[ix]) ? poll.options[ix] : '';
+          });
           document.querySelector('#saveMessage').textContent = `Editando: ${note.title}`; 
         }; 
 
@@ -1440,9 +1847,12 @@
 
       renderBreakingBanner();
 
+      const bookmarkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>';
+      const bookmarkBtn = (n, extraClass) => `<button type="button" class="bookmark-btn ${extraClass || ''}" data-id="${n.id}" aria-pressed="false" aria-label="Guardar para después" onclick="toggleBookmarkFromCard(this)">${bookmarkSvg}</button>`;
+
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">POR ${n.author.toUpperCase()}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -1463,6 +1873,7 @@
               <p>${n.intro}</p>
               <span class="meta-date">${noteDate(n.created_at)}</span>
             </a>
+            ${bookmarkBtn(n)}
           </article>`;
         });
       } else if (currentDisplayNotes.length === 0) {
@@ -1479,7 +1890,66 @@
         ranking.innerHTML += `<article class="rank-item"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia</span></div></article>`;
       });
 
+      renderTrending();
+
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
+
+      updateBookmarkUI();
+    }
+
+    const TRENDING_HOURS = 24;
+
+    function renderTrending() {
+      const section = document.getElementById('trendingSection');
+      const container = document.getElementById('trendingContainer');
+      if (!section || !container) return;
+
+      const windowMs = TRENDING_HOURS * 3600000;
+      const now = Date.now();
+      const scored = allPublicNotes
+        .filter(n => n.created_at && Number.isFinite(now - new Date(n.created_at).getTime()) && (now - new Date(n.created_at).getTime()) < windowMs)
+        .map(n => {
+          const r = n.reactions || {};
+          const score = (Number(r.clap) || 0) + (Number(r.wow) || 0) + (Number(r.angry) || 0);
+          return { note: n, score };
+        })
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score || new Date(a.note.created_at).getTime() - new Date(b.note.created_at).getTime())
+        .slice(0, 3);
+
+      if (scored.length === 0) {
+        section.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      section.style.display = '';
+      container.innerHTML = scored.map((item, id) => {
+        const r = item.note.reactions || {};
+        const total = (Number(r.clap) || 0) + (Number(r.wow) || 0) + (Number(r.angry) || 0);
+        return `<article class="rank-item">
+          <div class="rank-number">0${id + 1}</div>
+          <div>
+            <a class="open-trending" href="#lectura" data-id="${item.note.id}">${item.note.title}</a>
+            <span class="reads">${total} reacci${total === 1 ? 'ón' : 'ones'} · ${timeAgo(item.note.created_at)}</span>
+          </div>
+        </article>`;
+      }).join('');
+
+      container.querySelectorAll('.open-trending').forEach(link => {
+        link.onclick = e => {
+          e.preventDefault();
+          if (!openNoteById(link.dataset.id)) {
+            alert('Esta nota ya no está disponible.');
+          }
+        };
+      });
+    }
+
+    function toggleBookmarkFromCard(btn) {
+      const id = btn.dataset.id;
+      const note = currentDisplayNotes.find(n => String(n.id) === String(id));
+      if (note) toggleBookmark(note);
     }
 
     async function fetchNotesPage(isCategory = false, categoryName = '') {
@@ -1540,7 +2010,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'mostReadSection', 'podcast'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'mostReadSection', 'trendingSection', 'podcast'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -1789,6 +2259,24 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       }
     }
 
+    const pollEnabledInput = document.getElementById('pollEnabled');
+    const pollFieldsBox = document.getElementById('pollFields');
+    function togglePollFields() {
+      pollFieldsBox.classList.toggle('is-visible', pollEnabledInput.checked);
+    }
+    if (pollEnabledInput) pollEnabledInput.addEventListener('change', togglePollFields);
+
+    function collectPollConfig() {
+      const question = document.getElementById('pollQuestion').value.trim();
+      const opts = [1, 2, 3, 4]
+        .map(i => document.getElementById('pollOption' + i).value.trim())
+        .filter(Boolean);
+      if (!question) return null;
+      if (opts.length < 2 || opts.length > 4) return null;
+      if (opts.some(o => o.length > 80)) return null;
+      return { question, options: opts };
+    }
+
     document.querySelector('#articleForm').onsubmit = async e => { 
       e.preventDefault(); 
       const message = document.querySelector('#saveMessage');
@@ -1843,6 +2331,33 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           videoUrl = videoPublicUrlData.publicUrl;
         }
 
+        const editingNote = editingId !== null ? (allPanelNotes.find(n => n.id === editingId) || null) : null;
+        const existingReactions = (editingNote && editingNote.reactions) || {};
+
+        let reactions = { clap: 0, wow: 0, angry: 0 };
+        if (editingNote) {
+          reactions = {
+            clap: Number(existingReactions.clap) || 0,
+            wow: Number(existingReactions.wow) || 0,
+            angry: Number(existingReactions.angry) || 0
+          };
+        }
+
+        const pollConfig = pollEnabledInput && pollEnabledInput.checked ? collectPollConfig() : null;
+        if (pollEnabledInput && pollEnabledInput.checked && !pollConfig) {
+          message.textContent = 'Para añadir la encuesta, escribe la pregunta y al menos 2 opciones (máx. 4).';
+          return;
+        }
+        if (pollConfig) {
+          const oldPoll = editingNote ? (existingReactions.poll || null) : null;
+          const changed = !oldPoll ||
+            oldPoll.question !== pollConfig.question ||
+            JSON.stringify(oldPoll.options) !== JSON.stringify(pollConfig.options);
+          reactions.poll = pollConfig;
+          if (changed) reactions.poll_votes = {};
+          else if (editingNote && existingReactions.poll_votes) reactions.poll_votes = existingReactions.poll_votes;
+        }
+
         const note = {
           title: document.querySelector('#title').value,
           sport: document.getElementById('sportPicker').dataset.value,
@@ -1855,7 +2370,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           urgent: document.querySelector('#urgent').checked,
           image: imageUrl,
           video_url: videoUrl,
-          reactions: { clap: 0, wow: 0, angry: 0 }
+          reactions
         }; 
 
         const isNew = editingId === null;
@@ -1881,6 +2396,8 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         editingId = null;
         editingVideoUrl = '';
         e.target.reset();
+        if (pollEnabledInput) pollEnabledInput.checked = false;
+        if (pollFieldsBox) pollFieldsBox.classList.remove('is-visible');
         resetCustomPicker('sportPicker', 'Elige un deporte');
         setCustomPickerValue('statusPicker', 'borrador');
         document.querySelector('#photoFile').closest('.file-drop').querySelector('.file-name').textContent = 'Seleccionar imagen…';
