@@ -254,6 +254,19 @@ function validatePollVotes(value) {
   return votes;
 }
 
+function mapNoteToPublicApi(note, baseUrl) {
+  const id = note && note.id;
+  return {
+    id,
+    titulo: (note && note.title) || '',
+    entradilla: (note && note.intro) || '',
+    categoria: (note && note.sport) || '',
+    autor: (note && note.author) || '',
+    fecha: note && note.created_at ? new Date(note.created_at).toISOString() : null,
+    link: id ? `${baseUrl}/#note-${id}` : null
+  };
+}
+
 function restrictClasses(html) {
   const allowed = new Set(SCORE_CLASSES);
   return html.replace(/\sclass="([^"]*)"/g, (match, cls) => {
@@ -573,6 +586,26 @@ app.get('/api/notes/search', async (req, res) => {
   }
 });
 
+// GET Público: Feed JSON limpio para consumo externo (apps, bots, etc.).
+// Devuelve solo notas publicadas y no archivadas, con campos normalizados
+// y el enlace directo a cada nota. Sin duplicar lógica de acceso a Supabase.
+app.get('/api/public/notes', async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('id, title, intro, sport, author, created_at')
+      .eq('status', 'publicada')
+      .eq('archived', false)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json((data || []).map((note) => mapNoteToPublicApi(note, baseUrl)));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET Privado: Devuelve todas las notas para la redacción
 app.get('/api/notes/all', authenticateWriter, async (req, res) => {
   try {
@@ -861,3 +894,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+module.exports.toPublicNote = mapNoteToPublicApi;

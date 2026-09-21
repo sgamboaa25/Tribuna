@@ -2,6 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app } = require('./setup');
 
+const toPublicNote = require('../server').toPublicNote;
+
 async function loginToken() {
   const res = await request(app)
     .post('/api/auth')
@@ -81,4 +83,34 @@ test('notes: encuesta inválida → 400', async () => {
     assert.equal(res.status, 400, 'esperando 400');
     assert.match(res.body.error, /encuesta|voto/i, 'error debe mencionar la encuesta');
   }
+});
+
+test('api pública: mapeo de nota a JSON limpio', () => {
+  const out = toPublicNote(
+    { id: 'abc-123', title: 'Titular', intro: 'Entradilla', sport: 'Fútbol', author: 'Autor', created_at: '2026-01-02T03:04:05.000Z' },
+    'https://tribuna.example'
+  );
+  assert.deepEqual(out, {
+    id: 'abc-123',
+    titulo: 'Titular',
+    entradilla: 'Entradilla',
+    categoria: 'Fútbol',
+    autor: 'Autor',
+    fecha: '2026-01-02T03:04:05.000Z',
+    link: 'https://tribuna.example/#note-abc-123'
+  });
+});
+
+test('api pública: mapeo tolerante ante campos ausentes', () => {
+  const out = toPublicNote({ id: 'x' }, 'http://localhost:3000');
+  assert.equal(out.titulo, '');
+  assert.equal(out.link, 'http://localhost:3000/#note-x');
+  assert.equal(toPublicNote(null, 'http://x').link, null);
+});
+
+test('api pública: /api/public/notes responde JSON aunque la DB no esté disponible', async () => {
+  const res = await request(app).get('/api/public/notes');
+  assert.equal(res.status, 500);
+  assert.ok(res.body.error);
+  assert.equal(typeof res.body, 'object');
 });
