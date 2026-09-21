@@ -357,6 +357,23 @@
     #writerPanel { display:none; border:1px solid var(--line); border-radius:var(--radius-xl); background:var(--card-bg); padding:40px; margin:40px 0; box-shadow:0 10px 40px rgba(0,0,0,.02); } 
     #writerPanel h2 { font-size:1.8rem; margin-bottom:8px; font-family:'Fraunces', serif; }
     #writerPanel > p { color:var(--muted); font-size:.95rem; margin-bottom:30px; } 
+    #statsPanel { margin-bottom:34px; }
+    #statsPanel > strong { font-size:1rem; text-transform:uppercase; letter-spacing:.05em; }
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px; }
+    .stat-card { border:1px solid var(--line); border-radius:var(--radius-md); padding:16px 18px; background:var(--card-bg); }
+    .stat-number { display:block; font-family:'Fraunces', serif; font-size:2.1rem; line-height:1.1; }
+    .stat-card small { display:block; color:var(--muted); font-size:.95rem; margin-top:6px; }
+    .stat-label { display:block; color:var(--muted); font-size:.72rem; margin-top:6px; text-transform:uppercase; letter-spacing:.06em; }
+    .stats-sub { margin:24px 0 10px; font-size:.95rem; }
+    .stats-top { border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; }
+    .stat-row { display:flex; align-items:center; gap:14px; padding:12px 16px; border-bottom:1px solid var(--line); }
+    .stat-row:last-child { border-bottom:0; }
+    .stat-row .rank { font-family:'Fraunces', serif; font-size:1.25rem; color:var(--accent); min-width:34px; }
+    .stat-row .t { flex:1; min-width:0; }
+    .stat-row .t b { display:block; font-size:.95rem; line-height:1.35; }
+    .stat-row .t small { color:var(--muted); font-size:.8rem; }
+    .stat-row .reactions { font-family:'Fraunces', serif; font-weight:700; font-size:1.05rem; white-space:nowrap; }
+    @media (max-width:560px) { .stats-grid { grid-template-columns:1fr; } } 
     
     .draft-list { border-top:1px solid var(--line); margin:16px 0 40px; } 
     .draft-item { display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid var(--line); padding:18px 0; } 
@@ -765,6 +782,20 @@
       <div class="tag">Área privada</div>
       <h2>Panel editorial de redacción</h2>
       <p>Bienvenido al espacio de redacción. Las notas quedan como borrador hasta ser aprobadas para publicación.</p>
+      
+      <div id="statsPanel">
+        <strong>Estadísticas</strong>
+        <div class="stats-grid">
+          <div class="stat-card"><span class="stat-number" id="statNotasPub">—</span><span class="stat-label">Notas publicadas</span></div>
+          <div class="stat-card"><span class="stat-number" id="statSuscriptores">—</span><span class="stat-label">Suscriptores del boletín</span></div>
+          <div class="stat-card"><span class="stat-number" id="statReacciones">—</span><span class="stat-label">Reacciones (publicadas)</span></div>
+        </div>
+        <p class="stats-sub">Notas con más reacciones</p>
+        <div class="stats-top" id="statsTopList">
+          <div class="draft-item"><div><small>Cargando estadísticas…</small></div></div>
+        </div>
+      </div>
+      
       <div><strong>Gestión de contenido</strong><div class="draft-list" id="draftList"></div></div>
       
       <form id="articleForm">
@@ -2138,8 +2169,48 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         if (!response.ok) throw new Error('Error al cargar las notas de redacción.');
         allPanelNotes = await response.json();
         renderDrafts(); 
+        loadStatsForPanel();
       } catch (err) {
         console.error("Error crítico al cargar notas para el panel de redacción:", err);
+      } 
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function loadStatsForPanel(){ 
+      if (!writerToken) return;
+      const topEl = document.querySelector('#statsTopList');
+      try { 
+        const response = await fetch('/api/stats', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar las estadísticas.');
+        const s = await response.json();
+        document.querySelector('#statNotasPub').textContent = s.notas_publicadas;
+        document.querySelector('#statSuscriptores').textContent = s.suscriptores;
+        document.querySelector('#statReacciones').textContent = s.reacciones_totales;
+        topEl.innerHTML = s.top_reacciones.length
+          ? s.top_reacciones.map((n, i) =>
+              `<div class="stat-row"><span class="rank">0${i + 1}</span><div class="t"><b>${escapeHtml(n.titulo)}</b><small>${n.clap} 👏 · ${n.wow} 😮 · ${n.angry} 😡</small></div><span class="reactions">${n.total}</span></div>`
+            ).join('')
+          : '<div class="draft-item"><div><small>Sin reacciones todavía.</small></div></div>';
+      } catch (err) {
+        console.error("Error al cargar estadísticas del panel:", err);
+        topEl.innerHTML = '<div class="draft-item"><div><small>No se pudieron cargar las estadísticas.</small></div></div>';
       } 
     }
 

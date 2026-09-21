@@ -108,6 +108,18 @@ test('api pública: mapeo tolerante ante campos ausentes', () => {
   assert.equal(toPublicNote(null, 'http://x').link, null);
 });
 
+test('stats: bloqueado sin token (401)', async () => {
+  const res = await request(app).get('/api/stats');
+  assert.equal(res.status, 401);
+});
+
+test('stats: con token responde JSON aunque la DB no esté disponible', async () => {
+  const token = await loginToken();
+  const res = await request(app).get('/api/stats').set('Authorization', `Bearer ${token}`);
+  assert.equal(res.status, 500);
+  assert.ok(res.body.error);
+});
+
 test('api pública: /api/public/notes responde JSON aunque la DB no esté disponible', async () => {
   const res = await request(app).get('/api/public/notes');
   assert.equal(res.status, 500);

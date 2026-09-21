@@ -621,6 +621,45 @@ app.get('/api/notes/all', authenticateWriter, async (req, res) => {
   }
 });
 
+// GET Privado: Estadísticas para el panel de redacción.
+// Calcula sobre datos ya existentes en Supabase (notes + subscribers).
+// Solo lectura, protegida con el mismo JWT de redacción.
+app.get('/api/stats', authenticateWriter, async (req, res) => {
+  try {
+    const publishedQuery = () =>
+      supabase.from('notes').select('id', { count: 'exact', head: true })
+        .eq('status', 'publicada').eq('archived', false);
+    const reactionsQuery = () =>
+      supabase.from('notes').select('id, title, reactions')
+        .eq('status', 'publicada').eq('archived', false);
+    const subsQuery = () =>
+      supabase.from('subscribers').select('id', { count: 'exact', head: true }).eq('confirmed', true);
+
+    const [total, notes, subs] = await Promise.all([publishedQuery(), reactionsQuery(), subsQuery()]);
+    for (const item of [total, notes, subs]) if (item.error) throw item.error;
+
+    const top = (notes.data || [])
+      .map((n) => {
+        const r = n.reactions || {};
+        const clap = Math.max(0, Number(r.clap) || 0);
+        const wow = Math.max(0, Number(r.wow) || 0);
+        const angry = Math.max(0, Number(r.angry) || 0);
+        return { id: n.id, titulo: n.title, clap, wow, angry, total: clap + wow + angry };
+      })
+      .sort((a, b) => b.total - a.total || a.titulo.localeCompare(b.titulo))
+      .slice(0, 5);
+
+    res.json({
+      notas_publicadas: total.count || 0,
+      suscriptores: subs.count || 0,
+      reacciones_totales: top.reduce((acc, n) => acc + n.total, 0),
+      top_reacciones: top
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/notes', authenticateWriter, async (req, res) => {
   const { data: clean, error: validationError } = validateNote(req.body, false);
   if (validationError) return res.status(400).json({ error: validationError });
