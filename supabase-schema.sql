@@ -30,6 +30,10 @@ alter table public.notes add column if not exists archived boolean not null defa
 alter table public.notes add column if not exists x_post_id text;
 alter table public.notes add column if not exists x_posted_at timestamptz;
 
+-- Equipos vinculados a una nota (slugs). Los rellena el backend (server.js)
+-- al guardar una nota a partir de sus etiquetas; los usa el hub /equipo/:slug.
+alter table public.notes add column if not exists teams text[] not null default '{}';
+
 -- Row Level Security:
 -- El cliente público (rol anon) solo puede leer notas publicadas y
 -- incrementar las reacciones. Todas las escrituras editoriales pasan
@@ -126,3 +130,78 @@ revoke all on table public.newsletter_sends from authenticated;
 --   );
 --   $$
 -- );
+
+-- ============================================================
+-- EQUIPOS DE LA LIGA PROMÉRICA (Costa Rica) — HUBS /equipo/:slug
+-- ============================================================
+-- Catálogo de clubes de la Primera División de Costa Rica (Liga Promérica)
+-- para las páginas de hub por equipo. Escudos y nombres son datos públicos.
+-- Se pobla una única vez (no cambian seguido); si algo cambia, se actualiza
+-- esta tabla (p.ej. con el SQL de abajo) sin tocar código.
+create table if not exists public.teams_ca (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  escudo text not null,
+  slug text not null unique,
+  aliases text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+alter table public.teams_ca enable row level security;
+
+-- El cliente público puede leer el catálogo (nombres + escudos públicos).
+drop policy if exists "Lectura pública de equipos" on public.teams_ca;
+create policy "Lectura pública de equipos"
+  on public.teams_ca for select
+  to anon
+  using (true);
+
+revoke all on table public.teams_ca from anon;
+grant select on table public.teams_ca to anon;
+
+-- Seed idempotente con los 10 clubes de la temporada 2026-27
+-- (escudos de TheSportsDB, URLs públicas). Los aliases son variantes de
+-- etiqueta que el backend usa para enlazar notas automáticamente.
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Alajuelense', 'https://r2.thesportsdb.com/images/media/team/badge/zi9ft21707630526.png', 'alajuelense', '{"alajuelense","lda","manudos"}'
+where not exists (select 1 from public.teams_ca where slug = 'alajuelense');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Cartaginés', 'https://r2.thesportsdb.com/images/media/team/badge/0mo64x1589122311.png', 'cartagines', '{"cartagines","brumosos"}'
+where not exists (select 1 from public.teams_ca where slug = 'cartagines');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Deportivo Saprissa', 'https://r2.thesportsdb.com/images/media/team/badge/tvj33z1707630611.png', 'saprissa', '{"saprissa","deportivo saprissa"}'
+where not exists (select 1 from public.teams_ca where slug = 'saprissa');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Escorpiones de Belén', 'https://r2.thesportsdb.com/images/media/team/badge/aeng4x1785697969.png', 'escorpiones-belen', '{"escorpiones de belen","escorpiones","belen"}'
+where not exists (select 1 from public.teams_ca where slug = 'escorpiones-belen');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Herediano', 'https://r2.thesportsdb.com/images/media/team/badge/20qq911582143301.png', 'herediano', '{"herediano","fluminense"}'
+where not exists (select 1 from public.teams_ca where slug = 'herediano');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Inter de San Carlos', 'https://r2.thesportsdb.com/images/media/team/badge/9doqdz1781200489.png', 'inter-san-carlos', '{"inter de san carlos","inter san carlos"}'
+where not exists (select 1 from public.teams_ca where slug = 'inter-san-carlos');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Pérez Zeledón', 'https://r2.thesportsdb.com/images/media/team/badge/rbsepr1589122379.png', 'perez-zeledon', '{"perez zeledon","zeledon"}'
+where not exists (select 1 from public.teams_ca where slug = 'perez-zeledon');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Puntarenas', 'https://r2.thesportsdb.com/images/media/team/badge/ljzov51657724106.png', 'puntarenas', '{"puntarenas"}'
+where not exists (select 1 from public.teams_ca where slug = 'puntarenas');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'San Carlos', 'https://r2.thesportsdb.com/images/media/team/badge/v7hikt1606772054.png', 'san-carlos', '{"san carlos"}'
+where not exists (select 1 from public.teams_ca where slug = 'san-carlos');
+
+insert into public.teams_ca (nombre, escudo, slug, aliases)
+select 'Sporting San José', 'https://r2.thesportsdb.com/images/media/team/badge/7wzxlo1606770023.png', 'sporting-san-jose', '{"sporting san jose","sporting"}'
+where not exists (select 1 from public.teams_ca where slug = 'sporting-san-jose');
+
+-- Las notas publicadas antes de esta migración no tienen equipos vinculados.
+-- Cuando una de ellas mencione un equipo, re-guárdala (PUT /api/notes/:id) y
+-- el backend recalculará el campo teams desde sus etiquetas.

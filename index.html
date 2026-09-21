@@ -510,6 +510,32 @@
     .chip-list { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .chip { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); text-decoration:none; padding:var(--space-sm) 18px; border-radius:20px; font-size:.85rem; font-weight:600; transition:all .2s; }
     .chip:hover { color:var(--accent-strong); border-color:var(--accent-strong); background:var(--hover-bg); }
+    /* ===== HUBS POR EQUIPO (Liga Promérica) ===== */
+    .team-chip-row { display:flex; flex-wrap:wrap; gap:var(--space-sm); align-items:center; margin-top:var(--space-md); }
+    #detailTeams { display:none; }
+    .team-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--card-bg); color:var(--ink); padding:4px 12px 4px 6px; border-radius:20px; font-size:.8rem; font-weight:600; text-decoration:none; font-family:'Inter', sans-serif; transition:border-color .2s, color .2s; }
+    .team-chip img { width:22px; height:22px; object-fit:contain; border-radius:50%; }
+    .team-chip:hover { border-color:var(--accent-strong); color:var(--accent-strong); }
+    #teamHub { display:none; padding:0 0 72px; }
+    .team-hub-header { display:flex; align-items:center; gap:var(--space-lg); margin:var(--space-lg) 0 var(--space-xl); padding-bottom:var(--space-lg); border-bottom:1px solid var(--line); }
+    .team-hub-header .team-badge { width:92px; height:92px; object-fit:contain; flex:0 0 auto; }
+    .team-hub-header h1 { font:700 clamp(1.8rem,5vw,2.8rem)/1.1 'Fraunces', serif; margin:0 0 8px; letter-spacing:-.02em; }
+    .team-hub-header p { color:var(--muted); margin:0; max-width:520px; }
+    .team-note-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:var(--space-lg); }
+    .team-note-grid .open-article { display:block; border-top:1px solid var(--line); padding-top:var(--space-md); text-decoration:none; color:inherit; }
+    .team-note-grid h3 { font:700 1.2rem/1.25 'Fraunces', serif; margin:var(--space-sm) 0 6px; }
+    .team-note-grid p { color:var(--muted); font-size:.95rem; margin:0 0 8px; }
+    .team-note-grid .meta-date { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+    .team-note-grid .card-media { margin-bottom:var(--space-md); }
+    #teamHub .empty-results { text-align:center; padding:48px 0; }
+    #teamHub .empty-results h3 { font:700 1.4rem/1.2 'Fraunces', serif; margin:0 0 var(--space-sm); }
+    #teamHub .empty-results p { color:var(--muted); max-width:440px; margin:0 auto; }
+    .tags-hint { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:28px; font-size:.82rem; color:var(--muted); margin:6px 0 0; }
+    .tags-hint .chip { padding:2px 10px; font-size:.75rem; }
+    @media (max-width:640px) {
+      .team-hub-header { flex-direction:column; text-align:center; gap:var(--space-md); }
+      .team-hub-header .team-badge { width:72px; height:72px; }
+    }
     /* Punto 13 · Feedback de pulsación */
     .card:active { transform:translateY(-1px) scale(.99); }
     .share-btn:active, .load-more-btn:active, .reaction-btn:active, .btn-secondary:active, .chip:active, .reading-toggle:active, .bookmark-btn:active { transform:scale(.96); }
@@ -686,6 +712,8 @@
   <main id="portada">
     <div id="categoryHeaderContainer"></div>
 
+    <section id="teamHub" aria-labelledby="teamHubTitle" style="display:none"></section>
+
     <section aria-label="Buscar noticias" id="searchSection">
       <form class="search-bar" id="searchForm">
         <input id="searchInput" type="search" inputmode="search" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Busca por tema, atleta o equipo" aria-label="Término de búsqueda" />
@@ -723,6 +751,7 @@
       <div class="tag" id="detailTag"></div>
       <h1 id="detailTitle"></h1>
       <p class="lead" id="detailIntro"></p>
+      <div class="team-chip-row detail-teams" id="detailTeams" style="display:none" aria-label="Equipos relacionados"></div>
       <div class="detail-media" id="detailMedia"><img id="detailImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="" loading="lazy" decoding="async" onerror="this.closest('.detail-media').style.display='none'" /></div>
       <video id="detailVideo" class="detail-video" controls playsinline preload="metadata"></video>
       <div class="detail-content" id="detailBody"></div>
@@ -921,7 +950,10 @@
               </div>
             </div>
           </div>
-          <div class="wide"><label for="tags">Etiquetas</label><input id="tags" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Liga, equipo, atleta…" /></div>
+          <div class="wide"><label for="tags">Etiquetas</label><input id="tags" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Liga, equipo, atleta…" list="teamSuggest" />
+            <datalist id="teamSuggest"></datalist>
+            <p class="tags-hint" id="teamTagsHint" aria-live="polite"></p>
+          </div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." class="field-textarea"></textarea></div>
           
           <div class="wide">
@@ -1372,6 +1404,7 @@
 
     let allPublicNotes = [];
     let currentDisplayNotes = [];
+    let teamsCatalog = [];
     let allPanelNotes = [];
     let editingId = null;
     let editingVideoUrl = '';
@@ -1585,6 +1618,14 @@
         } 
         
         document.querySelector('#detailByline').innerHTML = `<span class="byline-author">${authorAvatar(author, note.email)}POR ${escapeHtml(author.toUpperCase())}</span>${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`; 
+
+        const noteTeams = noteTeamSlugs(note);
+        const detailTeams = document.getElementById('detailTeams');
+        if (detailTeams) {
+          detailTeams.innerHTML = noteTeams.map(teamChipHTML).join('');
+          detailTeams.style.display = noteTeams.length ? 'flex' : 'none';
+        }
+
         document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
 
         updateReactionsUI();
@@ -1979,6 +2020,7 @@
           setCustomPickerValue('sportPicker', note.sport);
           setCustomPickerValue('statusPicker', note.status || 'borrador'); 
           document.querySelector('#tags').value = note.tags || ''; 
+          refreshTeamsHint(); 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
           document.querySelector('#authorName').value = note.author; 
@@ -2047,7 +2089,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline"><span class="byline-author">${authorAvatar(n.author, n.email)}POR ${n.author.toUpperCase()}</span>${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline"><span class="byline-author">${authorAvatar(n.author, n.email)}POR ${n.author.toUpperCase()}</span>${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -2068,6 +2110,7 @@
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
               <span class="meta-date">${noteDate(n.created_at)}</span>
+              ${teamChipsRowHTML(noteTeamSlugs(n))}
             </a>
             ${bookmarkBtn(n)}
           </article>`;
@@ -2201,6 +2244,167 @@
     document.getElementById('loadMoreBtn').onclick = loadMoreNotes;
 
     // ==========================================
+    // HUBS POR EQUIPO (Liga Promérica) · escudos
+    // ==========================================
+    const TEAMS_FALLBACK = [
+      { slug: 'alajuelense', nombre: 'Alajuelense', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/zi9ft21707630526.png', aliases: ['lda', 'manudos'] },
+      { slug: 'cartagines', nombre: 'Cartaginés', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/0mo64x1589122311.png', aliases: ['brumosos'] },
+      { slug: 'saprissa', nombre: 'Deportivo Saprissa', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/tvj33z1707630611.png', aliases: ['saprissa', 'deportivo saprissa'] },
+      { slug: 'escorpiones-belen', nombre: 'Escorpiones de Belén', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/aeng4x1785697969.png', aliases: ['escorpiones de belen', 'escorpiones', 'belen'] },
+      { slug: 'herediano', nombre: 'Herediano', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/20qq911582143301.png', aliases: ['fluminense'] },
+      { slug: 'inter-san-carlos', nombre: 'Inter de San Carlos', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/9doqdz1781200489.png', aliases: ['inter de san carlos', 'inter san carlos'] },
+      { slug: 'perez-zeledon', nombre: 'Pérez Zeledón', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/rbsepr1589122379.png', aliases: ['perez zeledon', 'zeledon'] },
+      { slug: 'puntarenas', nombre: 'Puntarenas', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/ljzov51657724106.png', aliases: [] },
+      { slug: 'san-carlos', nombre: 'San Carlos', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/v7hikt1606772054.png', aliases: [] },
+      { slug: 'sporting-san-jose', nombre: 'Sporting San José', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/7wzxlo1606770023.png', aliases: ['sporting'] }
+    ];
+    const teamHubSection = document.getElementById('teamHub');
+
+    function normalizeTeamWord(s) {
+      return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    async function loadTeamsCatalog() {
+      if (teamsCatalog.length) return teamsCatalog;
+      try {
+        const res = await fetch('/api/teams');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length) teamsCatalog = data.map(t => ({ slug: t.slug, nombre: t.nombre, escudo: t.escudo, aliases: Array.isArray(t.aliases) ? t.aliases : [] }));
+        }
+      } catch (err) {
+        console.error('No se pudo cargar el catálogo de equipos:', err);
+      }
+      if (!teamsCatalog.length) teamsCatalog = TEAMS_FALLBACK;
+      return teamsCatalog;
+    }
+
+    function noteTeamSlugs(note) {
+      const found = new Set(Array.isArray(note.teams) ? note.teams.filter(Boolean) : []);
+      if (teamsCatalog.length) {
+        const rawTags = String(note.tags || '').split(/[,;\n]+/).map(normalizeTeamWord).filter(Boolean);
+        const words = new Set(rawTags.flatMap(t => t.split(/\s+/)).filter(Boolean));
+        teamsCatalog.forEach(team => {
+          const kws = [team.slug, team.nombre, ...(team.aliases || [])].map(normalizeTeamWord).filter(Boolean);
+          if (kws.some(kw => rawTags.includes(kw) || (kw.indexOf(' ') === -1 && words.has(kw)))) found.add(team.slug);
+        });
+      }
+      return [...found];
+    }
+
+    function teamByName(slug) {
+      return teamsCatalog.find(t => normalizeTeamWord(t.slug) === normalizeTeamWord(slug));
+    }
+
+    function teamChipHTML(slug) {
+      const t = teamByName(slug);
+      if (!t) return '';
+      const href = '/equipo/' + encodeURIComponent(t.slug);
+      return `<a class="team-chip" href="${href}" onclick="navigateTo(event, '${href}')"><img src="${t.escudo}" alt="" loading="lazy" onerror="this.style.display='none'" /><span>${escapeHtml(t.nombre)}</span></a>`;
+    }
+
+    function teamChipsRowHTML(slugs) {
+      const html = (slugs || []).map(teamChipHTML).filter(Boolean).join('');
+      return html ? `<div class="team-chip-row" aria-label="Equipos relacionados">${html}</div>` : '';
+    }
+
+    function setTeamVisible(show) {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'mostReadSection', 'trendingSection', 'podcast'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'none' : '';
+      });
+      document.getElementById('loadMoreContainer').style.display = show ? 'none' : '';
+      document.getElementById('breakingContainer').style.display = show ? 'none' : '';
+      if (teamHubSection) teamHubSection.style.display = show ? 'block' : 'none';
+    }
+
+    async function renderTeamPage(slug) {
+      const catalog = await loadTeamsCatalog();
+      const team = catalog.find(t => normalizeTeamWord(t.slug) === normalizeTeamWord(slug));
+      if (!team || !teamHubSection) {
+        detail.style.display = 'none';
+        setTeamVisible(false);
+        set404Visible(true);
+        return;
+      }
+
+      const related = allPublicNotes
+        .slice()
+        .map(n => Object.assign({}, n, { teams: noteTeamSlugs(n) }))
+        .filter(n => (n.teams || []).indexOf(team.slug) !== -1)
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+
+      const card = (n) => `<div class="team-note-card">
+          <a class="article-link open-article" href="#lectura" data-tidx="${related.indexOf(n)}">
+            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span></div>
+            <h3>${escapeHtml(n.title)}</h3>
+            <p>${escapeHtml(n.intro || '')}</p>
+            <span class="meta-date">${noteDate(n.created_at)}</span>
+          </a>
+        </div>`;
+
+      currentDisplayNotes = related;
+      currentActiveCategory = '';
+
+      teamHubSection.innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <a href="/categoria/futbol" onclick="navigateTo(event, '/categoria/futbol')">Fútbol</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">${escapeHtml(team.nombre)}</span>
+        </nav>
+        <header class="team-hub-header">
+          <img class="team-badge" src="${team.escudo}" alt="Escudo de ${escapeHtml(team.nombre)}" loading="lazy" onerror="this.style.display='none'" />
+          <div>
+            <span class="tag">Liga Promérica</span>
+            <h1 id="teamHubTitle">${escapeHtml(team.nombre)}</h1>
+            <p>${related.length ? `Noticias relacionadas: ${related.length}.` : 'Sigue a este club y sus historias aparecerán aquí cuando las publiquemos.'}</p>
+          </div>
+        </header>
+        ${related.length
+          ? `<h2 class="section-title">Notas relacionadas</h2><section class="team-note-grid">${related.map(card).join('')}</section>`
+          : `<div class="empty-results"><h3>Sin historias de ${escapeHtml(team.nombre)} todavía</h3><p>Cuando la redacción publique una nota con las etiquetas de este equipo, aparecerá automáticamente aquí.</p></div>`}`;
+
+      detail.style.display = 'none';
+      set404Visible(false);
+      setTeamVisible(true);
+      document.title = `${team.nombre} · Tribuna`;
+      const metaDesc = document.getElementById('metaDesc');
+      if (metaDesc) metaDesc.setAttribute('content', `Noticias de ${team.nombre}, Liga Promérica.`);
+
+      teamHubSection.querySelectorAll('.open-article').forEach(link => {
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+      });
+      revealOnScroll();
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    function refreshTeamsHint() {
+      const input = document.getElementById('tags');
+      const hint = document.getElementById('teamTagsHint');
+      const list = document.getElementById('teamSuggest');
+      if (!input || !hint || !list) return;
+      if (!list.childElementCount) {
+        teamsCatalog.forEach(t => {
+          const o = document.createElement('option');
+          o.value = t.nombre;
+          list.appendChild(o);
+        });
+      }
+      const slugs = noteTeamSlugs({ tags: input.value, teams: [] });
+      const names = slugs
+        .map(s => { const t = teamByName(s); return t ? t.nombre : s; })
+        .map(n => `<span class="chip">${escapeHtml(n)}</span>`)
+        .join('');
+      hint.innerHTML = names ? `Se vinculará con el hub: ${names}` : '';
+    }
+
+    const tagsInputEditor = document.getElementById('tags');
+    if (tagsInputEditor) tagsInputEditor.addEventListener('input', refreshTeamsHint);
+
+    // ==========================================
     // MANEJO DE LA PÁGINA 404 (rutas desconocidas)
     // ==========================================
     const notFoundSection = document.getElementById('notFound404');
@@ -2234,23 +2438,37 @@
       paginationPage = 0;
 
       let isNotFound;
+      let teamSlug = null;
       if (path === '/' || path === '/index.html') {
         isNotFound = false;
+        document.title = 'Tribuna | Periodismo deportivo';
       } else if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
         const normParam = normalizeStr(decodeURIComponent(sportParam).replace(/-/g, ' '));
         isNotFound = !KNOWN_CATEGORIES.includes(normParam);
+      } else if (path.startsWith('/equipo/')) {
+        const teamMatch = path.match(/^\/equipo\/([a-z0-9-]+)\/?$/i);
+        isNotFound = !teamMatch;
+        if (teamMatch) teamSlug = teamMatch[1];
       } else {
         isNotFound = true;
       }
 
       if (isNotFound) {
         detail.style.display = 'none';
+        setTeamVisible(false);
         set404Visible(true);
         return;
       }
 
+      if (teamSlug) {
+        set404Visible(false);
+        await renderTeamPage(teamSlug);
+        return;
+      }
+
       set404Visible(false);
+      setTeamVisible(false);
 
       const sk = skeletonMarkup();
       const heroEl = document.querySelector('#heroContainer');
@@ -2314,6 +2532,8 @@ try {
 const { data, error } = await supabaseClient.from('notes').select('*').eq('archived', false);
         if (error) throw error;
         allPublicNotes = (data && data.length > 0) ? data : fallbackNotes;
+        await loadTeamsCatalog();
+        refreshTeamsHint();
         handleRoute();
         openNoteFromHash();
       } catch (err) {
@@ -2750,6 +2970,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         editingId = null;
         editingVideoUrl = '';
         e.target.reset();
+        refreshTeamsHint();
         if (pollEnabledInput) pollEnabledInput.checked = false;
         if (pollFieldsBox) pollFieldsBox.classList.remove('is-visible');
         resetCustomPicker('sportPicker', 'Elige un deporte');

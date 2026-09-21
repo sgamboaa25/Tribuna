@@ -106,6 +106,12 @@ async function main() {
   const w2 = await fetch(BASE + '/widget/posiciones?liga=pd');
   report('widget posiciones con ?liga=pd 200', w2.status === 200, 'status=' + w2.status);
 
+  const teamsRes = await fetch(BASE + '/api/teams');
+  report('/api/teams sin DB real -> 500 JSON', teamsRes.status === 500, 'status=' + teamsRes.status);
+
+  const hubRes = await fetch(BASE + '/equipo/alajuelense');
+  report('ruta /equipo/:slug devuelve index.html (SPA)', hubRes.status === 200 && hubRes.headers.get('content-type')?.includes('text/html'), 'status=' + hubRes.status + ' ct=' + hubRes.headers.get('content-type'));
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 

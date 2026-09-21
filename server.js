@@ -529,6 +529,85 @@ function validateNote(body, partial) {
   return { data: clean };
 }
 
+// ============ Equipos de la Liga Promérica (Costa Rica) ============
+// Catálogo en teams_ca (se puebla una vez). Se cachea 1h; los escudos son
+// URLs públicas y no cambian seguido. resolveTeamSlugs() convierte las
+// etiquetas de una nota en slugs de equipo para los hubs /equipo/:slug.
+const TEAMS_CACHE_TTL_MS = 60 * 60 * 1000;
+let teamsCache = [];
+let teamsCacheAt = 0;
+
+function normalizeTeamText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[–—]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveTeamSlugs(tags, teams) {
+  if (!Array.isArray(teams)) return [];
+  const rawTags = String(tags || '')
+    .split(/[,;]+/)
+    .map(normalizeTeamText)
+    .filter(Boolean);
+  const words = new Set();
+  for (const tag of rawTags) for (const word of tag.split(' ')) if (word) words.add(word);
+
+  const found = [];
+  for (const team of teams) {
+    const keywords = [team.slug, team.nombre, ...(Array.isArray(team.aliases) ? team.aliases : [])]
+      .map(normalizeTeamText)
+      .filter(Boolean);
+    const hit = keywords.some(
+      (keyword) => rawTags.includes(keyword) || (keyword.indexOf(' ') === -1 && words.has(keyword))
+    );
+    if (hit) found.push(team.slug);
+  }
+  return found;
+}
+
+async function loadTeams() {
+  const now = Date.now();
+  if (teamsCacheAt && now - teamsCacheAt < TEAMS_CACHE_TTL_MS) return teamsCache;
+  const { data, error } = await supabase
+    .from('teams_ca')
+    .select('nombre, escudo, slug, aliases')
+    .order('nombre');
+  if (error) throw error;
+  teamsCache = data || [];
+  teamsCacheAt = now;
+  return teamsCache;
+}
+
+async function loadTeamsGraceful() {
+  try {
+    return await loadTeams();
+  } catch {
+    return [];
+  }
+}
+
+// Añade a una nota los equipos resolubles desde sus etiquetas, combinando
+// los ya vinculados al guardar (columna teams) con un cálculo a la lectura
+// (para notas anteriores a la migración). Nunca modifica la BD.
+function decorateNoteTeams(note, teams) {
+  if (!note) return note;
+  const stored = Array.isArray(note.teams) ? note.teams : [];
+  return { ...note, teams: [...new Set([...stored, ...resolveTeamSlugs(note.tags, teams)])] };
+}
+
+// GET Público: catálogo de equipos (nombre, escudo, slug) para los hubs.
+app.get('/api/teams', async (req, res) => {
+  try {
+    res.json(await loadTeams());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/auth', (req, res) => {
   const serverPassword = process.env.WRITER_PASSWORD;
   if (!serverPassword) {
@@ -586,7 +665,8 @@ app.get('/api/notes', async (req, res) => {
       .order('id', { ascending: false });
 
     if (error) throw error;
-    res.json(data || []);
+    const teams = await loadTeamsGraceful();
+    res.json((data || []).map((note) => decorateNoteTeams(note, teams)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -614,7 +694,8 @@ app.get('/api/notes/category/:sport', async (req, res) => {
       );
     });
 
-    res.json(filtered);
+    const teams = await loadTeamsGraceful();
+    res.json(filtered.map((note) => decorateNoteTeams(note, teams)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -639,7 +720,8 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
       return tags.includes(tagParam);
     });
 
-    res.json(filtered);
+    const teams = await loadTeamsGraceful();
+    res.json(filtered.map((note) => decorateNoteTeams(note, teams)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -667,7 +749,8 @@ app.get('/api/notes/author/:author', async (req, res) => {
       );
     });
 
-    res.json(filtered);
+    const teams = await loadTeamsGraceful();
+    res.json(filtered.map((note) => decorateNoteTeams(note, teams)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -698,7 +781,8 @@ app.get('/api/notes/search', async (req, res) => {
       });
     }
 
-    res.json(results);
+    const teams = await loadTeamsGraceful();
+    res.json(results.map((note) => decorateNoteTeams(note, teams)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -782,6 +866,16 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
   const { data: clean, error: validationError } = validateNote(req.body, false);
   if (validationError) return res.status(400).json({ error: validationError });
 
+  // Vincula automáticamente los equipos mencionados en las etiquetas.
+  // Si el catálogo no está disponible, se guarda igual (teams queda vacío).
+  if (typeof clean.tags === 'string') {
+    try {
+      clean.teams = resolveTeamSlugs(clean.tags, await loadTeams());
+    } catch {
+      /* catálogo no disponible */
+    }
+  }
+
   const { data, error } = await supabase.from('notes').insert([clean]).select();
   if (error) return res.status(500).json({ error: error.message });
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
@@ -791,6 +885,15 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
 app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const { data: clean, error: validationError } = validateNote(req.body, true);
   if (validationError) return res.status(400).json({ error: validationError });
+
+  // Recalcula los equipos vinculados cuando cambian las etiquetas.
+  if (typeof clean.tags === 'string') {
+    try {
+      clean.teams = resolveTeamSlugs(clean.tags, await loadTeams());
+    } catch {
+      /* catálogo no disponible */
+    }
+  }
 
   const { data, error } = await supabase
     .from('notes')
@@ -938,6 +1041,11 @@ app.get('/sitemap.xml', async (req, res) => {
       });
     }
 
+    const teams = await loadTeamsGraceful();
+    teams.forEach((team) => {
+      xml += `  <url>\n    <loc>${baseUrl}/equipo/${team.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+    });
+
     xml += `</urlset>`;
 
     res.type('application/xml');
@@ -1078,3 +1186,4 @@ module.exports.oauth1SignatureBase = oauth1SignatureBase;
 module.exports.oauth1Signature = oauth1Signature;
 module.exports.oauth1Authorization = oauth1Authorization;
 module.exports.maybeAutopostNote = maybeAutopostNote;
+module.exports.resolveTeamSlugs = resolveTeamSlugs;
