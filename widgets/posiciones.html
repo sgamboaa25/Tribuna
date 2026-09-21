@@ -14,14 +14,15 @@
     --accent: #A8321A;
     --muted: #6b6b6b;
     --line: #e5e2dc;
+    --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--paper); }
   body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); font-size: 13px; }
-  .widget { padding: 14px 16px 10px; }
-  .widget-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .widget { padding: 14px var(--space-md) 10px; }
+  .widget-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: var(--space-sm); }
   .widget-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; letter-spacing: .01em; }
-  .widget-title::before { content: ''; display: inline-block; width: 8px; height: 14px; background: var(--accent); margin-right: 8px; vertical-align: -1px; }
+  .widget-title::before { content: ''; display: inline-block; width: 8px; height: 14px; background: var(--accent); margin-right: var(--space-sm); vertical-align: -1px; }
   .widget-head select {
     margin-left: auto; font: inherit; font-size: 12px; padding: 3px 6px;
     border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink);
@@ -30,8 +31,9 @@
   .widget-status { font-size: 11px; color: var(--muted); }
   .standings-table { width: 100%; border-collapse: collapse; }
   .standings-table th, .standings-table td {
-    padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap;
+    padding: 6px var(--space-xs); text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap;
   }
+  .standings-table td:not(.team-col) { font-variant-numeric: tabular-nums; }
   .standings-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
   .standings-table td:first-child, .standings-table th:first-child { text-align: left; }
   .pos-col { font-family: 'Fraunces', serif; font-weight: 600; }
@@ -43,7 +45,7 @@
   tr.leader td { border-bottom-width: 2px; border-bottom-color: var(--accent); }
   tr.relegation td { border-top: 2px solid var(--accent); }
   .widget-error { padding: 18px 0; text-align: center; color: var(--muted); font-size: 12px; }
-  .widget-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); text-align: center; }
+  .widget-foot { margin-top: 10px; padding-top: var(--space-sm); border-top: 1px solid var(--line); text-align: center; }
   .widget-foot a { color: var(--accent); font-size: 11px; text-decoration: none; font-weight: 600; }
   .widget-foot a:hover { text-decoration: underline; }
   @media (max-width: 360px) {
