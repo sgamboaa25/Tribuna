@@ -1012,6 +1012,25 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 });
 
+// Widget embebible de posiciones (iframe). A diferencia del resto del sitio,
+// esta página permite que OTROS sitios la incrusten (frame-ancestors * y sin
+// X-Frame-Options). El resto de respuestas conserva la CSP cerrada de helmet.
+const WIDGET_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' https: data:",
+  "connect-src 'self'"
+].join('; ');
+
+app.get('/widget/posiciones', (req, res) => {
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
+  res.setHeader('Content-Security-Policy', `${WIDGET_CSP}; frame-ancestors *`);
+  res.sendFile(path.join(__dirname, 'widgets', 'posiciones.html'));
+});
+
 // Estáticos explícitos de PWA (solo esta carpeta; no exponer fuentes)
 app.use(
   '/public',

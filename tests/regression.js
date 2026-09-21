@@ -95,6 +95,17 @@ async function main() {
   r = await post('/api/auth', { email: 'limpi@tribuna.test', password: SECRET }, { 'X-Forwarded-For': '9.9.9.9' });
   report('login correcto (email limpio): 200 + token', r.status === 200 && !!r.data.token, 'status=' + r.status);
 
+  const wRes = await fetch(BASE + '/widget/posiciones');
+  const w = await wRes.text();
+  const frameOk = wRes.status === 200 &&
+    !wRes.headers.get('x-frame-options') &&
+    /frame-ancestors\s+\*/i.test(wRes.headers.get('content-security-policy') || '') &&
+    w.includes('Datos por Tribuna');
+  report('widget posiciones: HTML 200, sin X-Frame-Options, frame-ancestors * y crédito', frameOk, 'status=' + wRes.status);
+
+  const w2 = await fetch(BASE + '/widget/posiciones?liga=pd');
+  report('widget posiciones con ?liga=pd 200', w2.status === 200, 'status=' + w2.status);
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 

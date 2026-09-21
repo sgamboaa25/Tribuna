@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Posiciones · Tribuna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111111;
+    --paper: #ffffff;
+    --accent: #A8321A;
+    --muted: #6b6b6b;
+    --line: #e5e2dc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); font-size: 13px; }
+  .widget { padding: 14px 16px 10px; }
+  .widget-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .widget-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; letter-spacing: .01em; }
+  .widget-title::before { content: ''; display: inline-block; width: 8px; height: 14px; background: var(--accent); margin-right: 8px; vertical-align: -1px; }
+  .widget-head select {
+    margin-left: auto; font: inherit; font-size: 12px; padding: 3px 6px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink);
+    max-width: 150px;
+  }
+  .widget-status { font-size: 11px; color: var(--muted); }
+  .standings-table { width: 100%; border-collapse: collapse; }
+  .standings-table th, .standings-table td {
+    padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  .standings-table th { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  .standings-table td:first-child, .standings-table th:first-child { text-align: left; }
+  .pos-col { font-family: 'Fraunces', serif; font-weight: 600; }
+  .team-col { text-align: left !important; }
+  .team-cell { display: flex; align-items: center; gap: 7px; }
+  .team-crest { width: 18px; height: 18px; object-fit: contain; }
+  .team-name { overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+  .pts-col { font-weight: 600; }
+  tr.leader td { border-bottom-width: 2px; border-bottom-color: var(--accent); }
+  tr.relegation td { border-top: 2px solid var(--accent); }
+  .widget-error { padding: 18px 0; text-align: center; color: var(--muted); font-size: 12px; }
+  .widget-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); text-align: center; }
+  .widget-foot a { color: var(--accent); font-size: 11px; text-decoration: none; font-weight: 600; }
+  .widget-foot a:hover { text-decoration: underline; }
+  @media (max-width: 360px) {
+    body { font-size: 12px; }
+    .team-name { max-width: 110px; }
+  }
+</style>
+</head>
+<body>
+  <div class="widget">
+    <div class="widget-head">
+      <span class="widget-title">Posiciones</span>
+      <select id="leagueSelect" aria-label="Competición"></select>
+      <span class="widget-status" id="status"></span>
+    </div>
+
+    <table class="standings-table" aria-label="Clasificación de la liga">
+      <thead>
+        <tr>
+          <th>#</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th>
+          <th>GF</th><th>GC</th><th>Dif</th><th>Pts</th>
+        </tr>
+      </thead>
+      <tbody id="standingsBody">
+        <tr><td colspan="10" class="widget-error">Cargando posiciones…</td></tr>
+      </tbody>
+    </table>
+
+    <div class="widget-foot">
+      <a href="https://tribuna-deportiva.onrender.com/" id="creditLink">Datos por Tribuna</a>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const LEAGUES = {
+    pl: 'Premier League',
+    pd: 'LaLiga',
+    bl1: 'Bundesliga',
+    sa: 'Serie A',
+    fl1: 'Ligue 1',
+    elc: 'Championship',
+    ppl: 'Portugal',
+    cl: 'Champions League',
+    ec: 'Eurocopa',
+    bsa: 'Brasileirão',
+    ded: 'Eredivisie'
+  };
+
+  const select = document.getElementById('leagueSelect');
+  const statusEl = document.getElementById('status');
+  const body = document.getElementById('standingsBody');
+
+  const urlLiga = new URLSearchParams(location.search).get('liga');
+  let current = (urlLiga && LEAGUES[urlLiga.toLowerCase()]) ? urlLiga.toLowerCase() : 'pl';
+
+  Object.keys(LEAGUES).forEach(function (key) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = LEAGUES[key];
+    select.appendChild(opt);
+  });
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  document.getElementById('creditLink').href = location.origin;
+
+  function renderLoading() {
+    body.innerHTML = '<tr><td colspan="10" class="widget-error">Cargando posiciones…</td></tr>';
+  }
+
+  function renderError() {
+    body.innerHTML = '<tr><td colspan="10" class="widget-error">No se pudo cargar la tabla. Intenta de nuevo.</td></tr>';
+    statusEl.textContent = 'Error';
+  }
+
+  async function load(liga) {
+    renderLoading();
+    statusEl.textContent = 'Actualizando…';
+    try {
+      const res = await fetch('/api/standings/' + encodeURIComponent(liga));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const rows = json && json.data ? json.data : [];
+
+      if (rows.length === 0) {
+        renderError();
+        return;
+      }
+
+      body.innerHTML = rows.map(function (row, index) {
+        const dif = (Number(row.diferencia) || 0);
+        const difFmt = dif > 0 ? '+' + dif : dif;
+        const rowClass = index === 0 ? ' leader' : (rows.length >= 8 && index >= rows.length - 2 ? ' relegation' : '');
+        return '<tr class="' + rowClass.trim() + '">' +
+          '<td class="pos-col">' + row.posicion + '</td>' +
+          '<td class="team-col"><div class="team-cell">' +
+          (row.escudo ? '<img src="' + esc(row.escudo) + '" alt="" class="team-crest" loading="lazy">' : '') +
+          '<span class="team-name">' + esc(row.equipo) + '</span></div></td>' +
+          '<td>' + row.jugados + '</td><td>' + row.ganados + '</td><td>' + row.empatados + '</td><td>' + row.perdidos + '</td>' +
+          '<td>' + row.golesFavor + '</td><td>' + row.golesContra + '</td><td>' + difFmt + '</td>' +
+          '<td class="pts-col">' + row.puntos + '</td>' +
+          '</tr>';
+      }).join('');
+
+      statusEl.textContent = json.stale ? 'Actualizado hace un momento' : 'En vivo';
+    } catch (err) {
+      console.error('Error cargando posiciones:', err);
+      renderError();
+    }
+  }
+
+  select.value = current;
+  select.addEventListener('change', function () {
+    current = select.value;
+    history.replaceState(null, '', '?liga=' + current);
+    load(current);
+  });
+
+  load(current);
+  setInterval(function () { load(current); }, 10 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
