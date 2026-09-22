@@ -1634,6 +1634,7 @@
       currentStandingsLeague = liga;
       const esPromerica = liga === 'promerica';
       const esBundesliga = liga === 'BL1';
+      const esChampions = liga === 'CL';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1674,7 +1675,11 @@
         standingsBody.innerHTML = seleccion.map((row, index) => {
           let rowClass = '';
           if (seleccion.length >= 8) {
-            if (index < 4) rowClass = 'row-highlight';
+            if (esChampions && seleccion.length >= 24) {
+              if (index < 8) rowClass = 'row-highlight';
+              else if (index < 24) rowClass = 'row-playoff';
+              else rowClass = 'row-relegation';
+            } else if (index < 4) rowClass = 'row-highlight';
             else if (esBundesliga && index === seleccion.length - 3) rowClass = 'row-playoff';
             else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
           }
