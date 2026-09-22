@@ -1640,6 +1640,7 @@
       const esPromerica = liga === 'promerica';
       const esBundesliga = liga === 'BL1';
       const esChampions = liga === 'CL';
+      const esChampionship = liga === 'ELC';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1684,6 +1685,10 @@
               if (index < 8) rowClass = 'row-qualified';
               else if (index < 24) rowClass = 'row-playoff';
               else rowClass = '';
+            } else if (esChampionship && seleccion.length >= 24) {
+              if (index < 2) rowClass = 'row-qualified';
+              else if (index < 6) rowClass = 'row-playoff';
+              else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
             } else if (index < 4) rowClass = 'row-highlight';
             else if (esBundesliga && index === seleccion.length - 3) rowClass = 'row-playoff';
             else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
