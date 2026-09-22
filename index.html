@@ -1725,6 +1725,7 @@
       const esPortuguesa = liga === 'PPL';
       const esPremier = liga === 'PL';
       const esLaLiga = liga === 'PD';
+      const esSerieA = liga === 'SA';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1800,6 +1801,11 @@
               else if (index === 4) rowClass = 'row-orange';
               else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
             } else if (esLaLiga && seleccion.length >= 20) {
+              if (index < 4) rowClass = 'row-sudamericana';
+              else if (index === 4) rowClass = 'row-orange';
+              else if (index === 5) rowClass = 'row-dark-green';
+              else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
+            } else if (esSerieA && seleccion.length >= 20) {
               if (index < 4) rowClass = 'row-sudamericana';
               else if (index === 4) rowClass = 'row-orange';
               else if (index === 5) rowClass = 'row-dark-green';
