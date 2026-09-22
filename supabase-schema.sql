@@ -421,9 +421,9 @@ where not exists (select 1 from public.site_settings where key = 'next_transfer_
 -- ============================================================
 -- Ninguna API conectada cubre UNAFUT de forma confiable, así que la redacción
 -- actualiza estas estadísticas a mano desde el panel (login existente) en la
--- tabla standings_promerica. Pts y DIF NO se guardan: se calculan al leer
--- (3G+E y GF-GC) para que nunca queden inconsistentes. Solo el backend
--- escribe (rutas /api/standings/promerica[/admin]); anon solo lee.
+-- tabla standings_promerica. La redacción escribe Pts y DIF a mano junto con el
+-- resto de las estadísticas; se guardan tal cual se ingresan en el panel. Solo el
+-- backend escribe (rutas /api/standings/promerica[/admin]); anon solo lee.
 create table if not exists public.standings_promerica (
   id uuid primary key default gen_random_uuid(),
   equipo_slug text not null unique references public.teams_ca(slug) on delete cascade,
@@ -433,6 +433,8 @@ create table if not exists public.standings_promerica (
   p integer not null default 0 check (p between 0 and 999),
   gf integer not null default 0 check (gf between 0 and 999),
   gc integer not null default 0 check (gc between 0 and 999),
+  dif integer not null default 0 check (dif between -999 and 999),
+  pts integer not null default 0 check (pts between 0 and 999),
   updated_by text,
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()

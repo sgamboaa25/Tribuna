@@ -178,6 +178,33 @@ test('standings promerica: mergeStandingsRoster preserva las estadísticas guard
   assert.equal(resto.every((r) => r.pj === 0), true);
 });
 
+test('standings promerica: usa DIF y Pts guardados cuando existen', () => {
+  const rows = decoratePromericaStandings([
+    { equipo_slug: 'saprissa', pj: 5, g: 3, e: 1, p: 1, gf: 8, gc: 4, dif: 5, pts: 11 }
+  ], TEAMS);
+  assert.equal(rows[0].dif, 5);
+  assert.equal(rows[0].pts, 11);
+});
+
+test('standings promerica: validación acepta DIF negativo y rechaza fuera de rango', () => {
+  const ok = validateStandingsRows(
+    { rows: [{ slug: 'saprissa', pj: 5, g: 1, e: 1, p: 3, gf: 2, gc: 5, dif: -3, pts: 4 }] },
+    SLUGS
+  );
+  assert.equal(ok.error, undefined);
+  assert.equal(ok.data[0].dif, -3);
+  const badDif = validateStandingsRows(
+    { rows: [{ slug: 'saprissa', pj: 5, g: 1, e: 1, p: 3, gf: 2, gc: 99, dif: -1000, pts: 4 }] },
+    SLUGS
+  );
+  assert.match(badDif.error, /\(dif\)/);
+  const badPts = validateStandingsRows(
+    { rows: [{ slug: 'saprissa', pj: 5, g: 1, e: 1, p: 3, gf: 2, gc: 2, dif: 0, pts: 1000 }] },
+    SLUGS
+  );
+  assert.match(badPts.error, /\(pts\)/);
+});
+
 test('standings promerica: GET público sin DB responde 500 JSON elegante', async () => {
   const res = await request(app).get('/api/standings/promerica');
   assert.equal(res.status, 500);

@@ -346,7 +346,6 @@
     .standings-admin-row .team-admin { display:flex; align-items:center; gap:var(--space-sm); min-width:0; }
     .standings-admin-row .team-admin img { width:26px; height:26px; object-fit:contain; }
     .standings-admin-row input { width:100%; text-align:center; }
-    .standings-admin-row .s-calc { text-align:center; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:600; }
     @media (max-width:640px) {
       .standings-admin-row { grid-template-columns:1fr repeat(3, 56px); }
     }
@@ -3682,26 +3681,13 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     const standingsAdminList = document.getElementById('standingsAdminList');
     const standingsPromMsg = document.getElementById('standingsPromMsg');
     const standingsPromSave = document.getElementById('standingsPromSave');
-    const headings = [{ key: 'pj', label: 'PJ' }, { key: 'g', label: 'G' }, { key: 'e', label: 'E' }, { key: 'p', label: 'P' }, { key: 'gf', label: 'GF' }, { key: 'gc', label: 'GC' }];
-
-    function standingsRowComputed(team) {
-      return {
-        dif: (Number(team.gf) || 0) - (Number(team.gc) || 0),
-        pts: (Number(team.g) || 0) * 3 + (Number(team.e) || 0)
-      };
-    }
-
-    function standingsComputedCell(team, key, label) {
-      return `<div class="s-cell s-calc" data-calc="${key}" aria-label="${label} de ${team.equipo}">${standingsRowComputed(team)[key]}</div>`;
-    }
+    const headings = [{ key: 'pj', label: 'PJ' }, { key: 'g', label: 'G' }, { key: 'e', label: 'E' }, { key: 'p', label: 'P' }, { key: 'gf', label: 'GF' }, { key: 'gc', label: 'GC' }, { key: 'dif', label: 'DIF' }, { key: 'pts', label: 'Pts' }];
 
     function standingsAdminRowHTML(team) {
-      const inputs = headings.map(h => `<div class="s-cell"><input type="number" min="0" max="999" data-slug="${team.slug}" data-key="${h.key}" value="${Number(team[h.key]) || 0}" aria-label="${h.label} de ${team.equipo}" /></div>`).join('');
+      const inputs = headings.map(h => `<div class="s-cell"><input type="number" min="-999" max="999" data-slug="${team.slug}" data-key="${h.key}" value="${Number(team[h.key]) || 0}" aria-label="${h.label} de ${team.equipo}" /></div>`).join('');
       return `<div class="standings-admin-row" data-slug="${team.slug}">
           <div class="team-admin"><img src="${team.escudo || ''}" alt="" /><span>${escapeHtml(team.equipo)}</span></div>
           ${inputs}
-          ${standingsComputedCell(team, 'dif', 'Diferencia de gol')}
-          ${standingsComputedCell(team, 'pts', 'Puntos')}
         </div>`;
     }
 
@@ -3729,7 +3715,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         const json = await response.json();
         standingsAdminList.innerHTML = '<div class="standings-admin-head">' +
           '<div class="team-admin">Equipo</div>' + headings.map(h => `<div>${h.label}</div>`).join('') +
-          '<div>DIF</div><div>Pts</div>' +
           '</div>' + (json.standings || []).map(standingsAdminRowHTML).join('');
         if (json.updatedAt) {
           await showStandingsMessage(`Última actualización: ${formatManualStamp(json.updatedAt)}${json.updatedBy ? ' por ' + json.updatedBy : ''}.`, false);
@@ -3783,21 +3768,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           await showStandingsMessage(`No se pudo guardar: ${err.message}`, true);
         }
       };
-    }
-
-    if (standingsAdminList) {
-      standingsAdminList.addEventListener('input', (event) => {
-        const input = event.target.closest('input[data-key]');
-        if (!input) return;
-        const row = event.target.closest('.standings-admin-row');
-        if (!row) return;
-        const values = {};
-        row.querySelectorAll('input[data-key]').forEach(inp => { values[inp.dataset.key] = Number(inp.value) || 0; });
-        const difCell = row.querySelector('[data-calc="dif"]');
-        const ptsCell = row.querySelector('[data-calc="pts"]');
-        if (difCell) difCell.textContent = values.gf - values.gc;
-        if (ptsCell) ptsCell.textContent = values.g * 3 + values.e;
-      });
     }
 
     if (rumorVeracityInput) {

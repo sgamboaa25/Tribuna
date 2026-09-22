@@ -1547,11 +1547,9 @@ app.get('/api/standings/:liga', async (req, res, next) => {
 // ============ Posiciones Liga Promérica (actualización manual) ============
 // Ninguna API conectada cubre UNAFUT de forma confiable, así que la redacción
 // actualiza estas estadísticas a mano desde el panel (login existente) en la
-// tabla standings_promerica. Pts y DIF NO se guardan: se calculan al leer
-// (3G+E y GF-GC) para que nunca queden inconsistentes. RLS anon solo lectura;
-// escrituras solo backend (authenticateWriter). El frontend consulta esta ruta
-// igual que consulta las demás ligas, mostrando updatedAt para no fingir
-// datos "en vivo".
+// tabla standings_promerica. Todos los campos (incluidos Pts y DIF) se guardan
+// tal cual se ingresan en el panel; el nombre/escudo salen del catálogo
+// teams_ca. RLS anon solo lectura; escrituras solo backend (authenticateWriter).
 const PRO_PROMERICAS_CACHE_MS = 60 * 1000;
 let promericaStandingsCache = null;
 let promericaStandingsCacheAt = 0;
@@ -1567,13 +1565,15 @@ function decoratePromericaStandings(rows, teams) {
     const p = Number(r.p) || 0;
     const gf = Number(r.gf) || 0;
     const gc = Number(r.gc) || 0;
+    const dif = (r.dif !== undefined && r.dif !== null) ? Number(r.dif) : gf - gc;
+    const pts = (r.pts !== undefined && r.pts !== null) ? Number(r.pts) : g * 3 + e;
     return {
       slug: r.equipo_slug,
       equipo: team.nombre || r.equipo_slug,
       escudo: team.escudo || '',
       pj, g, e, p, gf, gc,
-      dif: gf - gc,
-      pts: g * 3 + e
+      dif,
+      pts
     };
   });
   return withStats.sort((a, b) =>
@@ -1615,16 +1615,17 @@ function validateStandingsRows(payload, allowedSlugs) {
     return { error: 'Se esperaba la lista de equipos en "rows".' };
   }
   const slugSet = new Set(allowedSlugs || []);
-  const nums = ['pj', 'g', 'e', 'p', 'gf', 'gc'];
+  const limits = { pj: [0, 999], g: [0, 999], e: [0, 999], p: [0, 999], gf: [0, 999], gc: [0, 999], dif: [-999, 999], pts: [0, 999] };
   for (const row of rows) {
     if (!row || typeof row !== 'object') return { error: 'Fila inválida en la tabla.' };
     const slug = sanitizeText(row.slug || '');
     if (!slugSet.has(slug)) return { error: `Equipo no válido: "${slug}".` };
-    for (const key of nums) {
+    for (const key of Object.keys(limits)) {
       const v = row[key];
       if (v === undefined || v === null || v === '') continue;
       const n = Number(v);
-      if (!Number.isInteger(n) || n < 0 || n > 999) {
+      const [min, max] = limits[key];
+      if (!Number.isInteger(n) || n < min || n > max) {
         return { error: `Valor inválido en "${slug}" (${key}).` };
       }
     }
@@ -1690,16 +1691,22 @@ app.get('/api/standings/promerica/admin', authenticateWriter, async (req, res) =
     const map = standingsRowMap(db.data);
     const rows = (teams || []).map((t) => {
       const s = map.get(t.slug) || {};
+      const g = Number(s.g) || 0;
+      const e = Number(s.e) || 0;
+      const gf = Number(s.gf) || 0;
+      const gc = Number(s.gc) || 0;
       return {
         slug: t.slug,
         equipo: t.nombre,
         escudo: t.escudo,
         pj: Number(s.pj) || 0,
-        g: Number(s.g) || 0,
-        e: Number(s.e) || 0,
+        g,
+        e,
         p: Number(s.p) || 0,
-        gf: Number(s.gf) || 0,
-        gc: Number(s.gc) || 0
+        gf,
+        gc,
+        dif: (s.dif !== undefined && s.dif !== null) ? Number(s.dif) : gf - gc,
+        pts: (s.pts !== undefined && s.pts !== null) ? Number(s.pts) : g * 3 + e
       };
     });
     const last = lastManualUpdate(db.data);
@@ -1724,6 +1731,8 @@ app.put('/api/standings/promerica', authenticateWriter, async (req, res) => {
       p: Number(row.p) || 0,
       gf: Number(row.gf) || 0,
       gc: Number(row.gc) || 0,
+      dif: Number(row.dif) || 0,
+      pts: Number(row.pts) || 0,
       updated_by: req.writer || null,
       updated_at: updatedAt
     }));
