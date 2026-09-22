@@ -1902,6 +1902,100 @@ app.get('/api/fixtures/:liga', async (req, res) => {
   }
 });
 
+// GET Público: máximos goleadores de una liga. Mismo patrón de cache que
+// fixtures/standings (2h) y mismo manejo de stale si el proveedor cae.
+function scoresCacheKey(ligaKey) {
+  return `scorers:${ligaKey}`;
+}
+
+function footballDataScorerToRow(s) {
+  const player = (s && s.player) || {};
+  const team = (s && s.team) || {};
+  return {
+    jugador: player.name || '',
+    equipo: team.name || '',
+    escudo: team.crest || '',
+    goles: Number(s.goals) || 0,
+    asistencias: Number(s.assists) || 0,
+    posicion: player.position || ''
+  };
+}
+
+function apiFootballScorerToRow(item) {
+  const p = (item && item.player) || {};
+  const st = (item && item.statistics && item.statistics[0]) || {};
+  const team = st.team || {};
+  const goals = st.goals || {};
+  return {
+    jugador: p.name || '',
+    equipo: team.name || '',
+    escudo: team.logo || '',
+    goles: Number(goals.total) || 0,
+    asistencias: Number(goals.assists) || 0,
+    posicion: (st.games && st.games.position) || ''
+  };
+}
+
+async function fetchFootballDataScorers(leagueCode) {
+  const url = `https://api.football-data.org/v4/competitions/${leagueCode}/scorers?limit=10`;
+  const response = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY } });
+  const json = await response.json();
+  if (!response.ok || !Array.isArray(json.scorers)) {
+    throw new Error(json.message || `Error HTTP: ${response.status}`);
+  }
+  return json.scorers
+    .filter((s) => s && s.player && s.player.name)
+    .map(footballDataScorerToRow)
+    .slice(0, 10);
+}
+
+async function fetchApiFootballScorers() {
+  const url =
+    `${API_FOOTBALL_BASE}/players/topscorers?league=${COSTA_RICA_LEAGUE_ID}` +
+    `&season=${apiFootballSeasonFor()}`;
+  const response = await fetch(url, { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY } });
+  const json = await response.json();
+  const apiError =
+    json && json.errors && Object.keys(json.errors).length
+      ? Object.values(json.errors).join(' ')
+      : '';
+  if (!response.ok || apiError) {
+    throw new Error(apiError || `Error HTTP: ${response.status}`);
+  }
+  return (Array.isArray(json.response) ? json.response : [])
+    .map(apiFootballScorerToRow)
+    .filter((r) => r.jugador)
+    .slice(0, 10);
+}
+
+app.get('/api/top-scorers/:liga', async (req, res) => {
+  const ligaKey = req.params.liga.toLowerCase();
+  const leagueCode = LEAGUE_MAP[ligaKey];
+  const isPromerica = ligaKey === 'promerica';
+
+  if (!leagueCode && !isPromerica) return res.status(400).json({ error: 'Liga no válida.' });
+
+  const requiredKey = isPromerica ? process.env.API_FOOTBALL_KEY : process.env.FOOTBALL_DATA_API_KEY;
+  if (!requiredKey) return res.status(500).json({ error: 'Configuración interna del servidor.' });
+
+  const now = Date.now();
+  const cacheKey = scoresCacheKey(ligaKey);
+  if (cache[cacheKey] && now - cache[cacheKey].timestamp < CACHE_TTL_MS) {
+    return res.json({ stale: false, data: cache[cacheKey].data });
+  }
+
+  try {
+    const transformed = isPromerica
+      ? await fetchApiFootballScorers()
+      : await fetchFootballDataScorers(leagueCode);
+    cache[cacheKey] = { timestamp: now, data: transformed };
+    return res.json({ stale: false, data: transformed });
+  } catch (error) {
+    if (cache[cacheKey]) return res.json({ stale: true, data: cache[cacheKey].data });
+    return res.status(503).json({ error: error.message });
+  }
+});
+
 // Widget embebible de posiciones (iframe). A diferencia del resto del sitio,
 // esta página permite que OTROS sitios la incrusten (frame-ancestors * y sin
 // X-Frame-Options). El resto de respuestas conserva la CSP cerrada de helmet.
@@ -1977,4 +2071,6 @@ module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;
 module.exports.decoratePromericaStandings = decoratePromericaStandings;
 module.exports.validateStandingsRows = validateStandingsRows;
+module.exports.footballDataScorerToRow = footballDataScorerToRow;
+module.exports.apiFootballScorerToRow = apiFootballScorerToRow;
 module.exports.mergeStandingsRoster = mergeStandingsRoster;

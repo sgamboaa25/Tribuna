@@ -17,6 +17,9 @@
   <meta property="og:description" content="El deporte, sin ruido." id="ogDesc" />
   <meta property="og:image" content="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80" id="ogImage" />
   <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:site_name" content="Tribuna" />
+    <meta property="og:locale" content="es_CR" />
+    <meta property="og:url" content="https://tribuna-idgt.onrender.com/" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,6 +112,7 @@
     .breaking-label { background:var(--paper); color:var(--accent-strong); padding:2px var(--space-sm); border-radius:var(--radius-sm); font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; }
     .breaking-title { color:var(--on-accent); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background-image:linear-gradient(to right, var(--paper), var(--paper)); background-repeat:no-repeat; background-position:0 100%; background-size:0 2px; padding-bottom:2px; transition:background-size .3s cubic-bezier(.45,.05,.35,1); }
     .breaking-title:hover { background-size:100% 2px; }
+    .ultima-hora-badge { display:inline-block; background:var(--accent); color:var(--on-accent); font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:2px 8px; border-radius:var(--radius-sm); margin-left:8px; vertical-align:middle; }
     
     .share-group { display:flex; align-items:center; gap:12px; margin-top:28px; border-top:1px solid var(--line); padding-top:20px; }
     .share-label { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
@@ -772,7 +776,7 @@
     @media print {
       body { background:#fff; color:#000; }
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
-      .load-more-container, #posiciones, #proximos, .most-read, .newsletter, footer,
+      .load-more-container, #posiciones, #goleadores, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
       .theme-toggle, .category-header, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
@@ -897,6 +901,7 @@
         <button type="button" class="reading-toggle" id="readingModeToggle" aria-pressed="false">Modo lectura</button>
       </div>
       <div class="tag" id="detailTag"></div>
+      <span id="detailUrgent" class="ultima-hora-badge" style="display:none">Última hora</span>
       <h1 id="detailTitle"></h1>
       <p class="lead" id="detailIntro"></p>
       <div class="team-chip-row detail-teams" id="detailTeams" style="display:none" aria-label="Equipos relacionados"></div>
@@ -997,6 +1002,49 @@
             </tr>
           </thead>
           <tbody id="standingsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== GOLEADORES ===== -->
+    <section class="standings-section" id="goleadores">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Gol</div>
+          <h2 class="section-title">Máximos goleadores</h2>
+        </div>
+        <div class="standings-controls">
+          <div class="custom-picker" id="scorersPicker" data-value="pl">
+            <button type="button" class="custom-toggle" id="scorersPickerToggle" aria-expanded="false" aria-haspopup="menu">Premier League (Inglaterra)</button>
+            <div class="custom-menu" role="menu">
+              <button class="custom-option is-selected" type="button" data-value="pl" role="menuitem">Premier League (Inglaterra)</button>
+              <button class="custom-option" type="button" data-value="pd" role="menuitem">La Liga (España)</button>
+              <button class="custom-option" type="button" data-value="sa" role="menuitem">Serie A (Italia)</button>
+              <button class="custom-option" type="button" data-value="bl1" role="menuitem">Bundesliga (Alemania)</button>
+              <button class="custom-option" type="button" data-value="fl1" role="menuitem">Ligue 1 (Francia)</button>
+              <button class="custom-option" type="button" data-value="cl" role="menuitem">UEFA Champions League</button>
+              <button class="custom-option" type="button" data-value="elc" role="menuitem">Championship (Inglaterra)</button>
+              <button class="custom-option" type="button" data-value="ppl" role="menuitem">Primeira Liga (Portugal)</button>
+              <button class="custom-option" type="button" data-value="bsa" role="menuitem">Campeonato Brasileiro Série A</button>
+              <button class="custom-option" type="button" data-value="ded" role="menuitem">Eredivisie (Países Bajos)</button>
+              <button class="custom-option" type="button" data-value="promerica" role="menuitem">Liga Promérica (Costa Rica)</button>
+            </div>
+          </div>
+          <span id="scorersStatus" class="status-indicator">En vivo</span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th class="pos-col">#</th>
+              <th class="team-col">Jugador</th>
+              <th class="team-col">Equipo</th>
+              <th>G</th>
+              <th class="hide-mobile">A</th>
+            </tr>
+          </thead>
+          <tbody id="scorersBody"></tbody>
         </table>
       </div>
     </section>
@@ -1746,6 +1794,53 @@
     renderSkeleton();
     loadStandings('PL');
 
+    // ===== Goleadores (máximos artilleros por liga) =====
+    const scorersStatusEl = document.getElementById('scorersStatus');
+    const scorersBodyEl = document.getElementById('scorersBody');
+
+    function renderScorersSkeleton() {
+      if (!scorersBodyEl) return;
+      scorersBodyEl.innerHTML = Array.from({ length: 5 }).map(() =>
+        '<tr aria-hidden="true"><td class="pos-col"></td><td colspan="4"><span class="sk" style="display:block;height:16px;width:60%"></span></td></tr>'
+      ).join('');
+    }
+
+    async function loadScorers(liga) {
+      if (!scorersStatusEl || !scorersBodyEl) return;
+      scorersStatusEl.textContent = 'Actualizando...';
+      renderScorersSkeleton();
+      try {
+        const resp = await fetch('/api/top-scorers/' + encodeURIComponent(liga));
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json) throw new Error('Error al cargar goleadores');
+        const rows = json.data || [];
+        if (!rows.length) throw new Error('Sin datos de goleadores para esta competición.');
+        scorersBodyEl.innerHTML = rows.map((s, i) => `
+          <tr>
+            <td class="pos-col">${i + 1}</td>
+            <td class="team-col">${escapeHtml(s.jugador || '')}</td>
+            <td class="team-col">
+              <div class="team-cell">
+                ${s.escudo ? `<img class="team-crest" src="${escapeHtml(s.escudo)}" alt="" loading="lazy" onerror="this.style.display='none'" />` : ''}
+                <span>${escapeHtml(s.equipo || '')}</span>
+              </div>
+            </td>
+            <td>${Number(s.goles) || 0}</td>
+            <td class="hide-mobile">${Number(s.asistencias) || 0}</td>
+          </tr>`).join('');
+        scorersStatusEl.textContent = json.stale ? 'Actualizado hace un momento' : 'En vivo';
+      } catch (err) {
+        console.error('Error al cargar goleadores:', err);
+        scorersStatusEl.textContent = 'Error';
+        scorersBodyEl.innerHTML = '<tr><td colspan="5" class="standings-error">No se pudieron cargar los goleadores. Intenta de nuevo más tarde.</td></tr>';
+      }
+    }
+
+    setupCustomPicker('scorersPicker', (selectedLiga) => {
+      loadScorers(selectedLiga);
+    });
+    loadScorers('pl');
+
     // ===== Próximos partidos =====
     const fixturesStatus = document.getElementById('fixturesStatus');
     const fixturesList = document.getElementById('fixturesList');
@@ -2148,6 +2243,8 @@
         }
 
         document.querySelector('#detailTag').textContent = sport; 
+        const detailUrgentEl = document.querySelector('#detailUrgent');
+        if (detailUrgentEl) detailUrgentEl.style.display = note.urgent ? 'inline-block' : 'none';
         document.querySelector('#detailTitle').textContent = title; 
         document.querySelector('#detailIntro').textContent = intro; 
         
@@ -2736,6 +2833,7 @@
       const grid = document.querySelector('#futbol');
       const ranking = document.querySelector('#rankingContainer');
       const playBadge = (n) => (n && n.video_url) ? '<span class="media-play" aria-hidden="true"></span>' : '';
+      const ultimaHoraBadge = (n) => (n && n.urgent) ? '<span class="ultima-hora-badge">Última hora</span>' : '';
 
       renderBreakingBanner();
 
@@ -2744,7 +2842,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span><h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline"><span class="byline-author">${authorAvatar(n.author, n.email)}POR ${n.author.toUpperCase()}</span>${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline"><span class="byline-author">${authorAvatar(n.author, n.email)}POR ${n.author.toUpperCase()}</span>${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -2761,7 +2859,7 @@
                 <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
                 ${playBadge(n)}
               </div>
-              <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span></div>
+              <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}</div>
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
               <span class="meta-date">${noteDate(n.created_at)}</span>
@@ -3023,7 +3121,7 @@
     }
 
     function setTeamVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3033,7 +3131,7 @@
     }
 
     function setPlayerVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3225,7 +3323,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
