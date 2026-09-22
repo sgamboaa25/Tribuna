@@ -68,9 +68,17 @@ insert into public.notes (sport, title, intro, author, email, tags, body, status
 select 'Baloncesto', 'El talento joven ya no espera turno', 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', 'Diego Morales', 'diego@tribuna.test', 'baloncesto, liga', 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', 'publicada'
 where not exists (select 1 from public.notes where title = 'El talento joven ya no espera turno');
 
-insert into public.notes (sport, title, intro, author, email, tags, body, status)
-select 'Atletismo', 'La victoria tiene más de una medida', 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', 'Sofía Campos', 'sofia@tribuna.test', 'opinión, atletismo', 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', 'publicada'
+insert into public.notes (sport, title, intro, author, email, tags, body, status, reactions)
+select 'Fútbol', 'La victoria tiene más de una medida', 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', 'Sofía Campos', 'sofia@tribuna.test', 'opinión, atletismo', 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', 'publicada', '{"clap":0,"wow":0,"angry":0}'::jsonb
 where not exists (select 1 from public.notes where title = 'La victoria tiene más de una medida');
+
+-- MVP DE LA JORNADA (MUESTRA): nota-encuesta etiquetada "mvp" que la sección
+-- "MVP de la jornada" de la portada destaca automáticamente. La redacción crea
+-- una igual desde el panel (marcom "Añadir una encuesta rápida" y etiqueta mvp);
+-- o re-publica esta actualizando pregunta/opciones/votos.
+insert into public.notes (sport, title, intro, author, email, tags, body, status, reactions)
+select 'Fútbol', '¿Quién fue el MVP de la jornada?', 'Elegí al mejor del partido del fin de semana en la Liga Promérica.', 'Redacción Tribuna', 'redaccion@tribuna.test', 'mvp, liga promerica, jornada', 'El voto de los lectores define al jugador destacado de cada jornada. Resultados en tiempo real al votar.', 'publicada', '{"clap":0,"wow":0,"angry":0,"poll":{"question":"¿Quién fue el MVP de la jornada?","options":["Joel Campbell","Alexander López","Alonso Martínez"]},"poll_votes":{"0":24,"1":11,"2":9}}'::jsonb
+where not exists (select 1 from public.notes where title = '¿Quién fue el MVP de la jornada?');
 
 -- ============================================================
 -- NEWSLETTER SEMANAL
@@ -205,3 +213,185 @@ where not exists (select 1 from public.teams_ca where slug = 'sporting-san-jose'
 -- Las notas publicadas antes de esta migración no tienen equipos vinculados.
 -- Cuando una de ellas mencione un equipo, re-guárdala (PUT /api/notes/:id) y
 -- el backend recalculará el campo teams desde sus etiquetas.
+
+-- ============================================================
+-- PLANTILLA LIGA PROMÉRICA — PÁGINAS /jugador/:slug
+-- ============================================================
+-- Catálogo curado de jugadores (la redacción lo edita vía SQL o el panel).
+-- Mismo modelo que teams_ca: el cliente solo lee (RLS select anon) y el
+-- backend (server.js) lo sirve cacheado y enriquecido con el escudo del club.
+create table if not exists public.players_ca (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  slug text not null unique,
+  equipo_slug text not null,
+  posicion text not null,
+  dorsal integer,
+  foto text,
+  fecha_nacimiento date,
+  nacionalidad text,
+  aliases text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+alter table public.players_ca enable row level security;
+
+drop policy if exists "Lectura pública de jugadores" on public.players_ca;
+create policy "Lectura pública de jugadores"
+  on public.players_ca for select
+  to anon
+  using (true);
+
+revoke all on table public.players_ca from anon;
+grant select on table public.players_ca to anon;
+
+-- Seed idempotente con una muestra representativa (MUESTRA INICIAL: la
+-- redacción debe actualizar la plantilla real vía SQL eliminando los INSERT
+-- de abajo). Sin foto ni fecha de nacimiento se muestra el fallback en la UI;
+-- la columna foto admite cualquier URL pública (p. ej. r2.thesportsdb.com).
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Christian Bolaños', 'christian-bolanos', 'saprissa', 'Mediocampista', 8, 'Costa Rica', '{}'
+where not exists (select 1 from public.players_ca where slug = 'christian-bolanos');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Mariano Torres', 'mariano-torres', 'saprissa', 'Mediocampista', 7, 'Costa Rica', '{"mariano torres martinez"}'
+where not exists (select 1 from public.players_ca where slug = 'mariano-torres');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Kendall Waston', 'kendall-waston', 'saprissa', 'Defensa', 4, 'Costa Rica', '{"macho watson"}'
+where not exists (select 1 from public.players_ca where slug = 'kendall-waston');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Aarón Suárez', 'aaron-suarez', 'saprissa', 'Mediocampista', 10, 'Costa Rica', '{"aaron suarez"}'
+where not exists (select 1 from public.players_ca where slug = 'aaron-suarez');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Bryan Ruiz', 'bryan-ruiz', 'alajuelense', 'Mediocampista', 10, 'Costa Rica', '{"el banda"}'
+where not exists (select 1 from public.players_ca where slug = 'bryan-ruiz');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Joel Campbell', 'joel-campbell', 'alajuelense', 'Delantero', 7, 'Costa Rica', '{}'
+where not exists (select 1 from public.players_ca where slug = 'joel-campbell');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Alexander López', 'alexander-lopez', 'alajuelense', 'Mediocampista', 6, 'Costa Rica', '{"alexander hernando lopez"}'
+where not exists (select 1 from public.players_ca where slug = 'alexander-lopez');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Ian Smith', 'ian-smith', 'alajuelense', 'Defensa', 4, 'Costa Rica', '{"ian wesley smith"}'
+where not exists (select 1 from public.players_ca where slug = 'ian-smith');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Alonso Martínez', 'alonso-martinez', 'alajuelense', 'Delantero', 9, 'Costa Rica', '{"alonso martinez jara"}'
+where not exists (select 1 from public.players_ca where slug = 'alonso-martinez');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Yeltsin Tejeda', 'yeltsin-tejeda', 'herediano', 'Mediocampista', 6, 'Costa Rica', '{}'
+where not exists (select 1 from public.players_ca where slug = 'yeltsin-tejeda');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Gerson Torres', 'gerson-torres', 'herediano', 'Delantero', 11, 'Costa Rica', '{"gerson torres barrantes"}'
+where not exists (select 1 from public.players_ca where slug = 'gerson-torres');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Luis Díaz', 'luis-diaz', 'herediano', 'Defensa', 3, 'Costa Rica', '{"luis fernando diaz"}'
+where not exists (select 1 from public.players_ca where slug = 'luis-diaz');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Daniel Chacón', 'daniel-chacon', 'cartagines', 'Mediocampista', 14, 'Costa Rica', '{"daniel chacon salas"}'
+where not exists (select 1 from public.players_ca where slug = 'daniel-chacon');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Marcel Hernández', 'marcel-hernandez', 'cartagines', 'Delantero', 9, 'Cuba', '{"marcel"}'
+where not exists (select 1 from public.players_ca where slug = 'marcel-hernandez');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Javon East', 'javon-east', 'san-carlos', 'Delantero', 9, 'Jamaica', '{}'
+where not exists (select 1 from public.players_ca where slug = 'javon-east');
+
+insert into public.players_ca (nombre, slug, equipo_slug, posicion, dorsal, nacionalidad, aliases)
+select 'Junior Lara', 'junior-lara', 'puntarenas', 'Delantero', 7, 'Costa Rica', '{}'
+where not exists (select 1 from public.players_ca where slug = 'junior-lara');
+
+-- ============================================================
+-- RASTREADOR DE FICHAJES — SECCIÓN "MERCADO" / panel redacción
+-- ============================================================
+-- Rumores curados por la redacción. El cliente público (anon) solo lee los
+-- marcados como `activo`; toda escritura pasa por server.js con service_role.
+-- Los slugs de club enlazan con /equipo/:slug y el jugador con /jugador/:slug.
+create table if not exists public.transfer_rumors (
+  id uuid primary key default gen_random_uuid(),
+  jugador text not null,
+  jugador_slug text,
+  posicion text,
+  club_origen text,
+  club_origen_slug text,
+  club_destino text,
+  club_destino_slug text,
+  estado text not null default 'rumor',
+  veracidad integer not null default 50,
+  fuente text,
+  detalle text,
+  activo boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.transfer_rumors enable row level security;
+
+drop policy if exists "Lectura pública de rumores activos" on public.transfer_rumors;
+create policy "Lectura pública de rumores activos"
+  on public.transfer_rumors for select
+  to anon
+  using (activo = true);
+
+revoke all on table public.transfer_rumors from anon;
+grant select on table public.transfer_rumors to anon;
+
+-- Seed idempotente de MUESTRA: borra estos INSERT cuando la redacción cargue
+-- sus primeros rumores reales (o úsalo como plantilla).
+insert into public.transfer_rumors (jugador, jugador_slug, posicion, club_origen, club_origen_slug, club_destino, club_destino_slug, estado, veracidad, fuente, detalle)
+select 'Marcel Hernández', 'marcel-hernandez', 'Delantero', 'Cartaginés', 'cartagines', 'San Carlos', 'san-carlos', 'avanzado', 65, 'La Nación', 'El entorno del jugador estudia la oferta del club del planeta. Se esperaría resolución antes del cierre del mercado.'
+where not exists (select 1 from public.transfer_rumors where jugador = 'Marcel Hernández' and club_destino = 'San Carlos');
+
+insert into public.transfer_rumors (jugador, jugador_slug, posicion, club_origen, club_origen_slug, club_destino, club_destino_slug, estado, veracidad, fuente, detalle)
+select 'Alonso Martínez', 'alonso-martinez', 'Delantero', 'Alajuelense', 'alajuelense', 'Deportivo Saprissa', 'saprissa', 'rumor', 30, 'Afición Radio', 'El nombre suena en el vestuario rojinegro pero hoy no hay oferta formal sobre la mesa.'
+where not exists (select 1 from public.transfer_rumors where jugador = 'Alonso Martínez' and club_destino = 'Deportivo Saprissa');
+
+insert into public.transfer_rumors (jugador, jugador_slug, posicion, club_origen, club_origen_slug, club_destino, club_destino_slug, estado, veracidad, fuente, detalle)
+select 'Christian Bolaños', 'christian-bolanos', 'Mediocampista', 'Deportivo Saprissa', 'saprissa', 'Pérez Zeledón', 'perez-zeledon', 'descartado', 10, '—', 'El club sur manifestó interés, pero el capitán continuará en el Monstruo esta temporada.'
+where not exists (select 1 from public.transfer_rumors where jugador = 'Christian Bolaños' and club_destino = 'Pérez Zeledón');
+
+-- ============================================================
+-- FOTOS DE LECTORES (MODERADAS)
+-- ============================================================
+-- Los lectores suben su foto a Storage (bucket público compartido
+-- "notes-images", carpeta lectores/; quien quiera endurecerlo crea un bucket
+-- dedicado "reader-photos") y el navegador registra aquí solo el metadata vía
+-- POST /api/reader-photos (server.js valida la URL de origen, honeypot y limite
+-- por IP). La columna `estado` empieza como 'en_revision'; el panel de redacción
+-- la pasa a 'publicada' o 'rechazada'. El cliente anon solo lee publicadas (RLS).
+create table if not exists public.reader_photos (
+  id uuid primary key default gen_random_uuid(),
+  autor text not null,
+  titulo text,
+  foto text not null,
+  estado text not null default 'en_revision',
+  nota text,
+  creada_ip text,
+  moderada_por text,
+  moderada_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.reader_photos enable row level security;
+
+-- Escrituras solo por el backend (service_role). Sin INSERT/UPDATE/DELETE anon.
+drop policy if exists "Lectura pública de fotos aprobadas" on public.reader_photos;
+create policy "Lectura pública de fotos aprobadas"
+  on public.reader_photos for select
+  to anon
+  using (estado = 'publicada');
+
+revoke all on table public.reader_photos from anon;
+grant select on table public.reader_photos to anon;

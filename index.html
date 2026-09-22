@@ -289,6 +289,63 @@
     .standings-table tr.row-relegation .pos-col { color:var(--danger); }
     .standings-table tr.row-highlight td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
     .standings-table tr.row-relegation td:first-child { box-shadow:inset 3px 0 0 var(--danger); }
+
+    /* ===== PRÓXIMOS PARTIDOS (fixtures) ===== */
+    #fixturesList:empty { display:none; }
+    #fixturesList { border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); overflow:hidden; }
+    .fixture-day { display:flex; align-items:baseline; gap:var(--space-sm); padding:10px var(--space-md); background:var(--hover-bg); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border-bottom:1px solid var(--line); }
+    .fixture-day .fixture-day-liga { color:var(--accent-strong); }
+    .fixture-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:var(--space-md); padding:14px var(--space-md); border-bottom:1px solid var(--line); }
+    .fixture-row:last-child { border-bottom:0; }
+    .fixture-home, .fixture-away { display:flex; align-items:center; gap:10px; min-width:0; }
+    .fixture-home { justify-content:flex-end; text-align:right; }
+    .fixture-away { justify-content:flex-start; text-align:left; }
+    .fixture-team-wrap { display:inline-flex; align-items:center; gap:10px; min-width:0; }
+    .fixture-team { font-family:'Fraunces', serif; font-weight:700; font-size:1rem; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fixture-home .fixture-team-wrap { flex-direction:row-reverse; }
+    .fixture-crest { width:28px; height:28px; object-fit:contain; flex-shrink:0; }
+    .fixture-center { display:flex; flex-direction:column; align-items:center; gap:4px; padding:0 var(--space-sm); }
+    .fixture-time { font:700 1.15rem/1 'Fraunces', serif; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
+    .fixture-round { font-size:.72rem; font-weight:600; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.04em; line-height:1.3; }
+    @media (max-width:480px) {
+      .fixture-team { font-size:.9rem; }
+      .fixture-crest { width:22px; height:22px; }
+      .fixture-row { gap:var(--space-sm); padding:12px var(--space-md); }
+    }
+
+    /* ===== MERCADO DE FICHAJES (rumores) ===== */
+    #rumorList:empty { display:none; }
+    #rumorList { border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); overflow:hidden; }
+    .rumor-row { padding:16px var(--space-md); border-bottom:1px solid var(--line); }
+    .rumor-row:last-child { border-bottom:0; }
+    .rumor-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+    .rumor-player-name { font:700 1.05rem/1.2 'Fraunces', serif; color:var(--ink); text-decoration:none; }
+    .rumor-player-name:hover { color:var(--accent-strong); }
+    .rumor-pos { font-size:.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .rumor-route { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
+    .rumor-club { display:inline-flex; align-items:center; gap:8px; min-width:0; font-family:'Fraunces', serif; font-weight:700; font-size:1rem; color:var(--ink); text-decoration:none; }
+    .rumor-club img { width:22px; height:22px; object-fit:contain; border-radius:50%; flex-shrink:0; }
+    .rumor-club:hover { color:var(--accent-strong); }
+    .rumor-route .rumor-origen { justify-self:end; flex-direction:row-reverse; text-align:right; }
+    .rumor-arrow { font:700 1.3rem/1 'Fraunces', serif; color:var(--muted); }
+    .rumor-meter { width:120px; height:5px; border-radius:4px; background:var(--hover-bg); overflow:hidden; justify-self:center; margin-top:6px; }
+    .rumor-meter > span { display:block; height:100%; background:var(--accent); }
+    .rumor-foot { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; font-size:.8rem; color:var(--muted); }
+    .rumor-badge { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+    .rumor-badge.ru-state-rumor { background:var(--hover-bg); color:var(--muted); }
+    .rumor-badge.ru-state-avanzado { background:var(--badge-revision-bg); color:var(--badge-revision-fg); }
+    .rumor-badge.ru-state-confirmado { background:var(--badge-public-bg); color:var(--badge-public-fg); }
+    .rumor-badge.ru-state-descartado { background:var(--card-bg); color:var(--danger); border:1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
+    .rumor-fuente { font-style:italic; }
+    .rumor-age { color:var(--muted); opacity:.8; }
+    .rumor-empty { color:var(--muted); padding:24px var(--space-md); text-align:center; }
+    .rumor-panel-block { margin-top:34px; }
+    @media (max-width:560px) {
+      .rumor-route { grid-template-columns:1fr; gap:6px; }
+      .rumor-route .rumor-origen { justify-self:auto; text-align:left; flex-direction:row; }
+      .rumor-arrow { display:none; }
+      .rumor-meter { justify-self:start; }
+    }
     
     .skeleton-row td { background:var(--hover-bg); animation:pulse 1.5s infinite; color:transparent !important; border-bottom:1px solid var(--line); height:50px; }
     @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:0.3; } 100% { opacity:0.6; } }
@@ -381,6 +438,21 @@
     .poll-result-bar i { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .45s ease; }
     .poll-meta { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-sm); margin-top:14px; color:var(--muted); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
     .poll-meta .poll-note { color:var(--accent-strong); }
+    #mvpJornada .poll-card { max-width:none; margin:0; }
+    #mvpJornada .poll-card h3 { font-size:1.35rem; }
+    .poll-source { color:var(--accent-strong); font-weight:700; text-decoration:none; margin-left:auto; }
+    .poll-source:hover { text-decoration:underline; }
+    .foto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+    .foto-card { border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); display:flex; flex-direction:column; }
+    .foto-card .foto-media { aspect-ratio:4/3; background:var(--input-bg); overflow:hidden; }
+    .foto-card .foto-media img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
+    .foto-card .foto-media img:hover { transform:scale(1.04); }
+    .foto-card .foto-copy { padding:14px var(--space-md) var(--space-md); }
+    .foto-card .foto-copy p { margin:4px 0 0; color:var(--muted); font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+    .foto-card .foto-copy h3 { font:600 1rem/1.35 'Inter', sans-serif; margin:0; }
+    .reader-photo-form { margin-top:32px; padding:24px; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); }
+    .reader-photo-form strong { font:600 1rem 'Inter', sans-serif; }
+    .check-field { display:flex; align-items:flex-start; }
 
     .newsletter { background:var(--ink); color:var(--paper); border-radius:var(--radius-xl); padding:var(--space-xl); display:flex; justify-content:space-between; align-items:center; gap:30px; margin:20px 0 54px; }
     .newsletter h2 { font-size:2rem; margin:0; font-family:'Fraunces', serif; } 
@@ -530,6 +602,30 @@
     #teamHub .empty-results { text-align:center; padding:48px 0; }
     #teamHub .empty-results h3 { font:700 1.4rem/1.2 'Fraunces', serif; margin:0 0 var(--space-sm); }
     #teamHub .empty-results p { color:var(--muted); max-width:440px; margin:0 auto; }
+
+    /* ===== PERSONAJE /jugador/:slug y plantillas ===== */
+    .player-hub-header { display:flex; align-items:center; gap:var(--space-lg); margin:var(--space-lg) 0 var(--space-xl); padding-bottom:var(--space-lg); border-bottom:1px solid var(--line); }
+    .player-hub-photo { width:92px; height:92px; border-radius:50%; background:var(--hover-bg); flex:0 0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .player-hub-photo img { width:100%; height:100%; object-fit:cover; }
+    .player-hub-photo .player-initial { font:700 2.6rem/1 'Fraunces', serif; color:var(--accent-strong); text-transform:uppercase; }
+    .player-hub-header h1 { font:700 clamp(1.8rem,5vw,2.8rem)/1.1 'Fraunces', serif; margin:0 0 8px; letter-spacing:-.02em; }
+    .player-hub-header p { color:var(--muted); margin:0; max-width:520px; }
+    .player-meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .player-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--card-bg); color:var(--ink); padding:4px 12px; border-radius:20px; font-size:.8rem; font-weight:600; text-decoration:none; font-family:'Inter', sans-serif; transition:border-color .2s, color .2s; }
+    .player-chip img { width:20px; height:20px; object-fit:contain; border-radius:50%; }
+    .player-chip:hover { border-color:var(--accent-strong); color:var(--accent-strong); }
+    .player-squad-list { display:grid; gap:6px; margin-top:var(--space-md); }
+    .player-row { display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:12px; padding:10px var(--space-md); border:1px solid var(--line); border-radius:var(--radius-md); background:var(--card-bg); color:inherit; text-decoration:none; }
+    .player-row:hover { border-color:var(--accent-strong); }
+    .player-row .player-dorsal { font:700 1rem/1 'Fraunces', serif; color:var(--muted); text-align:center; }
+    .player-row .player-name { font:700 1rem/1.2 'Fraunces', serif; }
+    .player-row .player-sub { font-size:.8rem; color:var(--muted); }
+    .player-row .player-pos { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+    .player-empty { color:var(--muted); font-size:.95rem; margin-top:var(--space-md); }
+    @media (max-width:480px) {
+      .player-hub-header { flex-direction:column; text-align:center; gap:var(--space-md); }
+      .player-hub-photo { width:72px; height:72px; }
+    }
     .tags-hint { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:28px; font-size:.82rem; color:var(--muted); margin:6px 0 0; }
     .tags-hint .chip { padding:2px 10px; font-size:.75rem; }
     @media (max-width:640px) {
@@ -660,9 +756,9 @@
     @media print {
       body { background:#fff; color:#000; }
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
-      .load-more-container, #posiciones, .most-read, .newsletter, footer,
+      .load-more-container, #posiciones, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, dialog, .to-top { display:none !important; }
+      .theme-toggle, .category-header, #rumores, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
       a { color:inherit; text-decoration:none; }
@@ -713,6 +809,8 @@
     <div id="categoryHeaderContainer"></div>
 
     <section id="teamHub" aria-labelledby="teamHubTitle" style="display:none"></section>
+
+    <section id="playerHub" aria-labelledby="playerHubTitle" style="display:none"></section>
 
     <section aria-label="Buscar noticias" id="searchSection">
       <form class="search-bar" id="searchForm">
@@ -852,6 +950,98 @@
       </div>
     </section>
 
+    <!-- ===== PRÓXIMOS PARTIDOS ===== -->
+    <section class="standings-section" id="proximos">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Fixtures</div>
+          <h2 class="section-title">Próximos partidos</h2>
+        </div>
+        <div class="standings-controls">
+          <div class="custom-picker" id="fixturesPicker" data-value="pl">
+            <button type="button" class="custom-toggle" id="fixturesPickerToggle" aria-expanded="false" aria-haspopup="menu">Premier League (Inglaterra)</button>
+            <div class="custom-menu" role="menu">
+              <button class="custom-option is-selected" type="button" data-value="pl" role="menuitem">Premier League (Inglaterra)</button>
+              <button class="custom-option" type="button" data-value="pd" role="menuitem">La Liga (España)</button>
+              <button class="custom-option" type="button" data-value="sa" role="menuitem">Serie A (Italia)</button>
+              <button class="custom-option" type="button" data-value="bl1" role="menuitem">Bundesliga (Alemania)</button>
+              <button class="custom-option" type="button" data-value="fl1" role="menuitem">Ligue 1 (Francia)</button>
+              <button class="custom-option" type="button" data-value="cl" role="menuitem">UEFA Champions League</button>
+              <button class="custom-option" type="button" data-value="elc" role="menuitem">Championship (Inglaterra)</button>
+              <button class="custom-option" type="button" data-value="ppl" role="menuitem">Primeira Liga (Portugal)</button>
+              <button class="custom-option" type="button" data-value="bsa" role="menuitem">Campeonato Brasileiro Série A</button>
+              <button class="custom-option" type="button" data-value="ded" role="menuitem">Eredivisie (Países Bajos)</button>
+              <button class="custom-option" type="button" data-value="ec" role="menuitem">European Championship</button>
+              <button class="custom-option" type="button" data-value="promerica" role="menuitem">Liga Promérica (Costa Rica)</button>
+            </div>
+          </div>
+          <span id="fixturesStatus" class="status-indicator">En vivo</span>
+        </div>
+      </div>
+      <div id="fixturesList"></div>
+    </section>
+
+    <!-- ===== MERCADO DE FICHAJES (rumores) ===== -->
+    <section class="standings-section" id="rumores">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Mercado</div>
+          <h2 class="section-title">Mercado de fichajes</h2>
+        </div>
+        <span id="rumorStatus" class="status-indicator">En vivo</span>
+      </div>
+      <div id="rumorList"></div>
+    </section>
+
+    <!-- ===== MVP DE LA JORNADA (encuesta destacada en portada) ===== -->
+    <!-- La redacción etiqueta una nota-encuesta con "mvp"; esta sección muestra
+         la encuesta de la nota publicada más reciente con esa etiqueta. -->
+    <section class="standings-section" id="mvpJornada">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Votación</div>
+          <h2 class="section-title">MVP de la jornada</h2>
+        </div>
+        <span id="mvpStatus" class="status-indicator">En vivo</span>
+      </div>
+      <div id="mvpList"></div>
+    </section>
+
+    <!-- ===== FOTOS DE LECTORES (galería moderada) ===== -->
+    <!-- Los lectores envían su foto desde aquí; la redacción la modera en el
+         panel antes de que aparezca en esta galería. -->
+    <section class="standings-section" id="fotosLectores">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Comunidad</div>
+          <h2 class="section-title">Fotos de lectores</h2>
+        </div>
+        <span id="fotosStatus" class="status-indicator">En vivo</span>
+      </div>
+      <div id="fotosGallery" class="foto-grid"></div>
+      <div class="reader-photo-form">
+        <strong>Envía la tuya</strong>
+        <p class="tags-hint">Comparte una imagen del partido o de la grada. La redacción la modera antes de publicarla.</p>
+        <form id="readerPhotoForm">
+          <div class="editor-grid">
+            <div class="wide">
+              <label for="readerPhotoFile">Tu foto</label>
+              <label class="file-drop" for="readerPhotoFile">
+                <input id="readerPhotoFile" type="file" accept="image/*" />
+                <span class="file-name">Seleccionar imagen…</span>
+              </label>
+            </div>
+            <div><label for="readerPhotoAutor">Tu nombre</label><input id="readerPhotoAutor" maxlength="80" required placeholder="Cómo firmamos tu foto" autocomplete="name" /></div>
+            <div><label for="readerPhotoTitulo">Pie de foto</label><input id="readerPhotoTitulo" maxlength="140" placeholder="Momentazo en la grada…" /></div>
+            <div class="wide check-field"><label class="check"><input type="checkbox" required /> Aceptas que Tribuna publique tu foto con tu nombre</label></div>
+            <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          </div>
+          <button class="submit" type="submit">Enviar foto</button>
+          <p class="message" id="readerPhotoMsg" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
     <!-- ===== PÁGINA 404 (se muestra en rutas desconocidas) ===== -->
     <section id="notFound404" aria-live="polite">
       <span class="tag">Error 404</span>
@@ -952,6 +1142,7 @@
           </div>
           <div class="wide"><label for="tags">Etiquetas</label><input id="tags" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Liga, equipo, atleta…" list="teamSuggest" />
             <datalist id="teamSuggest"></datalist>
+            <datalist id="playerSuggest"></datalist>
             <p class="tags-hint" id="teamTagsHint" aria-live="polite"></p>
           </div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." class="field-textarea"></textarea></div>
@@ -1000,12 +1191,57 @@
               <input id="pollOption3" maxlength="80" placeholder="Opción 3 (opcional)" />
               <input id="pollOption4" maxlength="80" placeholder="Opción 4 (opcional)" />
               <p class="field-hint">Los lectores verán los resultados en porcentaje tras votar, y cada navegador solo podrá votar una vez.</p>
+              <p class="field-hint">Si etiquetas la nota con <b>mvp</b>, su encuesta aparecerá como "MVP de la jornada" en la portada.</p>
             </div>
           </div>
         </div>
         <button class="submit" type="submit">Guardar nota</button> 
         <p class="message" id="saveMessage" aria-live="polite"></p>
       </form>
+
+      <div class="rumor-panel-block">
+        <strong>Rastreador de fichajes</strong>
+        <p class="tags-hint">Los rumores activos aparecen en la sección "Mercado de fichajes" de la portada. Vincula clubes con su hub escribiendo el nombre tal cual aparece en el catálogo.</p>
+        <div class="draft-list" id="rumorManagerList"></div>
+        <form id="rumorForm">
+          <div class="editor-grid">
+            <div>
+              <label for="rumorPlayer">Jugador</label>
+              <input id="rumorPlayer" list="playerSuggest" placeholder="Nombre del jugador" />
+            </div>
+            <div><label for="rumorPos">Posición</label><input id="rumorPos" placeholder="Delantero" /></div>
+            <div><label for="rumorOrigen">Club de origen</label><input id="rumorOrigen" list="teamSuggest" placeholder="Club actual" /></div>
+            <div><label for="rumorDestino">Club de destino</label><input id="rumorDestino" list="teamSuggest" placeholder="Club interesado" /></div>
+            <div>
+              <label for="rumorStatusPickerToggle">Estado</label>
+              <div class="custom-picker" id="rumorStatusPicker" data-value="rumor">
+                <button type="button" class="custom-toggle" id="rumorStatusPickerToggle" aria-expanded="false" aria-haspopup="menu">Rumor</button>
+                <div class="custom-menu" role="menu">
+                  <button class="custom-option is-selected" type="button" data-value="rumor" role="menuitem">Rumor</button>
+                  <button class="custom-option" type="button" data-value="avanzado" role="menuitem">Negociación avanzada</button>
+                  <button class="custom-option" type="button" data-value="confirmado" role="menuitem">Confirmado</button>
+                  <button class="custom-option" type="button" data-value="descartado" role="menuitem">Descartado</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label for="rumorVeracity">Veracidad: <span id="rumorVeracityLabel">50%</span></label>
+              <input id="rumorVeracity" type="range" min="0" max="100" value="50" />
+            </div>
+            <div class="wide"><label for="rumorFuente">Fuente</label><input id="rumorFuente" placeholder="Medio que reportó el interés" /></div>
+            <div class="wide"><label for="rumorDetalle">Detalle</label><textarea id="rumorDetalle" placeholder="Una línea sobre la negociación (opcional)" class="field-textarea"></textarea></div>
+            <div class="wide"><label class="check"><input id="rumorActivo" type="checkbox" checked /> Visible en el rastreador público</label></div>
+          </div>
+          <button class="submit" type="submit">Guardar rumor</button>
+          <p class="message" id="rumorMessage" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <div class="foto-panel-block">
+        <strong>Fotos de lectores</strong>
+        <p class="tags-hint">Aprueba o rechaza las fotos enviadas desde la portada. Las aprobadas aparecen en la galería "Fotos de lectores".</p>
+        <div class="draft-list" id="fotoManagerList"></div>
+      </div>
     </section>
   </main>
   
@@ -1398,13 +1634,259 @@
     renderSkeleton();
     loadStandings('PL');
 
+    // ===== Próximos partidos =====
+    const fixturesStatus = document.getElementById('fixturesStatus');
+    const fixturesList = document.getElementById('fixturesList');
+    let nowLiga = '';
+
+    function fixturesSkeleton() {
+      fixturesList.innerHTML = Array.from({length: 4}).map(() =>
+        '<div class="fixture-row sk"></div>'
+      ).join('');
+    }
+
+    function fixtureDayHeader(dia) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const target = new Date(dia + 'T00:00:00');
+      const diffDias = Math.round((target - hoy) / 86400000);
+      let label = '';
+      if (diffDias === 0) label = 'Hoy';
+      else if (diffDias === 1) label = 'Mañana';
+      else if (diffDias === -1) label = 'Ayer';
+      const titulo = label || dia;
+      return `<div class="fixture-day"><span>${titulo}</span><span class="fixture-day-liga">${escapeHtml(nowLiga || '')}</span></div>`;
+    }
+
+    function fixtureHour(iso) {
+      if (!iso) return '';
+      const h = new Date(iso);
+      return `${String(h.getHours()).padStart(2, '0')}:${String(h.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function fixtureTeamHtml(team) {
+      if (!team || !team.equipo) return '<span class="fixture-team">?</span>';
+      return `<span class="fixture-team-wrap">${team.escudo ? `<img class="fixture-crest" src="${team.escudo}" alt="${escapeHtml(team.equipo)}" />` : ''}<span class="fixture-team">${escapeHtml(team.equipo)}</span></span>`;
+    }
+
+    function renderFixtures(data) {
+      if (!data || data.length === 0) {
+        fixturesList.innerHTML = '<div class="standings-error">No hay partidos programados en los próximos días.</div>';
+        return;
+      }
+      nowLiga = data[0].liga || '';
+      const byDay = {};
+      for (const f of data) (byDay[f.fecha] = byDay[f.fecha] || []).push(f);
+      fixturesList.innerHTML = Object.entries(byDay).map(([dia, matches]) =>
+        fixtureDayHeader(dia) +
+        matches.map(f => `
+          <div class="fixture-row">
+            <span class="fixture-home">${fixtureTeamHtml(f.local)}</span>
+            <span class="fixture-center">
+              <span class="fixture-time">${fixtureHour(f.fechaISO)}</span>
+              <span class="fixture-round">${escapeHtml(f.jornada || '')}</span>
+            </span>
+            <span class="fixture-away">${fixtureTeamHtml(f.visitante)}</span>
+          </div>
+        `).join('')
+      ).join('');
+    }
+
+    async function loadFixtures(liga) {
+      fixturesStatus.textContent = 'Actualizando...';
+      fixturesSkeleton();
+      try {
+        const resp = await fetch(`/api/fixtures/${encodeURIComponent(liga)}`);
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json) throw new Error((json && json.error) || 'Error desconocido');
+        renderFixtures(json.data || []);
+        fixturesStatus.textContent = json.stale ? 'Actualizado hace un momento' : 'En vivo';
+      } catch (err) {
+        console.error("Error al cargar los partidos:", err);
+        fixturesStatus.textContent = 'Error';
+        fixturesList.innerHTML = '<div class="standings-error">No se pudieron cargar los próximos partidos. Intenta de nuevo más tarde.</div>';
+      }
+    }
+
+    setupCustomPicker('fixturesPicker', (selectedLiga) => {
+      loadFixtures(selectedLiga);
+    });
+    loadFixtures('pl');
+
+    // ===== Mercado de fichajes (rumores) =====
+    const rumorStatusEl = document.getElementById('rumorStatus');
+    const rumorListEl = document.getElementById('rumorList');
+    const RUMOR_STATE_LABEL = { rumor: 'Rumor', avanzado: 'Negociación avanzada', confirmado: 'Confirmado', descartado: 'Descartado' };
+    const RUMOR_STATE_CLASS = { rumor: 'ru-state-rumor', avanzado: 'ru-state-avanzado', confirmado: 'ru-state-confirmado', descartado: 'ru-state-descartado' };
+
+    function rumorClubHTML(club) {
+      if (!club || !club.nombre) return '<span class="rumor-club">—</span>';
+      const href = club.slug ? '/equipo/' + encodeURIComponent(club.slug) : null;
+      const inner = `${club.escudo ? `<img src="${club.escudo}" alt="" loading="lazy" onerror="this.style.display='none'" />` : ''}<span>${escapeHtml(club.nombre)}</span>`;
+      return href
+        ? `<a class="rumor-club" href="${href}" onclick="navigateTo(event, '${href}')">${inner}</a>`
+        : `<span class="rumor-club">${inner}</span>`;
+    }
+
+    function rumorPlayerHTML(r) {
+      const href = r.jugador_slug ? '/jugador/' + encodeURIComponent(r.jugador_slug) : null;
+      const name = escapeHtml(r.jugador || '');
+      if (!href) return `<div class="rumor-head"><span class="rumor-player-name">${name}</span>${r.posicion ? `<span class="rumor-pos">${escapeHtml(r.posicion)}</span>` : ''}</div>`;
+      return `<div class="rumor-head"><a class="rumor-player-name" href="${href}" onclick="navigateTo(event, '${href}')">${name}</a>${r.posicion ? `<span class="rumor-pos">${escapeHtml(r.posicion)}</span>` : ''}</div>`;
+    }
+
+    function renderRumors(list) {
+      if (!list || !list.length) {
+        rumorListEl.innerHTML = '<div class="rumor-empty">Sin movimientos en el mercado por ahora. Vuelve pronto.</div>';
+        return;
+      }
+      rumorListEl.innerHTML = list.map(r => {
+        const label = RUMOR_STATE_LABEL[r.estado] || 'Rumor';
+        const cls = RUMOR_STATE_CLASS[r.estado] || 'ru-state-rumor';
+        const veracidad = Math.max(0, Math.min(100, Number(r.veracidad) || 0));
+        const age = timeAgo(r.updated_at);
+        return `
+          <div class="rumor-row">
+            ${rumorPlayerHTML(r)}
+            <div class="rumor-route">
+              <span class="rumor-origen">${rumorClubHTML(r.origen)}</span>
+              <span class="rumor-arrow">→</span>
+              <span class="rumor-destino">${rumorClubHTML(r.destino)}</span>
+              <span class="rumor-meter"><span style="width:${veracidad}%"></span></span>
+            </div>
+            <div class="rumor-foot">
+              <span class="rumor-badge ${cls}">${escapeHtml(label)}</span>
+              <span class="rumor-score">${veracidad}%</span>
+              ${r.fuente ? `<span class="rumor-fuente">${escapeHtml(r.fuente)}</span>` : ''}
+              ${age ? `<span class="rumor-age">${age}</span>` : ''}
+            </div>
+            ${r.detalle ? `<p class="rumor-detalle">${escapeHtml(r.detalle)}</p>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    async function loadRumors() {
+      rumorStatusEl.textContent = 'Actualizando...';
+      try {
+        const resp = await fetch('/api/rumors');
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json) throw new Error('Error al cargar rumores');
+        renderRumors(json);
+        rumorStatusEl.textContent = 'En vivo';
+      } catch (err) {
+        console.error("Error al cargar los rumores:", err);
+        rumorStatusEl.textContent = 'Error';
+        rumorListEl.innerHTML = '<div class="rumor-empty">No se pudo cargar el mercado de fichajes. Intenta de nuevo más tarde.</div>';
+      }
+    }
+loadRumors();
+
+    // ===== Fotos de lectores (galería moderada) =====
+    const fotosStatusEl = document.getElementById('fotosStatus');
+    const fotosGalleryEl = document.getElementById('fotosGallery');
+
+    function fotoCardHTML(p) {
+      return `<article class="foto-card">
+        <div class="foto-media"><img src="${escapeHtml(p.foto)}" alt="${escapeHtml(p.titulo || 'Foto de lector')}" loading="lazy" onerror="this.closest('.foto-card').remove()" /></div>
+        <div class="foto-copy">
+          ${p.titulo ? `<h3>${escapeHtml(p.titulo)}</h3>` : ''}
+          <p>Foto de ${escapeHtml(p.autor)}</p>
+        </div>
+      </article>`;
+    }
+
+    function renderFotosGallery(list) {
+      const section = document.getElementById('fotosLectores');
+      if (!section || !fotosGalleryEl) return;
+      if (!list || !list.length) {
+        section.style.display = 'none';
+        fotosGalleryEl.innerHTML = '';
+        return;
+      }
+      section.style.display = '';
+      fotosGalleryEl.innerHTML = list.map(fotoCardHTML).join('');
+      if (fotosStatusEl) fotosStatusEl.textContent = list.length + (list.length === 1 ? ' foto' : ' fotos');
+    }
+
+    async function loadReaderPhotos() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('reader_photos')
+          .select('*')
+          .eq('estado', 'publicada')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        renderFotosGallery(data || []);
+      } catch (err) {
+        console.error('Error al cargar las fotos de lectores:', err);
+        renderFotosGallery([]);
+      }
+    }
+    loadReaderPhotos();
+
+    const readerPhotoForm = document.getElementById('readerPhotoForm');
+    if (readerPhotoForm) {
+      readerPhotoForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById('readerPhotoMsg');
+        const autor = document.getElementById('readerPhotoAutor').value.trim();
+        if (!autor) {
+          msg.textContent = 'Escribe tu nombre para firmar la foto.';
+          return;
+        }
+        const fileInput = document.getElementById('readerPhotoFile');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          msg.textContent = 'Selecciona una imagen antes de enviar.';
+          return;
+        }
+        msg.textContent = 'Subiendo tu foto…';
+        try {
+          const compressed = await compressImage(file, 1600, 0.82);
+          const fileExt = (compressed.name.split('.').pop() || 'jpg').toLowerCase();
+          const filePath = `lectores/${Date.now()}.${fileExt}`;
+          const { error: uploadError } = await supabaseClient.storage
+            .from('notes-images')
+            .upload(filePath, compressed, { contentType: compressed.type });
+          if (uploadError) throw uploadError;
+          const { data: urlData } = supabaseClient.storage
+            .from('notes-images')
+            .getPublicUrl(filePath);
+          const foto = urlData.publicUrl;
+
+          const honeypot = readerPhotoForm.querySelector('input[name="website"]');
+          const resp = await fetch('/api/reader-photos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              autor,
+              titulo: document.getElementById('readerPhotoTitulo').value.trim(),
+              foto,
+              website: honeypot ? honeypot.value.trim() : ''
+            })
+          });
+          const json = await resp.json().catch(() => ({}));
+          if (resp.status === 429) throw new Error((json && json.error) || 'Demasiados envíos. Espera unos minutos.');
+          if (!resp.ok) throw new Error((json && json.error) || `Error HTTP ${resp.status}`);
+          readerPhotoForm.reset();
+          readerPhotoForm.querySelector('.file-name').textContent = 'Seleccionar imagen…';
+          msg.textContent = '¡Gracias! Tu foto será revisada por la redacción antes de publicarse.';
+        } catch (err) {
+          console.error('Error al enviar la foto:', err);
+          msg.textContent = 'No se pudo enviar tu foto. Inténtalo de nuevo.';
+        }
+      };
+    }
+
     const fallbackNotes = [
-      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80', reactions: { clap: 0, wow: 0, angry: 0 }}
+      {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80', reactions: { clap: 0, wow: 0, angry: 0 }},
+      {id: 2, status: 'publicada', urgent: false, sport: 'Fútbol', title: '¿Quién fue el MVP de la jornada?', intro: 'Elegí al mejor del partido del fin de semana en la Liga Promérica.', author: 'Redacción Tribuna', email: 'redaccion@tribuna.test', tags: 'mvp, liga promerica, jornada', body: 'El voto de los lectores define al jugador destacado de cada jornada. Resultados en tiempo real al votar.', image: '', reactions: { clap: 0, wow: 0, angry: 0, poll: { question: '¿Quién fue el MVP de la jornada?', options: ['Joel Campbell', 'Alexander López', 'Alonso Martínez'] }, poll_votes: { 0: 24, 1: 11, 2: 9 } }}
     ];
 
     let allPublicNotes = [];
     let currentDisplayNotes = [];
     let teamsCatalog = [];
+    let playersCatalog = [];
     let allPanelNotes = [];
     let editingId = null;
     let editingVideoUrl = '';
@@ -1935,6 +2417,101 @@
       }
     }
 
+    // ===== SECCIÓN ● 3e · MVP de la jornada (encuesta destacada en portada) =====
+    // La redacción etiqueta una nota-encuesta con "mvp"; aquí se muestra la
+    // encuesta de la nota publicada más reciente con esa etiqueta.
+    function noteHasMvpTag(note) {
+      return String(note.tags || '').split(/[,;\n]+/).some(t => normalizeStr(t) === 'mvp');
+    }
+
+    function getMvpNote() {
+      return (allPublicNotes || [])
+        .filter(n => n.status === 'publicada' && noteHasMvpTag(n) && getPollDef(n))
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0] || null;
+    }
+
+    function renderMvpSection() {
+      const section = document.getElementById('mvpJornada');
+      const listEl = document.getElementById('mvpList');
+      if (!section || !listEl) return;
+      const note = getMvpNote();
+      if (!note) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      const poll = getPollDef(note);
+      const noteId = String(note.id);
+      const votes = getPollVotes(note);
+      const total = Object.keys(votes).reduce((a, k) => a + (Number(votes[k]) || 0), 0);
+      const pcts = poll.options.map((_, i) => (total > 0 ? Math.round(((Number(votes[i]) || 0) / total) * 100) : 0));
+      const maxPct = Math.max.apply(null, pcts);
+      const myVote = votedPollIndex(noteId);
+      const hasVoted = Number.isInteger(myVote) && myVote >= 0 && myVote < poll.options.length;
+
+      const optionsHtml = poll.options.map((opt, i) => {
+        if (!hasVoted) {
+          return `<button type="button" class="poll-option" onclick="voteMvpPoll(${i})">${opt}</button>`;
+        }
+        const isMine = myVote === i;
+        const isWinner = maxPct > 0 && pcts[i] === maxPct;
+        return `<button type="button" class="poll-option${isMine ? ' is-voted' : ''}${isWinner ? ' is-winner' : ''}" disabled>
+          <span class="poll-row"><span>${opt}</span><span class="poll-pct">${pcts[i]}%</span></span>
+          <span class="poll-result-bar"><i style="width:${pcts[i]}%"></i></span>
+        </button>`;
+      }).join('');
+
+      const statusEl = document.getElementById('mvpStatus');
+      if (statusEl) statusEl.textContent = hasVoted ? 'Ya votaste' : 'En vivo';
+
+      listEl.innerHTML = `<div class="poll-card">
+        <span class="tag">MVP · ${escapeHtml(note.sport || '')}</span>
+        <h3>${poll.question}</h3>
+        ${optionsHtml}
+        <div class="poll-meta">
+          <span>${total} voto${total === 1 ? '' : 's'}</span>
+          ${hasVoted ? '<span class="poll-note">Tu voto está registrado</span>' : '<span>¿Tu opción?</span>'}
+          <a class="poll-source" href="#lectura" onclick="event.preventDefault(); openNoteById('${noteId}');">Ver nota →</a>
+        </div>
+      </div>`;
+    }
+
+    async function voteMvpPoll(index) {
+      const note = getMvpNote();
+      if (!note) return;
+      const poll = getPollDef(note);
+      if (!poll || index < 0 || index >= poll.options.length) return;
+      const noteId = String(note.id);
+      try {
+        if (localStorage.getItem('tribuna_poll_' + noteId)) {
+          alert('Ya has votado en esta encuesta.');
+          return;
+        }
+      } catch (err) {}
+
+      const reactions = note.reactions || {};
+      const votes = getPollVotes(note);
+      votes[index] = (Number(votes[index]) || 0) + 1;
+      const next = Object.assign({}, reactions, { poll_votes: votes });
+
+      try {
+        const { error } = await supabaseClient
+          .from('notes')
+          .update({ reactions: next })
+          .eq('id', noteId);
+        if (error) throw error;
+        note.reactions = next;
+        const pubNote = (allPublicNotes || []).find(x => String(x.id) === noteId);
+        if (pubNote) pubNote.reactions = next;
+        localStorage.setItem('tribuna_poll_' + noteId, String(index));
+        renderMvpSection();
+        renderPoll();
+      } catch (err) {
+        console.error('Error al registrar el voto del MVP:', err);
+        alert('No se pudo registrar tu voto. Inténtalo de nuevo.');
+      }
+    }
+
     function updateReactionsUI() {
       if (!currentNote) return;
       const r = currentNote.reactions || { clap: 0, wow: 0, angry: 0 };
@@ -2133,6 +2710,8 @@
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
 
+      renderMvpSection();
+
       updateBookmarkUI();
       revealOnScroll();
     }
@@ -2259,6 +2838,7 @@
       { slug: 'sporting-san-jose', nombre: 'Sporting San José', escudo: 'https://r2.thesportsdb.com/images/media/team/badge/7wzxlo1606770023.png', aliases: ['sporting'] }
     ];
     const teamHubSection = document.getElementById('teamHub');
+    const playerHubSection = document.getElementById('playerHub');
 
     function normalizeTeamWord(s) {
       return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -2292,6 +2872,62 @@
       return [...found];
     }
 
+    async function loadPlayersCatalog() {
+      if (playersCatalog.length) return playersCatalog;
+      try {
+        const res = await fetch('/api/players');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length) playersCatalog = data;
+        }
+      } catch (err) {
+        console.error('No se pudo cargar el catálogo de jugadores:', err);
+      }
+      const playerSuggest = document.getElementById('playerSuggest');
+      if (playerSuggest && !playerSuggest.childElementCount) {
+        playersCatalog.forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.nombre;
+          playerSuggest.appendChild(o);
+        });
+      }
+      return playersCatalog;
+    }
+
+    function notePlayerSlugs(note) {
+      if (!playersCatalog.length) return [];
+      const rawTags = String(note.tags || '').split(/[,;\n]+/).map(normalizeTeamWord).filter(Boolean);
+      const words = new Set(rawTags.flatMap(t => t.split(/\s+/)).filter(Boolean));
+      const found = [];
+      playersCatalog.forEach(player => {
+        const kws = [player.slug, player.nombre, ...(player.aliases || [])].map(normalizeTeamWord).filter(Boolean);
+        if (kws.some(kw => rawTags.includes(kw) || (kw.indexOf(' ') === -1 && words.has(kw)))) found.push(player.slug);
+      });
+      return found;
+    }
+
+    function playerBySlug(slug) {
+      return playersCatalog.find(p => normalizeTeamWord(p.slug) === normalizeTeamWord(slug)) || null;
+    }
+
+    function squadRowsHTML(equipoSlug) {
+      const squad = playersCatalog
+        .filter(p => p.equipo_slug === equipoSlug)
+        .sort((a, b) => String(a.posicion || '').localeCompare(String(b.posicion || '')) || (Number(a.dorsal) || 0) - (Number(b.dorsal) || 0));
+      if (!squad.length) return '<p class="player-empty">Sin fichas de plantilla todavía. La redacción las publicará aquí por jugador.</p>';
+      return `<div class="player-squad-list">${squad.map(p => {
+        const href = '/jugador/' + encodeURIComponent(p.slug);
+        return `<a class="player-row" href="${href}" onclick="navigateTo(event, '${href}')">
+          <span class="player-dorsal">${p.dorsal ? '#' + p.dorsal : '—'}</span>
+          <span>
+            <span class="player-name">${escapeHtml(p.nombre)}</span>
+            ${p.nacionalidad ? `<span class="player-sub"> · ${escapeHtml(p.nacionalidad)}</span>` : ''}
+          </span>
+          <span class="player-pos">${escapeHtml(p.posicion || '')}</span>
+        </a>`;
+      }).join('')}</div>`;
+    }
+
     function teamByName(slug) {
       return teamsCatalog.find(t => normalizeTeamWord(t.slug) === normalizeTeamWord(slug));
     }
@@ -2309,13 +2945,23 @@
     }
 
     function setTeamVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'mostReadSection', 'trendingSection', 'podcast'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'proximos', 'rumores', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
       document.getElementById('loadMoreContainer').style.display = show ? 'none' : '';
       document.getElementById('breakingContainer').style.display = show ? 'none' : '';
       if (teamHubSection) teamHubSection.style.display = show ? 'block' : 'none';
+    }
+
+    function setPlayerVisible(show) {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'proximos', 'rumores', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'none' : '';
+      });
+      document.getElementById('loadMoreContainer').style.display = show ? 'none' : '';
+      document.getElementById('breakingContainer').style.display = show ? 'none' : '';
+      if (playerHubSection) playerHubSection.style.display = show ? 'block' : 'none';
     }
 
     async function renderTeamPage(slug) {
@@ -2328,6 +2974,7 @@
         return;
       }
 
+      await loadPlayersCatalog();
       const related = allPublicNotes
         .slice()
         .map(n => Object.assign({}, n, { teams: noteTeamSlugs(n) }))
@@ -2365,7 +3012,9 @@
         </header>
         ${related.length
           ? `<h2 class="section-title">Notas relacionadas</h2><section class="team-note-grid">${related.map(card).join('')}</section>`
-          : `<div class="empty-results"><h3>Sin historias de ${escapeHtml(team.nombre)} todavía</h3><p>Cuando la redacción publique una nota con las etiquetas de este equipo, aparecerá automáticamente aquí.</p></div>`}`;
+          : `<div class="empty-results"><h3>Sin historias de ${escapeHtml(team.nombre)} todavía</h3><p>Cuando la redacción publique una nota con las etiquetas de este equipo, aparecerá automáticamente aquí.</p></div>`}
+        <h2 class="section-title">Plantilla</h2>
+        ${squadRowsHTML(team.slug)}`;
 
       detail.style.display = 'none';
       set404Visible(false);
@@ -2375,6 +3024,92 @@
       if (metaDesc) metaDesc.setAttribute('content', `Noticias de ${team.nombre}, Liga Promérica.`);
 
       teamHubSection.querySelectorAll('.open-article').forEach(link => {
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+      });
+      revealOnScroll();
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    function formatPlayerDate(iso) {
+      if (!iso) return '';
+      const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    async function renderPlayerPage(slug) {
+      const catalog = await loadPlayersCatalog();
+      const player = playerBySlug(slug);
+      if (!player || !playerHubSection) {
+        detail.style.display = 'none';
+        setPlayerVisible(false);
+        set404Visible(true);
+        return;
+      }
+
+      const team = player.equipo || teamByName(player.equipo_slug) || null;
+      const related = allPublicNotes
+        .slice()
+        .map(n => Object.assign({}, n, { players: notePlayerSlugs(n) }))
+        .filter(n => (n.players || []).indexOf(player.slug) !== -1)
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+
+      const card = (n) => `<div class="team-note-card">
+          <a class="article-link open-article" href="#lectura" data-tidx="${related.indexOf(n)}">
+            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span></div>
+            <h3>${escapeHtml(n.title)}</h3>
+            <p>${escapeHtml(n.intro || '')}</p>
+            <span class="meta-date">${noteDate(n.created_at)}</span>
+          </a>
+        </div>`;
+
+      currentDisplayNotes = related;
+      currentActiveCategory = '';
+
+      const inicial = String(player.nombre || '?').trim().charAt(0).toUpperCase();
+      const datos = [];
+      if (player.posicion) datos.push(`<span class="player-chip">${escapeHtml(player.posicion)}</span>`);
+      if (player.dorsal) datos.push(`<span class="player-chip">Dorsal #${escapeHtml(String(player.dorsal))}</span>`);
+      if (player.nacionalidad) datos.push(`<span class="player-chip">${escapeHtml(player.nacionalidad)}</span>`);
+      if (team) {
+        const teamHref = '/equipo/' + encodeURIComponent(team.slug);
+        datos.push(`<a class="team-chip" href="${teamHref}" onclick="navigateTo(event, '${teamHref}')"><img src="${team.escudo}" alt="" loading="lazy" onerror="this.style.display='none'" /><span>${escapeHtml(team.nombre)}</span></a>`);
+      }
+
+      playerHubSection.innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <a href="/categoria/futbol" onclick="navigateTo(event, '/categoria/futbol')">Fútbol</a>
+          ${team ? `<span aria-hidden="true">/</span><a href="/equipo/${encodeURIComponent(team.slug)}" onclick="navigateTo(event, '/equipo/${encodeURIComponent(team.slug)}')">${escapeHtml(team.nombre)}</a>` : ''}
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">${escapeHtml(player.nombre)}</span>
+        </nav>
+        <header class="player-hub-header">
+          <div class="player-hub-photo" aria-hidden="true">
+            ${player.foto ? `<img src="${player.foto}" alt="" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=&quot;player-initial&quot;>${inicial}</span>';" />` : `<span class="player-initial">${inicial}</span>`}
+          </div>
+          <div>
+            <span class="tag">Liga Promérica</span>
+            <h1 id="playerHubTitle">${escapeHtml(player.nombre)}</h1>
+            <p>${team ? `Ficha de ${escapeHtml(player.nombre)} en ${escapeHtml(team.nombre)}.` : 'Ficha de jugador de la Liga Promérica.'}</p>
+            <div class="player-meta">${datos.join('')}</div>
+          </div>
+        </header>
+        ${player.fecha_nacimiento ? `<p class="player-sub">Nacimiento: ${formatPlayerDate(player.fecha_nacimiento)}</p>` : ''}
+        ${related.length
+          ? `<h2 class="section-title">Notas relacionadas</h2><section class="team-note-grid">${related.map(card).join('')}</section>`
+          : `<div class="empty-results"><h3>${escapeHtml(player.nombre)} todavía no tiene notas propias</h3><p>Cuando la redacción publique una nota que lo mencione (tags), aparecerá automáticamente aquí.</p></div>`}`;
+
+      detail.style.display = 'none';
+      set404Visible(false);
+      setPlayerVisible(true);
+      document.title = `${player.nombre} · Tribuna`;
+      const metaDesc = document.getElementById('metaDesc');
+      if (metaDesc) metaDesc.setAttribute('content', `Ficha de ${player.nombre}${team ? ', ' + team.nombre : ''}, Liga Promérica.`);
+
+      playerHubSection.querySelectorAll('.open-article').forEach(link => {
         link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
       });
       revealOnScroll();
@@ -2412,7 +3147,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'mostReadSection', 'trendingSection', 'podcast'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'proximos', 'rumores', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -2439,6 +3174,7 @@
 
       let isNotFound;
       let teamSlug = null;
+      let playerSlug = null;
       if (path === '/' || path === '/index.html') {
         isNotFound = false;
         document.title = 'Tribuna | Periodismo deportivo';
@@ -2450,6 +3186,10 @@
         const teamMatch = path.match(/^\/equipo\/([a-z0-9-]+)\/?$/i);
         isNotFound = !teamMatch;
         if (teamMatch) teamSlug = teamMatch[1];
+      } else if (path.startsWith('/jugador/')) {
+        const playerMatch = path.match(/^\/jugador\/([a-z0-9-]+)\/?$/i);
+        isNotFound = !playerMatch;
+        if (playerMatch) playerSlug = playerMatch[1];
       } else {
         isNotFound = true;
       }
@@ -2464,6 +3204,12 @@
       if (teamSlug) {
         set404Visible(false);
         await renderTeamPage(teamSlug);
+        return;
+      }
+
+      if (playerSlug) {
+        set404Visible(false);
+        await renderPlayerPage(playerSlug);
         return;
       }
 
@@ -2566,6 +3312,347 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       } catch (err) {
         console.error("Error crítico al cargar notas para el panel de redacción:", err);
       } 
+    }
+
+    // ===== Rastreador de fichajes (panel) =====
+    let allPanelRumors = [];
+    let editingRumorId = null;
+    const rumorManagerListEl = document.getElementById('rumorManagerList');
+    const rumorFormEl = document.getElementById('rumorForm');
+    const rumorMessageEl = document.getElementById('rumorMessage');
+    const rumorVeracityInput = document.getElementById('rumorVeracity');
+    const rumorVeracityLabel = document.getElementById('rumorVeracityLabel');
+
+    function setRumorForm(rumor) {
+      editingRumorId = rumor ? rumor.id : null;
+      document.getElementById('rumorPlayer').value = rumor ? (rumor.jugador || '') : '';
+      document.getElementById('rumorPos').value = rumor ? (rumor.posicion || '') : '';
+      document.getElementById('rumorOrigen').value = rumor ? (rumor.origen ? rumor.origen.nombre : '') : '';
+      document.getElementById('rumorDestino').value = rumor ? (rumor.destino ? rumor.destino.nombre : '') : '';
+      setCustomPickerValue('rumorStatusPicker', rumor ? (rumor.estado || 'rumor') : 'rumor');
+      const veracidad = rumor && typeof rumor.veracidad === 'number' ? rumor.veracidad : 50;
+      rumorVeracityInput.value = veracidad;
+      if (rumorVeracityLabel) rumorVeracityLabel.textContent = veracidad + '%';
+      document.getElementById('rumorFuente').value = rumor ? (rumor.fuente || '') : '';
+      document.getElementById('rumorDetalle').value = rumor ? (rumor.detalle || '') : '';
+      document.getElementById('rumorActivo').checked = rumor ? rumor.activo !== false : true;
+      rumorMessageEl.textContent = rumor ? `Editando: ${rumor.jugador}` : '';
+    }
+
+    function renderRumorManager() {
+      rumorManagerListEl.replaceChildren();
+      if (!allPanelRumors.length) {
+        const empty = document.createElement('div');
+        empty.className = 'draft-item';
+        empty.innerHTML = '<div><strong>Sin rumores todavía</strong><small>Crea el primero desde el formulario de abajo.</small></div>';
+        rumorManagerListEl.append(empty);
+        return;
+      }
+      allPanelRumors.forEach(rumor => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        const text = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = rumor.jugador;
+        const badge = document.createElement('span');
+        badge.className = `status-badge status-${rumor.estado || 'rumor'}`;
+        badge.textContent = RUMOR_STATE_LABEL[rumor.estado] || rumor.estado || 'Rumor';
+        name.appendChild(badge);
+        if (!rumor.activo) {
+          const hidden = document.createElement('span');
+          hidden.className = 'status-badge status-archived';
+          hidden.textContent = 'Oculto';
+          name.appendChild(hidden);
+        }
+        const meta = document.createElement('small');
+        const destino = rumor.destino ? rumor.destino.nombre : '—';
+        const origen = rumor.origen ? rumor.origen.nombre : '¿?';
+        meta.textContent = `${origen} → ${destino} · ${rumor.veracidad}% · ${rumor.fuente || 'sin fuente'}`;
+        text.append(name, meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'draft-actions';
+        const button = document.createElement('button');
+        button.className = 'edit-note';
+        button.type = 'button';
+        button.textContent = 'Editar';
+        button.onclick = () => {
+          setRumorForm(rumor);
+          rumorFormEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+        const del = document.createElement('button');
+        del.className = 'trash-note';
+        del.type = 'button';
+        del.textContent = 'Eliminar';
+        del.onclick = () => deleteRumor(rumor);
+        actions.append(del, button);
+        item.append(text, actions);
+        rumorManagerListEl.append(item);
+      });
+    }
+
+    async function loadRumorsForPanel() {
+      if (!writerToken) return;
+      rumorManagerListEl.innerHTML = '<div class="draft-item"><div><small>Cargando rumores…</small></div></div>';
+      try {
+        const response = await fetch('/api/rumors/manager', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar los rumores.');
+        allPanelRumors = await response.json();
+        renderRumorManager();
+        loadStatsForPanel();
+      } catch (err) {
+        console.error("Error al cargar los rumores del panel:", err);
+      }
+    }
+
+    async function deleteRumor(rumor) {
+      if (!writerToken) return;
+      const ok = confirm(`¿Eliminar el rumor de "${rumor.jugador}"? Se borrará del rastreador público.`);
+      if (!ok) return;
+      try {
+        const response = await fetch(`/api/rumors/${rumor.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+        }
+        await loadRumorsForPanel();
+        await loadRumors();
+      } catch (err) {
+        console.error('Error al eliminar el rumor:', err);
+        alert('Error al eliminar el rumor: ' + err.message);
+      }
+    }
+
+    if (rumorVeracityInput) {
+      rumorVeracityInput.addEventListener('input', () => {
+        if (rumorVeracityLabel) rumorVeracityLabel.textContent = rumorVeracityInput.value + '%';
+      });
+    }
+    setupCustomPicker('rumorStatusPicker', () => {});
+
+    if (rumorFormEl) {
+      rumorFormEl.onsubmit = async e => {
+        e.preventDefault();
+        if (!writerToken) return;
+        const value = document.getElementById('rumorVeracity').value;
+        const payload = {
+          jugador: document.getElementById('rumorPlayer').value.trim(),
+          posicion: document.getElementById('rumorPos').value.trim(),
+          club_origen: document.getElementById('rumorOrigen').value.trim(),
+          club_destino: document.getElementById('rumorDestino').value.trim(),
+          estado: document.getElementById('rumorStatusPicker').dataset.value || 'rumor',
+          veracidad: Math.max(0, Math.min(100, Number(value) || 0)),
+          fuente: document.getElementById('rumorFuente').value.trim(),
+          detalle: document.getElementById('rumorDetalle').value.trim(),
+          activo: document.getElementById('rumorActivo').checked
+        };
+        rumorMessageEl.textContent = 'Guardando rumor…';
+        try {
+          const isNew = editingRumorId === null;
+          const endpoint = isNew ? '/api/rumors' : `/api/rumors/${editingRumorId}`;
+          const response = await fetch(endpoint, {
+            method: isNew ? 'POST' : 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${writerToken}` },
+            body: JSON.stringify(payload)
+          });
+          if (response.status === 401) {
+            writerToken = '';
+            sessionStorage.removeItem('tribuna_writer_token');
+            panel.style.display = 'none';
+            access.textContent = 'Acceso redacción';
+            return;
+          }
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+          }
+          rumorMessageEl.textContent = isNew ? 'Rumor guardado.' : 'Cambios guardados.';
+          setRumorForm(null);
+          rumorFormEl.reset();
+          document.getElementById('rumorActivo').checked = true;
+          rumorVeracityInput.value = 50;
+          if (rumorVeracityLabel) rumorVeracityLabel.textContent = '50%';
+          await loadRumorsForPanel();
+          await loadRumors();
+        } catch (err) {
+          console.error('Error al guardar el rumor:', err);
+          rumorMessageEl.textContent = 'No se pudo guardar el rumor: ' + err.message;
+        }
+      };
+    }
+
+    // ===== Moderación de fotos de lectores (panel) =====
+    let allPanelFotos = [];
+    const fotoManagerListEl = document.getElementById('fotoManagerList');
+    const FOTO_STATE_LABEL = { en_revision: 'En revisión', publicada: 'Publicada', rechazada: 'Rechazada' };
+    const FOTO_STATE_CLASS = { en_revision: '', publicada: 'status-archived', rechazada: '' };
+
+    function renderFotosManager() {
+      fotoManagerListEl.replaceChildren();
+      if (!allPanelFotos.length) {
+        const empty = document.createElement('div');
+        empty.className = 'draft-item';
+        empty.innerHTML = '<div><strong>Sin fotos enviadas todavía</strong><small>Las fotos de lectores llegaran aquí cuando se envíen desde la portada.</small></div>';
+        fotoManagerListEl.append(empty);
+        return;
+      }
+      allPanelFotos.forEach(foto => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        item.style.gap = '12px';
+        const thumb = document.createElement('img');
+        thumb.src = foto.foto || '';
+        thumb.alt = '';
+        thumb.style.cssText = 'width:64px;height:48px;object-fit:cover;border-radius:6px;flex:none;';
+        thumb.onerror = () => { thumb.style.display = 'none'; };
+        const text = document.createElement('div');
+        text.style.minWidth = '0';
+        const name = document.createElement('strong');
+        name.textContent = foto.autor;
+        const badge = document.createElement('span');
+        badge.className = `status-badge status-${FOTO_STATE_CLASS[foto.estado] || ''}`.replace(/\s+/g, ' ').trim();
+        if (!FOTO_STATE_CLASS[foto.estado]) badge.style.cssText = '';
+        badge.textContent = FOTO_STATE_LABEL[foto.estado] || foto.estado;
+        name.appendChild(badge);
+        const meta = document.createElement('small');
+        meta.textContent = `${foto.titulo || 'Sin pie de foto'} · ${nowAge(foto.created_at)}`;
+        text.append(name, meta);
+        item.append(thumb, text);
+
+        const actions = document.createElement('div');
+        actions.className = 'draft-actions';
+        const approve = document.createElement('button');
+        approve.className = 'edit-note';
+        approve.type = 'button';
+        approve.textContent = 'Aprobar';
+        approve.disabled = foto.estado === 'publicada';
+        approve.onclick = () => moderateFoto(foto, 'publicada');
+        const reject = document.createElement('button');
+        reject.className = 'trash-note';
+        reject.type = 'button';
+        reject.textContent = 'Rechazar';
+        reject.disabled = foto.estado === 'rechazada';
+        reject.onclick = () => moderateFoto(foto, 'rechazada');
+        const del = document.createElement('button');
+        del.className = 'trash-note';
+        del.type = 'button';
+        del.textContent = 'Borrar';
+        del.onclick = () => deleteFoto(foto);
+        actions.append(del, approve, reject);
+        item.append(actions);
+        fotoManagerListEl.append(item);
+      });
+    }
+
+    function nowAge(iso) {
+      if (!iso) return '';
+      const diff = Date.now() - new Date(iso).getTime();
+      if (Number.isNaN(diff) || diff < 0) return '';
+      const mins = Math.round(diff / 60000);
+      if (mins < 1) return 'ahora mismo';
+      if (mins < 60) return `hace ${mins} min`;
+      const hours = Math.round(mins / 60);
+      if (hours < 24) return `hace ${hours} h`;
+      return `hace ${Math.round(hours / 24)} d`;
+    }
+
+    async function loadFotosForPanel() {
+      if (!writerToken) return;
+      fotoManagerListEl.innerHTML = '<div class="draft-item"><div><small>Cargando fotos…</small></div></div>';
+      try {
+        const response = await fetch('/api/reader-photos/manager', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar las fotos de lectores.');
+        allPanelFotos = await response.json();
+        renderFotosManager();
+      } catch (err) {
+        console.error("Error al cargar las fotos del panel:", err);
+      }
+    }
+
+    async function moderateFoto(foto, estado) {
+      if (!writerToken) return;
+      const nota = estado === 'rechazada'
+        ? prompt(`Motivo del rechazo (se guarda para referencia de la redacción):`) || ''
+        : '';
+      try {
+        const response = await fetch(`/api/reader-photos/${foto.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${writerToken}` },
+          body: JSON.stringify({ estado, nota })
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+        }
+        await loadFotosForPanel();
+        await loadReaderPhotos();
+      } catch (err) {
+        console.error('Error al moderar la foto:', err);
+        alert('No se pudo guardar la decisión: ' + err.message);
+      }
+    }
+
+    async function deleteFoto(foto) {
+      if (!writerToken) return;
+      const ok = confirm(`¿Eliminar la foto de "${foto.autor}"? Se borrará de la galería y de Storage.`);
+      if (!ok) return;
+      try {
+        const response = await fetch(`/api/reader-photos/${foto.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+        }
+        await loadFotosForPanel();
+        await loadReaderPhotos();
+      } catch (err) {
+        console.error('Error al eliminar la foto:', err);
+        alert('Error al eliminar la foto: ' + err.message);
+      }
     }
 
     function escapeHtml(str) {
@@ -2800,6 +3887,8 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
 
     loadPublicNotes();
     if (writerToken) loadAllNotesForPanel();
+    if (writerToken) loadFotosForPanel();
+    loadPlayersCatalog();
     
     async function compressImage(file, maxWidth = 1600, quality = 0.8) {
       if (!file || !file.type || !file.type.startsWith('image/')) return file;

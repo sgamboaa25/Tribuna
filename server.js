@@ -74,13 +74,23 @@ const newsletterLimiter = rateLimit({
   message: { error: 'Demasiadas suscripciones. Espera unos minutos.' }
 });
 
+const readerPhotosLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 6,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas fotos enviadas. Espera unos minutos.' }
+});
+
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/notes', writeLimiter);
 app.use('/api/standings', standingsLimiter);
+app.use('/api/fixtures', standingsLimiter);
 app.use('/api/newsletter', newsletterLimiter);
+app.use('/api/reader-photos', readerPhotosLimiter);
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
@@ -608,6 +618,362 @@ app.get('/api/teams', async (req, res) => {
   }
 });
 
+// ============ Jugadores de la Liga Promérica (Costa Rica) ============
+// Catálogo en players_ca, curado por la redacción (mismo modelo que teams_ca).
+// Se cachea 1h. El join con teams_ca aporta nombre y escudo del club a cada
+// jugador para las páginas /jugador/:slug sin otra petición del cliente.
+const PLAYERS_CACHE_TTL_MS = 60 * 60 * 1000;
+let playersCache = [];
+let playersCacheAt = 0;
+
+async function loadPlayers() {
+  const now = Date.now();
+  if (playersCacheAt && now - playersCacheAt < PLAYERS_CACHE_TTL_MS) return playersCache;
+  const { data, error } = await supabase
+    .from('players_ca')
+    .select('*')
+    .order('nombre');
+  if (error) throw error;
+  playersCache = data || [];
+  playersCacheAt = now;
+  return playersCache;
+}
+
+function decoratePlayersWithTeams(players, teams) {
+  const teamBySlug = new Map((teams || []).map((t) => [t.slug, t]));
+  return (players || []).map((p) => ({
+    nombre: p.nombre || '',
+    slug: p.slug || '',
+    posicion: p.posicion || '',
+    dorsal: p.dorsal ?? null,
+    foto: p.foto || '',
+    fecha_nacimiento: p.fecha_nacimiento || null,
+    nacionalidad: p.nacionalidad || '',
+    aliases: Array.isArray(p.aliases) ? p.aliases : [],
+    equipo_slug: p.equipo_slug || '',
+    equipo: teamBySlug.get(p.equipo_slug) || null
+  }));
+}
+
+async function loadPlayersDecorated() {
+  const [players, teams] = await Promise.all([loadPlayers(), loadTeams()]);
+  return decoratePlayersWithTeams(players, teams);
+}
+
+// GET Público: catálogo de jugadores (con nombre y escudo del equipo) para
+// las páginas /jugador/:slug y la plantilla de cada /equipo/:slug.
+app.get('/api/players', async (req, res) => {
+  try {
+    res.json(await loadPlayersDecorated());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ Rastreador de fichajes (rumores de la Liga Promérica) ============
+// Entidad curada por la redacción en transfer_rumors. El público lee solo los
+// rumores `activo` (caché corta); el panel gestiona todos vía authenticateWriter.
+// La decoración une clubes con teams_ca (escudo, /equipo/:slug) y resuelve el
+// slug de jugador por nombre contra players_ca (/jugador/:slug).
+const RUMOR_FIELDS = [
+  'jugador',
+  'jugador_slug',
+  'posicion',
+  'club_origen',
+  'club_origen_slug',
+  'club_destino',
+  'club_destino_slug',
+  'estado',
+  'veracidad',
+  'fuente',
+  'detalle',
+  'activo'
+];
+const RUMOR_STATES = ['rumor', 'avanzado', 'confirmado', 'descartado'];
+const RUMOR_CACHE_TTL_MS = 10 * 60 * 1000;
+const RUMOR_TEXT_LIMITS = {
+  jugador: 120,
+  posicion: 60,
+  club_origen: 120,
+  club_destino: 120,
+  fuente: 120,
+  detalle: 500
+};
+let rumorsCache = [];
+let rumorsCacheAt = 0;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateRumor(body, partial) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { error: 'Cuerpo de petición inválido.' };
+  }
+  if (!partial && String(body.jugador || '').trim() === '') {
+    return { error: 'Campo requerido: jugador.' };
+  }
+  const clean = {};
+  for (const key of Object.keys(body)) {
+    if (RUMOR_FIELDS.includes(key)) clean[key] = body[key];
+  }
+  for (const [field, limit] of Object.entries(RUMOR_TEXT_LIMITS)) {
+    if (clean[field] === undefined) continue;
+    if (typeof clean[field] !== 'string') return { error: `El campo ${field} debe ser texto.` };
+    clean[field] = sanitizeText(clean[field]);
+    if (clean[field].length > limit) {
+      return { error: `El campo ${field} supera la longitud máxima permitida (${limit} caracteres).` };
+    }
+  }
+  if (clean.jugador !== undefined && clean.jugador === '') {
+    return { error: 'Campo requerido: jugador.' };
+  }
+  for (const field of ['club_origen_slug', 'club_destino_slug', 'jugador_slug']) {
+    if (clean[field] === '') delete clean[field];
+  }
+  if (clean.estado !== undefined && !RUMOR_STATES.includes(clean.estado)) {
+    return { error: 'Estado de rumor no válido.' };
+  }
+  if (clean.estado === undefined && !partial) clean.estado = 'rumor';
+  if (clean.veracidad !== undefined) {
+    clean.veracidad = Number(clean.veracidad);
+    if (!Number.isFinite(clean.veracidad) || clean.veracidad < 0 || clean.veracidad > 100) {
+      return { error: 'La veracidad debe ser un número entre 0 y 100.' };
+    }
+  } else if (!partial) {
+    clean.veracidad = 50;
+  }
+  if (clean.activo !== undefined) clean.activo = Boolean(clean.activo);
+  if (Object.keys(clean).length === 0) {
+    return { error: 'No se enviaron campos válidos para guardar.' };
+  }
+  return { data: clean };
+}
+
+function resolvePlayerSlugByName(jugador, players) {
+  const key = normalizeTeamText(jugador);
+  if (!key) return null;
+  const hit = (players || []).find((p) =>
+    [p.nombre, ...(Array.isArray(p.aliases) ? p.aliases : [])].map(normalizeTeamText).includes(key)
+  );
+  return hit ? hit.slug : null;
+}
+
+// api: decoración de rumores con datos de club (nombre, escudo, slug del hub)
+// y slug de jugador resuelto para /jugador/:slug.
+function decorateRumors(rumors, teams, players) {
+  const teamBySlug = new Map((teams || []).map((t) => [t.slug, t]));
+  const toClub = (slug, name) => {
+    const t = slug && teamBySlug.get(slug);
+    return {
+      slug: t ? t.slug : slug || '',
+      nombre: t ? t.nombre : name || '',
+      escudo: t ? t.escudo : ''
+    };
+  };
+  return (rumors || []).map((r) => ({
+    id: r.id,
+    jugador: r.jugador || '',
+    jugador_slug: r.jugador_slug || resolvePlayerSlugByName(r.jugador, players) || null,
+    posicion: r.posicion || '',
+    origen: toClub(r.club_origen_slug, r.club_origen),
+    destino: toClub(r.club_destino_slug, r.club_destino),
+    estado: r.estado || 'rumor',
+    veracidad: typeof r.veracidad === 'number' ? r.veracidad : Number(r.veracidad) || 0,
+    fuente: r.fuente || '',
+    detalle: r.detalle || '',
+    activo: r.activo !== false,
+    updated_at: r.updated_at || r.created_at || null
+  }));
+}
+
+async function loadRumorsPublic() {
+  const now = Date.now();
+  if (rumorsCacheAt && now - rumorsCacheAt < RUMOR_CACHE_TTL_MS) return rumorsCache;
+  const { data, error } = await supabase
+    .from('transfer_rumors')
+    .select('*')
+    .eq('activo', true)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  rumorsCache = data || [];
+  rumorsCacheAt = now;
+  return rumorsCache;
+}
+
+async function loadTeamsAndPlayers() {
+  const [teams, players] = await Promise.all([loadTeams(), loadPlayers()]);
+  return { teams, players };
+}
+
+async function runRumorsQuery(supabaseQuery) {
+  const { data, error } = await supabaseQuery;
+  if (error) throw error;
+  const { teams, players } = await loadTeamsAndPlayers();
+  return decorateRumors(data || [], teams, players);
+}
+
+// GET Público: rumores activos para la sección "Mercado".
+app.get('/api/rumors', async (req, res) => {
+  try {
+    const { teams, players } = await loadTeamsAndPlayers();
+    res.json(decorateRumors(await loadRumorsPublic(), teams, players));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET del panel: todos los rumores (activos e inactivos).
+app.get('/api/rumors/manager', authenticateWriter, async (req, res) => {
+  try {
+    res.json(await runRumorsQuery(supabase.from('transfer_rumors').select('*').order('created_at', { ascending: false })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST: crear un rumor (solo redacción).
+app.post('/api/rumors', authenticateWriter, async (req, res) => {
+  const { data: clean, error: verr } = validateRumor(req.body, false);
+  if (verr) return res.status(400).json({ error: verr });
+  try {
+    clean.updated_at = new Date().toISOString();
+    const { data, error } = await supabase.from('transfer_rumors').insert([clean]).select();
+    if (error) throw error;
+    rumorsCacheAt = 0;
+    res.status(201).json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT: actualizar un rumor (solo redacción).
+app.put('/api/rumors/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  const { data: clean, error: verr } = validateRumor(req.body, true);
+  if (verr) return res.status(400).json({ error: verr });
+  try {
+    clean.updated_at = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('transfer_rumors')
+      .update(clean)
+      .eq('id', req.params.id)
+      .select();
+    if (error) throw error;
+    if (!data || !data.length) return res.status(404).json({ error: 'Rumor no encontrado.' });
+    rumorsCacheAt = 0;
+    res.json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE: eliminar un rumor (solo redacción).
+app.delete('/api/rumors/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  try {
+    const { error } = await supabase.from('transfer_rumors').delete().eq('id', req.params.id);
+    if (error) throw error;
+    rumorsCacheAt = 0;
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ Fotos de lectores (moderadas) ============
+// Los lectores suben la foto a Storage (bucket compartido notes-images, carpeta
+// lectores/) desde el navegador y registran aquí el metadata. Todo pasa por el
+// backend (service_role): validación de la URL de origen, honeypot y limiter.
+// El cliente público solo lee las publicadas vía RLS; el panel las modera.
+const READER_PHOTO_STATES = ['en_revision', 'publicada', 'rechazada'];
+
+function readerPhotoUrlPrefix() {
+  return `${String(process.env.SUPABASE_URL || '').replace(/\/+$/, '')}/storage/v1/object/public/notes-images/lectores/`;
+}
+
+function validateReaderPhoto(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'Cuerpo de petición inválido.' };
+  const autor = sanitizeText(body.autor).slice(0, 80);
+  if (!autor) return { error: 'Campo requerido: autor.' };
+  const titulo = sanitizeText(body.titulo).slice(0, 140);
+  const foto = String(body.foto || '').trim();
+  if (foto.length > 500) return { error: 'URL de imagen no válida.' };
+  if (!foto.startsWith(readerPhotoUrlPrefix())) return { error: 'La imagen debe subirse desde el sitio.' };
+  return { data: { autor, titulo, foto, estado: 'en_revision' } };
+}
+
+// POST Público: un lector envía su foto para moderación.
+app.post('/api/reader-photos', async (req, res) => {
+  const honeypot = String((req.body || {}).website || '').trim();
+  if (honeypot) return res.status(201).json({ ok: true });
+  const { data, error } = validateReaderPhoto(req.body);
+  if (error) return res.status(400).json({ error });
+  try {
+    const { data: rows, error: insertError } = await supabase
+      .from('reader_photos')
+      .insert({ ...data, creada_ip: req.ip || (req.socket && req.socket.remoteAddress) || null })
+      .select('id');
+    if (insertError) throw insertError;
+    res.status(201).json({ ok: true, id: rows[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET Privado (panel): todas las fotos, más recientes primero.
+app.get('/api/reader-photos/manager', authenticateWriter, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('reader_photos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT Privado (panel): aprobar / rechazar una foto enviada.
+app.put('/api/reader-photos/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  const estado = sanitizeText((req.body || {}).estado);
+  if (!READER_PHOTO_STATES.includes(estado)) return res.status(400).json({ error: 'Estado de foto no válido.' });
+  const nota = sanitizeText((req.body || {}).nota).slice(0, 200);
+  const patch = { estado, nota: nota || null };
+  if (estado === 'publicada' || estado === 'rechazada') {
+    patch.moderada_at = new Date().toISOString();
+    patch.moderada_por = req.writer || null;
+  }
+  try {
+    const { error: updateError } = await supabase.from('reader_photos').update(patch).eq('id', req.params.id);
+    if (updateError) throw updateError;
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE Privado (panel): elimina la foto (fila + objeto en Storage).
+app.delete('/api/reader-photos/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  try {
+    const { data: rows, error: selectError } = await supabase
+      .from('reader_photos')
+      .select('foto')
+      .eq('id', req.params.id);
+    if (selectError) throw selectError;
+    const foto = rows && rows[0] ? rows[0].foto : null;
+    if (foto && foto.startsWith(readerPhotoUrlPrefix())) {
+      const objectPath = foto.slice(readerPhotoUrlPrefix().length);
+      await supabase.storage.from('notes-images').remove([objectPath]).catch(() => null);
+    }
+    const { error } = await supabase.from('reader_photos').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/auth', (req, res) => {
   const serverPassword = process.env.WRITER_PASSWORD;
   if (!serverPassword) {
@@ -1120,6 +1486,132 @@ app.get('/api/standings/:liga', async (req, res) => {
   }
 });
 
+// ============ Próximos partidos (fixtures) ============
+// Mismo patrón de caché que standings (TTL 2h + stale-while-revalidate).
+// Ligas europeas → football-data.org (endpoint de matches); Liga Promérica
+// (Costa Rica) → API-Football (api-sports), que sí cubre UNAFUT. La clave de
+// API-Football es secreta y debe vivir en el servidor (API_FOOTBALL_KEY).
+const API_FOOTBALL_BASE = 'https://v3.football.api-sports.io';
+const COSTA_RICA_LEAGUE_ID = 162;
+const FIXTURES_WINDOW_DAYS = 3;
+
+function fixturesCacheKey(ligaKey) {
+  return `fixtures:${ligaKey}`;
+}
+
+function isoDateDaysFromNow(days) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// La temporada de API-Football se identifica por el año de inicio (p. ej. la
+// 2026-27 es "2026"). En Costa Rica la Apertura arranca en el segundo semestre.
+function apiFootballSeasonFor(date) {
+  const d = date || new Date();
+  return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+}
+
+function footballDataMatchToFixture(match) {
+  return {
+    fecha: String(match.utcDate || '').slice(0, 10),
+    fechaISO: match.utcDate || null,
+    jornada: match.matchday ? `Jornada ${match.matchday}` : match.stage || '',
+    liga: (match.competition && match.competition.name) || '',
+    estado: match.status || '',
+    local: {
+      equipo: (match.homeTeam && match.homeTeam.name) || '',
+      escudo: (match.homeTeam && match.homeTeam.crest) || ''
+    },
+    visitante: {
+      equipo: (match.awayTeam && match.awayTeam.name) || '',
+      escudo: (match.awayTeam && match.awayTeam.crest) || ''
+    }
+  };
+}
+
+function apiFootballFixtureToFixture(item) {
+  const fixture = (item && item.fixture) || {};
+  const home = (item && item.teams && item.teams.home) || {};
+  const away = (item && item.teams && item.teams.away) || {};
+  const league = (item && item.league) || {};
+  return {
+    fecha: String(fixture.date || '').slice(0, 10),
+    fechaISO: fixture.date || null,
+    jornada: league.round || '',
+    liga: league.name || 'Liga Promérica',
+    estado: (fixture.status && fixture.status.short) || 'NS',
+    local: { equipo: home.name || '', escudo: home.logo || '' },
+    visitante: { equipo: away.name || '', escudo: away.logo || '' }
+  };
+}
+
+async function fetchFootballDataFixtures(leagueCode) {
+  const url =
+    `https://api.football-data.org/v4/competitions/${leagueCode}/matches` +
+    `?status=SCHEDULED&dateFrom=${isoDateDaysFromNow(0)}&dateTo=${isoDateDaysFromNow(FIXTURES_WINDOW_DAYS - 1)}`;
+  const response = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY } });
+  const json = await response.json();
+  if (!response.ok || !Array.isArray(json.matches)) {
+    throw new Error(json.message || `Error HTTP: ${response.status}`);
+  }
+  return json.matches
+    .map(footballDataMatchToFixture)
+    .filter((f) => f.fechaISO)
+    .sort((a, b) => String(a.fechaISO).localeCompare(String(b.fechaISO)))
+    .slice(0, 20);
+}
+
+async function fetchApiFootballFixtures() {
+  const url =
+    `${API_FOOTBALL_BASE}/fixtures?league=${COSTA_RICA_LEAGUE_ID}` +
+    `&season=${apiFootballSeasonFor()}&status=NS&timezone=America/Costa_Rica`;
+  const response = await fetch(url, { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY } });
+  const json = await response.json();
+  const apiError =
+    json && json.errors && Object.keys(json.errors).length
+      ? Object.values(json.errors).join(' ')
+      : '';
+  if (!response.ok || apiError) {
+    throw new Error(apiError || `Error HTTP: ${response.status}`);
+  }
+  const now = Date.now();
+  return (Array.isArray(json.response) ? json.response : [])
+    .map(apiFootballFixtureToFixture)
+    .filter((f) => f.fechaISO && new Date(f.fechaISO).getTime() >= now - 60 * 60 * 1000)
+    .sort((a, b) => String(a.fechaISO).localeCompare(String(b.fechaISO)))
+    .slice(0, 20);
+}
+
+// GET Público: próximos partidos de una liga. Cachea 2h como standings.
+app.get('/api/fixtures/:liga', async (req, res) => {
+  const ligaKey = req.params.liga.toLowerCase();
+  const leagueCode = LEAGUE_MAP[ligaKey];
+  const isPromerica = ligaKey === 'promerica';
+
+  if (!leagueCode && !isPromerica) return res.status(400).json({ error: 'Liga no válida.' });
+
+  const requiredKey = isPromerica ? process.env.API_FOOTBALL_KEY : process.env.FOOTBALL_DATA_API_KEY;
+  if (!requiredKey) return res.status(500).json({ error: 'Configuración interna del servidor.' });
+
+  const now = Date.now();
+  const cacheKey = fixturesCacheKey(ligaKey);
+  if (cache[cacheKey] && now - cache[cacheKey].timestamp < CACHE_TTL_MS) {
+    return res.json({ stale: false, data: cache[cacheKey].data });
+  }
+
+  try {
+    const transformed = isPromerica
+      ? await fetchApiFootballFixtures()
+      : await fetchFootballDataFixtures(leagueCode);
+    cache[cacheKey] = { timestamp: now, data: transformed };
+    return res.json({ stale: false, data: transformed });
+  } catch (error) {
+    if (cache[cacheKey]) return res.json({ stale: true, data: cache[cacheKey].data });
+    return res.status(503).json({ error: error.message });
+  }
+});
+
 // Widget embebible de posiciones (iframe). A diferencia del resto del sitio,
 // esta página permite que OTROS sitios la incrusten (frame-ancestors * y sin
 // X-Frame-Options). El resto de respuestas conserva la CSP cerrada de helmet.
@@ -1187,3 +1679,7 @@ module.exports.oauth1Signature = oauth1Signature;
 module.exports.oauth1Authorization = oauth1Authorization;
 module.exports.maybeAutopostNote = maybeAutopostNote;
 module.exports.resolveTeamSlugs = resolveTeamSlugs;
+module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
+module.exports.decorateRumors = decorateRumors;
+module.exports.validateRumor = validateRumor;
+module.exports.validateReaderPhoto = validateReaderPhoto;

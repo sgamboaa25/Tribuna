@@ -112,6 +112,21 @@ async function main() {
   const hubRes = await fetch(BASE + '/equipo/alajuelense');
   report('ruta /equipo/:slug devuelve index.html (SPA)', hubRes.status === 200 && hubRes.headers.get('content-type')?.includes('text/html'), 'status=' + hubRes.status + ' ct=' + hubRes.headers.get('content-type'));
 
+  const playerRes = await fetch(BASE + '/jugador/christian-bolanos');
+  report('ruta /jugador/:slug devuelve index.html (SPA)', playerRes.status === 200 && playerRes.headers.get('content-type')?.includes('text/html'), 'status=' + playerRes.status + ' ct=' + playerRes.headers.get('content-type'));
+
+  const rumorsPublic = await fetch(BASE + '/api/rumors');
+  report('/api/rumors sin DB real -> 500 JSON', rumorsPublic.status === 500, 'status=' + rumorsPublic.status);
+
+  const rumorsManager = await fetch(BASE + '/api/rumors/manager');
+  report('/api/rumors/manager sin token -> 401', rumorsManager.status === 401, 'status=' + rumorsManager.status);
+
+  const fotoHoneypot = await post('/api/reader-photos', { autor: 'Bot', foto: 'https://x.example/f.jpg', website: 'http://spam.example' }, {});
+  report('foto lector honeypot: 201 ok sin guardar', fotoHoneypot.status === 201 && fotoHoneypot.data.ok === true, 'status=' + fotoHoneypot.status);
+
+  const fotosManager = await fetch(BASE + '/api/reader-photos/manager');
+  report('/api/reader-photos/manager sin token -> 401', fotosManager.status === 401, 'status=' + fotosManager.status);
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 
