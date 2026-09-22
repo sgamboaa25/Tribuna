@@ -32,7 +32,7 @@
       --input-bg: #fafafb; --hover-bg: #f4f5f7; 
       --panel-bg: #111318; --panel-fg: #fbfbfc;
       --row-highlight: #f8fafc; --row-relegation: #fdf2f2; --row-playoff: #fff7d6; --playoff-ink: #8a6208;
-      --row-qualified: #e9f5ee; --qualified-ink: #1f7a3d; --row-sudamericana: #e8f1fb; --sudamericana-ink: #1d4ed8; --row-orange: #fff1e6; --orange-ink: #c2410c;
+      --row-qualified: #e9f5ee; --qualified-ink: #1f7a3d; --row-sudamericana: #e8f1fb; --sudamericana-ink: #1d4ed8; --row-orange: #fff1e6; --orange-ink: #c2410c; --row-light-green: #eef9f0; --light-green-ink: #15803d; --row-dark-green: #bfe8cd; --dark-green-ink: #0c5c28;
       --watermark: rgba(17,19,24,.14);
       --badge-revision-bg: #fef3c7; --badge-revision-fg: #92400e;
       --badge-public-bg: #d1fae5; --badge-public-fg: #065f46;
@@ -48,7 +48,7 @@
       --accent-strong: #EC6B4A; --on-accent: #ffffff; 
       --input-bg: #1a1d24; --hover-bg: #22262d;
       --row-highlight: #141820; --row-relegation: #2a1515; --row-playoff: #2b2712; --playoff-ink: #e6c96b;
-      --row-qualified: #12291a; --qualified-ink: #6fd69b; --row-sudamericana: #12233a; --sudamericana-ink: #7aa7e6; --row-orange: #3a2414; --orange-ink: #f0a878;
+      --row-qualified: #12291a; --qualified-ink: #6fd69b; --row-sudamericana: #12233a; --sudamericana-ink: #7aa7e6; --row-orange: #3a2414; --orange-ink: #f0a878; --row-light-green: #173e27; --light-green-ink: #8fe4af; --row-dark-green: #102a19; --dark-green-ink: #a9eec3;
       --watermark: rgba(238,240,243,.14);
       --badge-revision-bg: #332a15; --badge-revision-fg: #e6c072;
       --badge-public-bg: #14251c; --badge-public-fg: #6fd69b;
@@ -295,6 +295,8 @@
     .standings-table tr.row-qualified td { background:var(--row-qualified); }
     .standings-table tr.row-sudamericana td { background:var(--row-sudamericana); }
     .standings-table tr.row-orange td { background:var(--row-orange); }
+    .standings-table tr.row-light-green td { background:var(--row-light-green); }
+    .standings-table tr.row-dark-green td { background:var(--row-dark-green); }
     /* Punto 20 · Zonas de clasificación */
     .standings-table tr.row-highlight .pos-col { color:var(--accent-strong); }
     .standings-table tr.row-relegation .pos-col { color:var(--danger); }
@@ -302,12 +304,16 @@
     .standings-table tr.row-qualified .pos-col { color:var(--qualified-ink); }
     .standings-table tr.row-sudamericana .pos-col { color:var(--sudamericana-ink); }
     .standings-table tr.row-orange .pos-col { color:var(--orange-ink); }
+    .standings-table tr.row-light-green .pos-col { color:var(--light-green-ink); }
+    .standings-table tr.row-dark-green .pos-col { color:var(--dark-green-ink); }
     .standings-table tr.row-highlight td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
     .standings-table tr.row-relegation td:first-child { box-shadow:inset 3px 0 0 var(--danger); }
     .standings-table tr.row-playoff td:first-child { box-shadow:inset 3px 0 0 var(--playoff-ink); }
     .standings-table tr.row-qualified td:first-child { box-shadow:inset 3px 0 0 var(--qualified-ink); }
     .standings-table tr.row-sudamericana td:first-child { box-shadow:inset 3px 0 0 var(--sudamericana-ink); }
     .standings-table tr.row-orange td:first-child { box-shadow:inset 3px 0 0 var(--orange-ink); }
+    .standings-table tr.row-light-green td:first-child { box-shadow:inset 3px 0 0 var(--light-green-ink); }
+    .standings-table tr.row-dark-green td:first-child { box-shadow:inset 3px 0 0 var(--dark-green-ink); }
 
     /* ===== PRÓXIMOS PARTIDOS (fixtures) ===== */
     #fixturesList:empty { display:none; }
@@ -1782,9 +1788,9 @@
               else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
             } else if (esPortuguesa && seleccion.length >= 18) {
               if (index < 2) rowClass = 'row-qualified';
-              else if (index === 2) rowClass = 'row-playoff';
-              else if (index === 3) rowClass = 'row-sudamericana';
-              else if (index === 4) rowClass = 'row-orange';
+              else if (index === 2) rowClass = 'row-light-green';
+              else if (index === 3) rowClass = 'row-orange';
+              else if (index === 4) rowClass = 'row-dark-green';
               else if (index === seleccion.length - 3) rowClass = 'row-playoff';
               else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
             } else if (index < 4) rowClass = 'row-highlight';
