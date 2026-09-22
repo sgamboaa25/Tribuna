@@ -450,3 +450,32 @@ create policy "Lectura pública de posiciones manuales"
 
 revoke all on table public.standings_promerica from anon;
 grant select on table public.standings_promerica to anon;
+
+-- ============================================================
+-- GOLEADORES LIGA PROMÉRICA — ACTUALIZACIÓN MANUAL
+-- ============================================================
+-- Misma filosofía que standings_promerica: la redacción carga los máximos
+-- goleadores a mano desde el panel. El jugador es texto libre; el equipo se
+-- referencia al catálogo teams_ca (nombre + escudo se resuelven al servir).
+-- La lista es variable y se guarda reemplazándola completa. RLS anon lectura.
+create table if not exists public.goleadores_promerica (
+  id uuid primary key default gen_random_uuid(),
+  jugador text not null check (char_length(jugador) between 1 and 80),
+  equipo_slug text not null references public.teams_ca(slug) on delete cascade,
+  goles integer not null default 0 check (goles between 0 and 999),
+  asistencias integer not null default 0 check (asistencias between 0 and 999),
+  updated_by text,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.goleadores_promerica enable row level security;
+
+drop policy if exists "Lectura pública de goleadores manuales" on public.goleadores_promerica;
+create policy "Lectura pública de goleadores manuales"
+  on public.goleadores_promerica for select
+  to anon
+  using (true);
+
+revoke all on table public.goleadores_promerica from anon;
+grant select on table public.goleadores_promerica to anon;

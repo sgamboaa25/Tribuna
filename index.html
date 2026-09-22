@@ -332,8 +332,15 @@
     .standings-admin-row .team-admin { display:flex; align-items:center; gap:var(--space-sm); min-width:0; }
     .standings-admin-row .team-admin img { width:26px; height:26px; object-fit:contain; }
     .standings-admin-row input { width:100%; text-align:center; }
+    .scorers-admin-row { display:grid; grid-template-columns:1.4fr 1.2fr 64px 64px 36px; gap:var(--space-sm); align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+    .scorers-admin-row input, .scorers-admin-row select { width:100%; }
+    .scorers-admin-row input[type="number"] { text-align:center; }
+    .scorers-admin-row .s-remove { background:none; border:none; color:var(--muted); font-size:1.25rem; line-height:1; cursor:pointer; padding:6px; }
+    .scorers-admin-row .s-remove:hover { color:var(--accent); }
+    .scorers-admin-actions { display:flex; gap:var(--space-sm); margin-top:14px; flex-wrap:wrap; }
     @media (max-width:640px) {
       .standings-admin-row { grid-template-columns:1fr repeat(3, 56px); }
+      .scorers-admin-row { grid-template-columns:1fr .9fr 52px 52px 32px; }
     }
 .rumor-panel-block { margin-top:34px; }
 
@@ -1340,6 +1347,17 @@
         <button class="submit" type="button" id="standingsPromSave">Guardar tabla</button>
       </div>
 
+      <div class="promerica-panel-block">
+        <strong>Goleadores Liga Promérica</strong>
+        <p class="tags-hint">Actualización manual: ninguna API conectada cubre el goleo de UNAFUT. Escribís el jugador, elegís el club y anotás goles y asistencias; la lista se guarda completa y se muestra en la portada en "Máximos goleadores".</p>
+        <p class="message" id="scorersPromMsg" aria-live="polite"></p>
+        <div class="scorers-admin-list" id="scorersAdminList"></div>
+        <div class="scorers-admin-actions">
+          <button class="edit-note" type="button" id="scorersAddRow">Añadir jugador</button>
+          <button class="submit" type="button" id="scorersPromSave">Guardar goleadores</button>
+        </div>
+      </div>
+
       <div class="foto-panel-block">
         <strong>Fotos de lectores</strong>
         <p class="tags-hint">Aprueba o rechaza las fotos enviadas desde la portada. Las aprobadas aparecen en la galería "Fotos de lectores".</p>
@@ -1521,6 +1539,7 @@
         loginMsg.textContent = '';
         loadAllNotesForPanel();
         loadStandingsForPanel();
+        loadScorersForPanel();
         panel.scrollIntoView({ behavior: scrollBehavior }); 
       } catch (err) {
         writerToken = '';
@@ -1814,7 +1833,16 @@
         const json = await resp.json().catch(() => null);
         if (!resp.ok || !json) throw new Error('Error al cargar goleadores');
         const rows = json.data || [];
-        if (!rows.length) throw new Error('Sin datos de goleadores para esta competición.');
+        if (!rows.length) {
+          if (json.updatedAt !== undefined || liga === 'promerica') {
+            scorersBodyEl.innerHTML = '<tr><td colspan="5" class="standings-error">Todavía no se han cargado goleadores para esta competición.</td></tr>';
+            scorersStatusEl.textContent = json.updatedAt
+              ? `Actualizado ${formatManualStamp(json.updatedAt)}`
+              : 'Sin actualizar';
+            return;
+          }
+          throw new Error('Sin datos de goleadores para esta competición.');
+        }
         scorersBodyEl.innerHTML = rows.map((s, i) => `
           <tr>
             <td class="pos-col">${i + 1}</td>
@@ -1828,7 +1856,11 @@
             <td>${Number(s.goles) || 0}</td>
             <td class="hide-mobile">${Number(s.asistencias) || 0}</td>
           </tr>`).join('');
-        scorersStatusEl.textContent = json.stale ? 'Actualizado hace un momento' : 'En vivo';
+        scorersStatusEl.textContent = json.stale
+          ? 'Actualizado hace un momento'
+          : (json.updatedAt
+            ? `Actualizado ${formatManualStamp(json.updatedAt)}`
+            : 'En vivo');
       } catch (err) {
         console.error('Error al cargar goleadores:', err);
         scorersStatusEl.textContent = 'Error';
@@ -3792,6 +3824,117 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       };
     }
 
+    // ===== Goleadores Liga Promérica (panel) =====
+    const scorersAdminList = document.getElementById('scorersAdminList');
+    const scorersPromMsg = document.getElementById('scorersPromMsg');
+    const scorersPromSave = document.getElementById('scorersPromSave');
+    const scorersAddRow = document.getElementById('scorersAddRow');
+    let proScorersTeams = [];
+
+    function showScorersMessage(msg, isError) {
+      if (!scorersPromMsg) return;
+      scorersPromMsg.textContent = msg;
+      scorersPromMsg.className = 'message' + (isError ? ' error' : '');
+    }
+
+    function scorersRowHTML(row, teams) {
+      const options = (teams || []).map(t =>
+        `<option value="${t.slug}"${t.slug === row.equipo_slug ? ' selected' : ''}>${escapeHtml(t.nombre)}</option>`).join('');
+      return `<div class="scorers-admin-row">
+        <input type="text" data-key="jugador" value="${escapeHtml(row.jugador || '')}" maxlength="80" placeholder="Jugador" aria-label="Jugador" />
+        <select data-key="equipo_slug" aria-label="Equipo"><option value="">Club…</option>${options}</select>
+        <input type="number" min="0" max="999" data-key="goles" value="${Number(row.goles) || 0}" aria-label="Goles" />
+        <input type="number" min="0" max="999" data-key="asistencias" value="${Number(row.asistencias) || 0}" aria-label="Asistencias" />
+        <button type="button" class="s-remove" title="Quitar fila" aria-label="Quitar fila">&times;</button>
+      </div>`;
+    }
+
+    function addScorersRow(row) {
+      if (!scorersAdminList) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = scorersRowHTML(row || {}, proScorersTeams);
+      const rowEl = wrapper.firstElementChild;
+      const removeBtn = rowEl.querySelector('.s-remove');
+      if (removeBtn) removeBtn.addEventListener('click', () => rowEl.remove());
+      scorersAdminList.appendChild(rowEl);
+    }
+
+    async function loadScorersForPanel() {
+      if (!writerToken || !scorersAdminList) return;
+      scorersAdminList.innerHTML = '<div class="draft-item"><div><small>Cargando goleadores…</small></div></div>';
+      try {
+        const response = await fetch('/api/top-scorers/promerica/admin', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar los goleadores.');
+        const json = await response.json();
+        proScorersTeams = Array.isArray(json.teams) ? json.teams : [];
+        scorersAdminList.innerHTML = '';
+        const currentRows = json.rows && json.rows.length ? json.rows : [{}];
+        currentRows.forEach((r) => addScorersRow(r));
+        if (json.updatedAt) {
+          await showScorersMessage(`Última actualización: ${formatManualStamp(json.updatedAt)}${json.updatedBy ? ' por ' + json.updatedBy : ''}.`, false);
+        } else {
+          await showScorersMessage('Todavía no se ha guardado ninguna lista.', false);
+        }
+      } catch (err) {
+        console.error('Error al cargar los goleadores del panel:', err);
+        await showScorersMessage('No se pudieron cargar los goleadores.', true);
+      }
+    }
+
+    if (scorersAddRow) {
+      scorersAddRow.addEventListener('click', () => addScorersRow());
+    }
+
+    if (scorersPromSave) {
+      scorersPromSave.onclick = async () => {
+        if (!writerToken || !scorersAdminList) return;
+        const rows = [...scorersAdminList.querySelectorAll('.scorers-admin-row')].map(row => {
+          const get = (k) => {
+            const input = row.querySelector(`[data-key="${k}"]`);
+            return input ? String(input.value).trim() : '';
+          };
+          return { jugador: get('jugador'), equipo_slug: get('equipo_slug'), goles: get('goles'), asistencias: get('asistencias') };
+        });
+        await showScorersMessage('Guardando…', false);
+        try {
+          const response = await fetch('/api/top-scorers/promerica', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${writerToken}`
+            },
+            body: JSON.stringify({ rows })
+          });
+          if (response.status === 401) {
+            writerToken = '';
+            sessionStorage.removeItem('tribuna_writer_token');
+            panel.style.display = 'none';
+            access.textContent = 'Acceso redacción';
+            return;
+          }
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+          }
+          const saved = await response.json();
+          await showScorersMessage(`Goleadores guardados. Actualizado el ${formatManualStamp(saved.updatedAt)}.`, false);
+          if (currentStandingsLeague === 'promerica') await loadScorers('promerica');
+        } catch (err) {
+          console.error('Error al guardar los goleadores:', err);
+          await showScorersMessage(`No se pudo guardar: ${err.message}`, true);
+        }
+      };
+    }
+
     if (rumorVeracityInput) {
       rumorVeracityInput.addEventListener('input', () => {
         if (rumorVeracityLabel) rumorVeracityLabel.textContent = rumorVeracityInput.value + '%';
@@ -4238,6 +4381,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     if (writerToken) loadAllNotesForPanel();
     if (writerToken) loadFotosForPanel();
     if (writerToken) loadStandingsForPanel();
+    if (writerToken) loadScorersForPanel();
     loadPlayersCatalog();
     
     async function compressImage(file, maxWidth = 1600, quality = 0.8) {

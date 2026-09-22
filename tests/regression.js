@@ -142,6 +142,15 @@ async function main() {
   const promericaPut = await fetch(BASE + '/api/standings/promerica', { method: 'PUT', body: '{"rows":[]}' });
   report('/api/standings/promerica PUT sin token -> 401', promericaPut.status === 401, 'status=' + promericaPut.status);
 
+  const scorersPromPub = await fetch(BASE + '/api/top-scorers/promerica');
+  report('/api/top-scorers/promerica sin DB real -> 500 JSON', scorersPromPub.status === 500, 'status=' + scorersPromPub.status);
+
+  const scorersPromAdmin = await fetch(BASE + '/api/top-scorers/promerica/admin');
+  report('/api/top-scorers/promerica/admin sin token -> 401', scorersPromAdmin.status === 401, 'status=' + scorersPromAdmin.status);
+
+  const scorersPromPut = await fetch(BASE + '/api/top-scorers/promerica', { method: 'PUT', body: '{"rows":[]}' });
+  report('/api/top-scorers/promerica PUT sin token -> 401', scorersPromPut.status === 401, 'status=' + scorersPromPut.status);
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 

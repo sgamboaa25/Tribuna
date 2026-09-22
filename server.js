@@ -1904,6 +1904,7 @@ app.get('/api/fixtures/:liga', async (req, res) => {
 
 // GET Público: máximos goleadores de una liga. Mismo patrón de cache que
 // fixtures/standings (2h) y mismo manejo de stale si el proveedor cae.
+// Promérica NO pasa por aquí: se sirve manual desde la BD (rutas de abajo).
 function scoresCacheKey(ligaKey) {
   return `scorers:${ligaKey}`;
 }
@@ -1921,21 +1922,6 @@ function footballDataScorerToRow(s) {
   };
 }
 
-function apiFootballScorerToRow(item) {
-  const p = (item && item.player) || {};
-  const st = (item && item.statistics && item.statistics[0]) || {};
-  const team = st.team || {};
-  const goals = st.goals || {};
-  return {
-    jugador: p.name || '',
-    equipo: team.name || '',
-    escudo: team.logo || '',
-    goles: Number(goals.total) || 0,
-    asistencias: Number(goals.assists) || 0,
-    posicion: (st.games && st.games.position) || ''
-  };
-}
-
 async function fetchFootballDataScorers(leagueCode) {
   const url = `https://api.football-data.org/v4/competitions/${leagueCode}/scorers?limit=10`;
   const response = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY } });
@@ -1949,34 +1935,15 @@ async function fetchFootballDataScorers(leagueCode) {
     .slice(0, 10);
 }
 
-async function fetchApiFootballScorers() {
-  const url =
-    `${API_FOOTBALL_BASE}/players/topscorers?league=${COSTA_RICA_LEAGUE_ID}` +
-    `&season=${apiFootballSeasonFor()}`;
-  const response = await fetch(url, { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY } });
-  const json = await response.json();
-  const apiError =
-    json && json.errors && Object.keys(json.errors).length
-      ? Object.values(json.errors).join(' ')
-      : '';
-  if (!response.ok || apiError) {
-    throw new Error(apiError || `Error HTTP: ${response.status}`);
-  }
-  return (Array.isArray(json.response) ? json.response : [])
-    .map(apiFootballScorerToRow)
-    .filter((r) => r.jugador)
-    .slice(0, 10);
-}
-
-app.get('/api/top-scorers/:liga', async (req, res) => {
+app.get('/api/top-scorers/:liga', async (req, res, next) => {
   const ligaKey = req.params.liga.toLowerCase();
+  if (ligaKey === 'promerica') return next();
   const leagueCode = LEAGUE_MAP[ligaKey];
-  const isPromerica = ligaKey === 'promerica';
 
-  if (!leagueCode && !isPromerica) return res.status(400).json({ error: 'Liga no válida.' });
+  if (!leagueCode) return res.status(400).json({ error: 'Liga no válida.' });
 
-  const requiredKey = isPromerica ? process.env.API_FOOTBALL_KEY : process.env.FOOTBALL_DATA_API_KEY;
-  if (!requiredKey) return res.status(500).json({ error: 'Configuración interna del servidor.' });
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'Configuración interna del servidor.' });
 
   const now = Date.now();
   const cacheKey = scoresCacheKey(ligaKey);
@@ -1985,14 +1952,156 @@ app.get('/api/top-scorers/:liga', async (req, res) => {
   }
 
   try {
-    const transformed = isPromerica
-      ? await fetchApiFootballScorers()
-      : await fetchFootballDataScorers(leagueCode);
+    const transformed = await fetchFootballDataScorers(leagueCode);
     cache[cacheKey] = { timestamp: now, data: transformed };
     return res.json({ stale: false, data: transformed });
   } catch (error) {
     if (cache[cacheKey]) return res.json({ stale: true, data: cache[cacheKey].data });
     return res.status(503).json({ error: error.message });
+  }
+});
+
+// ============ Goleadores Liga Promérica (actualización manual) ============
+// Misma filosofía que las posiciones: sin fuente externa confiable para
+// UNAFUT, la redacción los carga a mano desde el panel (login existente) en
+// la tabla goleadores_promerica. El nombre/escudo del equipo salen del
+// catálogo teams_ca. RLS anon solo lectura; escrituras solo backend.
+const PRO_PROMERICAS_SCORERS_CACHE_MS = 60 * 1000;
+let promericaScorersCache = null;
+let promericaScorersCacheAt = 0;
+
+// Ordena y decora la vista pública (jugador + equipo + escudo). Exportado.
+function decoratePromericaScorers(rows, teams) {
+  const teamBySlug = new Map((teams || []).map((t) => [t.slug, t]));
+  return (rows || [])
+    .map((r) => {
+      const team = teamBySlug.get(r.equipo_slug) || {};
+      return {
+        jugador: r.jugador || '',
+        equipo: team.nombre || r.equipo_slug,
+        escudo: team.escudo || '',
+        goles: Number(r.goles) || 0,
+        asistencias: Number(r.asistencias) || 0
+      };
+    })
+    .sort((a, b) =>
+      b.goles - a.goles || b.asistencias - a.asistencias || String(a.jugador).localeCompare(String(b.jugador), 'es')
+    )
+    .slice(0, 30);
+}
+
+// Valida el payload del panel: lista acotada, jugador con nombre y club del
+// catálogo, goles/asistencias enteros >= 0. Exportado para tests.
+function validateTopScorersRows(payload, allowedSlugs) {
+  const rows = Array.isArray(payload && payload.rows) ? payload.rows : null;
+  if (!rows || rows.length < 1 || rows.length > 30) {
+    return { error: 'Se esperaba la lista de goleadores en "rows".' };
+  }
+  const slugSet = new Set(allowedSlugs || []);
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') return { error: 'Fila inválida en la lista.' };
+    const jugador = sanitizeText(row.jugador || '').slice(0, 80);
+    if (!jugador) return { error: 'Falta el nombre del jugador.' };
+    const slug = sanitizeText(row.equipo_slug || '');
+    if (!slugSet.has(slug)) return { error: `Equipo no válido: "${slug}".` };
+    for (const key of ['goles', 'asistencias']) {
+      const v = row[key];
+      if (v === undefined || v === null || v === '') continue;
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 999) {
+        return { error: `Valor inválido en "${jugador}" (${key}).` };
+      }
+    }
+  }
+  return { data: rows };
+}
+
+// GET Público: goleadores manuales de la Liga Promérica (cache 1 min).
+app.get('/api/top-scorers/promerica', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (promericaScorersCacheAt && now - promericaScorersCacheAt < PRO_PROMERICAS_SCORERS_CACHE_MS) {
+      return res.json(promericaScorersCache);
+    }
+    const [teams, db] = await Promise.all([
+      loadTeams(),
+      supabase.from('goleadores_promerica').select('*')
+    ]);
+    if (db.error) throw db.error;
+    const last = lastManualUpdate(db.data);
+    const body = {
+      updatedAt: last ? last.updated_at : null,
+      updatedBy: last ? last.updated_by : null,
+      data: decoratePromericaScorers(db.data, teams)
+    };
+    promericaScorersCache = body;
+    promericaScorersCacheAt = now;
+    res.json(body);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET del panel: la lista guardada (o vacía) + el catálogo de clubes para el editor.
+app.get('/api/top-scorers/promerica/admin', authenticateWriter, async (req, res) => {
+  try {
+    const [teams, db] = await Promise.all([
+      loadTeams(),
+      supabase.from('goleadores_promerica').select('*')
+    ]);
+    if (db.error) throw db.error;
+    const teamBySlug = new Map((teams || []).map((t) => [t.slug, t]));
+    const rows = (db.data || [])
+      .map((r) => ({
+        id: r.id,
+        jugador: r.jugador || '',
+        equipo_slug: r.equipo_slug || '',
+        escudo: (teamBySlug.get(r.equipo_slug) || {}).escudo || '',
+        goles: Number(r.goles) || 0,
+        asistencias: Number(r.asistencias) || 0
+      }))
+      .sort((a, b) => b.goles - a.goles || b.asistencias - a.asistencias || String(a.jugador).localeCompare(String(b.jugador), 'es'));
+    const last = lastManualUpdate(db.data);
+    res.json({
+      rows,
+      teams: (teams || []).map((t) => ({ slug: t.slug, nombre: t.nombre, escudo: t.escudo })),
+      updatedAt: last ? last.updated_at : null,
+      updatedBy: last ? last.updated_by : null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT Privado (panel): reemplaza la lista completa de goleadores de una vez.
+app.put('/api/top-scorers/promerica', authenticateWriter, async (req, res) => {
+  try {
+    const allowed = await loadTeamsSlugs();
+    const { data, error } = validateTopScorersRows(req.body, allowed);
+    if (error) return res.status(400).json({ error });
+    const updatedAt = new Date().toISOString();
+    const rowsToSave = (data || [])
+      .map((r) => ({
+        jugador: sanitizeText(r.jugador).slice(0, 80),
+        equipo_slug: sanitizeText(r.equipo_slug),
+        goles: Number(r.goles) || 0,
+        asistencias: Number(r.asistencias) || 0,
+        updated_by: req.writer || null,
+        updated_at: updatedAt
+      }));
+    const { error: deleteError } = await supabase
+      .from('goleadores_promerica')
+      .delete()
+      .gte('id', '00000000-0000-0000-0000-000000000000');
+    if (deleteError) throw deleteError;
+    if (rowsToSave.length) {
+      const { error: insertError } = await supabase.from('goleadores_promerica').insert(rowsToSave);
+      if (insertError) throw insertError;
+    }
+    promericaScorersCacheAt = 0;
+    res.json({ ok: true, updatedAt });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -2072,5 +2181,6 @@ module.exports.loadSettingsPublic = loadSettingsPublic;
 module.exports.decoratePromericaStandings = decoratePromericaStandings;
 module.exports.validateStandingsRows = validateStandingsRows;
 module.exports.footballDataScorerToRow = footballDataScorerToRow;
-module.exports.apiFootballScorerToRow = apiFootballScorerToRow;
+module.exports.decoratePromericaScorers = decoratePromericaScorers;
+module.exports.validateTopScorersRows = validateTopScorersRows;
 module.exports.mergeStandingsRoster = mergeStandingsRoster;
