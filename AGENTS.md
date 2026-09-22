@@ -10,7 +10,7 @@ Guía de contexto para agentes que trabajan en este repositorio. Léela antes de
 
 - **Frontend:** HTML/CSS/JS vanilla en `index.html` (sin framework, sin build). `@supabase/supabase-js` vía CDN.
 - **Backend:** Node.js + Express en `server.js` (también expone el feed RSS). El cliente del backend usa `@supabase/supabase-js` con credenciales de entorno.
-- **Base de datos:** Supabase Postgres (schema en `supabase-schema.sql`, semilla en `seed-notes.json`).
+- **Base de datos:** Supabase Postgres (schema idempotente en `supabase-schema.sql`, semilla en `seed-notes.json`). Si la variable `DATABASE_URL` está configurada, `npm start` lo aplica automáticamente antes de arrancar (`npm run db:migrate`); si no, hay que ejecutarlo a mano en el SQL Editor. El schema es totalmente re-ejecutable (IF NOT EXISTS / WHERE NOT EXISTS).
 - **Serverless (cuando aplique):** Supabase Edge Functions (`functions/*`).
 
 ## Convenciones de diseño
@@ -39,6 +39,7 @@ Notas de aplicación:
 
 - `SUPABASE_URL` — URL pública de Supabase (no secreta).
 - `SUPABASE_SERVICE_ROLE_KEY` — service role key (SECRETA; la usa el backend para escribir).
+- `DATABASE_URL` — connection string de Postgres de Supabase (SECRETA); la usa `npm run db:migrate` para aplicar `supabase-schema.sql` automáticamente antes de `npm start`. Si falta, la migración se omite (no rompe el arranque).
 - `FOOTBALL_DATA_API_KEY` — API key externa de standings (SECRETA).
 - `WRITER_PASSWORD` — contraseña compartida de la redacción (SECRETA).
 - `PORT` — puerto de Express (opcional).
