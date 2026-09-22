@@ -63,6 +63,27 @@ test('notes: nota completa no crashea ante DB no disponible', async () => {
   assert.ok(res.body.error);
 });
 
+test('notes: PUT/PATCH/DELETE con id que no es UUID → 400 sin tocar la DB', async () => {
+  const token = await loginToken();
+  const put = await request(app)
+    .put('/api/notes/no-es-un-uuid')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ title: 'T', sport: 'Fútbol', intro: 'I', author: 'A', email: 'a@x.com', body: 'B' });
+  assert.equal(put.status, 400);
+  assert.match(put.body.error, /ID de nota/i);
+
+  const patch = await request(app)
+    .patch('/api/notes/no-es-un-uuid/status')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ status: 'publicada' });
+  assert.equal(patch.status, 400);
+
+  const del = await request(app)
+    .delete('/api/notes/no-es-un-uuid')
+    .set('Authorization', `Bearer ${token}`);
+  assert.equal(del.status, 400);
+});
+
 test('notes: encuesta inválida → 400', async () => {
   const token = await loginToken();
   const base = { title: 'T', sport: 'Fútbol', intro: 'I', author: 'A', email: 'a@x.com', body: 'B' };

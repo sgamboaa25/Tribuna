@@ -1687,12 +1687,22 @@
           seleccion = json.standings || [];
           updatedAt = json.updatedAt || null;
         } else {
-          const { data, error } = await supabaseClient.functions.invoke('get-standings', {
-            body: { competition: liga }
-          });
-          if (error) throw error;
-          seleccion = data?.standings || [];
-          isStale = data?.stale || false;
+          const resp = await fetch('/api/standings/' + encodeURIComponent(liga));
+          const json = await resp.json().catch(() => null);
+          if (!resp.ok || !json) throw new Error('Error al cargar las posiciones de la liga');
+          seleccion = (json.data || []).map((row) => ({
+            team: row.equipo,
+            crest: row.escudo,
+            pj: row.jugados,
+            g: row.ganados,
+            e: row.empatados,
+            p: row.perdidos,
+            gf: row.golesFavor,
+            gc: row.golesContra,
+            dif: row.diferencia,
+            pts: row.puntos
+          }));
+          isStale = !!json.stale;
         }
 
         if (seleccion.length === 0) {
@@ -1708,7 +1718,9 @@
 
           const gf = Number(row.gf) || 0;
           const gc = Number(row.gc) || 0;
-          const dif = gf - gc;
+          const dif = (row.dif !== undefined && row.dif !== null && Number.isFinite(Number(row.dif)))
+            ? Number(row.dif)
+            : gf - gc;
           const difFormatted = dif > 0 ? '+' + dif : dif;
           const crest = row.crest || row.escudo || '';
 
@@ -2793,12 +2805,20 @@
       const breakingContainer = document.querySelector('#breakingContainer');
       const urgentNotes = allPublicNotes.filter(isBreaking);
       if (urgentNotes.length > 0) {
+        const urgent = urgentNotes[0];
         breakingContainer.innerHTML = `
           <div class="breaking-banner">
             <span class="breaking-label">ÚLTIMA HORA</span>
-            <a href="#lectura" class="breaking-title open-article" data-id="0">${urgentNotes[0].title}</a>
+            <a href="#note-${urgent.id}" class="breaking-title" data-note-id="${urgent.id}">${urgent.title}</a>
           </div>
         `;
+        const link = breakingContainer.querySelector('.breaking-title');
+        if (link) {
+          link.onclick = (e) => {
+            e.preventDefault();
+            openNoteById(urgent.id);
+          };
+        }
       } else {
         breakingContainer.innerHTML = '';
       }

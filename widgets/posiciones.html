@@ -92,7 +92,8 @@
     cl: 'Champions League',
     ec: 'Eurocopa',
     bsa: 'Brasileirão',
-    ded: 'Eredivisie'
+    ded: 'Eredivisie',
+    promerica: 'Liga Promérica (Costa Rica)'
   };
 
   const select = document.getElementById('leagueSelect');
@@ -129,6 +130,28 @@
     statusEl.textContent = 'Error';
   }
 
+  // Normaliza los dos formatos que devuelve el backend: ligas externas
+  // ({ data: [{ posicion, equipo, escudo, jugados, ... }] }) y la Liga Promérica
+  // manual ({ standings: [{ slug, equipo, escudo, pj, g, e, p, gf, gc, dif, pts }] }).
+  function normalizeRow(row, index) {
+    const jugados = row.jugados != null ? row.jugados : row.pj;
+    const ganados = row.ganados != null ? row.ganados : row.g;
+    const empatados = row.empatados != null ? row.empatados : row.e;
+    const perdidos = row.perdidos != null ? row.perdidos : row.p;
+    const golesFavor = row.golesFavor != null ? row.golesFavor : row.gf;
+    const golesContra = row.golesContra != null ? row.golesContra : row.gc;
+    const diferencia = row.diferencia != null ? row.diferencia
+      : (row.dif != null ? row.dif
+        : ((Number(golesFavor) || 0) - (Number(golesContra) || 0)));
+    return {
+      posicion: row.posicion != null ? row.posicion : index + 1,
+      equipo: row.equipo || row.team || '',
+      escudo: row.escudo || row.crest || '',
+      jugados, ganados, empatados, perdidos, golesFavor, golesContra, diferencia,
+      puntos: row.puntos != null ? row.puntos : row.pts
+    };
+  }
+
   async function load(liga) {
     renderLoading();
     statusEl.textContent = 'Actualizando…';
@@ -136,7 +159,8 @@
       const res = await fetch('/api/standings/' + encodeURIComponent(liga));
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
-      const rows = json && json.data ? json.data : [];
+      const rawRows = Array.isArray(json.data) ? json.data : (Array.isArray(json.standings) ? json.standings : []);
+      const rows = rawRows.map(normalizeRow);
 
       if (rows.length === 0) {
         renderError();
@@ -152,13 +176,15 @@
           '<td class="team-col"><div class="team-cell">' +
           (row.escudo ? '<img src="' + esc(row.escudo) + '" alt="" class="team-crest" loading="lazy">' : '') +
           '<span class="team-name">' + esc(row.equipo) + '</span></div></td>' +
-          '<td>' + row.jugados + '</td><td>' + row.ganados + '</td><td>' + row.empatados + '</td><td>' + row.perdidos + '</td>' +
-          '<td>' + row.golesFavor + '</td><td>' + row.golesContra + '</td><td>' + difFmt + '</td>' +
-          '<td class="pts-col">' + row.puntos + '</td>' +
+          '<td>' + (row.jugados || 0) + '</td><td>' + (row.ganados || 0) + '</td><td>' + (row.empatados || 0) + '</td><td>' + (row.perdidos || 0) + '</td>' +
+          '<td>' + (row.golesFavor || 0) + '</td><td>' + (row.golesContra || 0) + '</td><td>' + difFmt + '</td>' +
+          '<td class="pts-col">' + (row.puntos || 0) + '</td>' +
           '</tr>';
       }).join('');
 
-      statusEl.textContent = json.stale ? 'Actualizado hace un momento' : 'En vivo';
+      statusEl.textContent = liga === 'promerica'
+        ? (json.updatedAt ? 'Actualización manual' : 'Sin actualizar')
+        : (json.stale ? 'Actualizado hace un momento' : 'En vivo');
     } catch (err) {
       console.error('Error cargando posiciones:', err);
       renderError();

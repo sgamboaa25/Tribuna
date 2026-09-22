@@ -103,6 +103,15 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 
 const activeSessions = new Map();
 
+// Purga periódica de sesiones expiradas para que el mapa no crezca sin límite
+// en procesos de larga vida (Render). El timer no mantiene vivo el proceso.
+setInterval(() => {
+  const cutoff = Date.now();
+  for (const [token, session] of activeSessions) {
+    if (session.expiresAt < cutoff) activeSessions.delete(token);
+  }
+}, 15 * 60 * 1000).unref?.();
+
 const loginAttempts = new Map();
 const LOGIN_MAX_FAILURES = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -1188,7 +1197,7 @@ app.get('/api/notes/search', async (req, res) => {
     let query = supabase.from('notes').select('*').eq('status', 'publicada').eq('archived', false);
 
     if (sport) {
-      query = query.ilike('sport', sport);
+      query = query.ilike('sport', `%${sport}%`);
     }
 
     const { data, error } = await query.order('id', { ascending: false });
@@ -1306,6 +1315,10 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
 });
 
 app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
+  const id = req.params.id;
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ error: 'ID de nota no válido.' });
+  }
   const { data: clean, error: validationError } = validateNote(req.body, true);
   if (validationError) return res.status(400).json({ error: validationError });
 
@@ -1321,15 +1334,19 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const { data, error } = await supabase
     .from('notes')
     .update(clean)
-    .eq('id', req.params.id)
+    .eq('id', id)
     .select();
   if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
 
 app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   const id = req.params.id;
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ error: 'ID de nota no válido.' });
+  }
   const { status } = req.body;
 
   if (!['borrador', 'en revisión', 'publicada'].includes(status)) {
@@ -1339,6 +1356,7 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
   const { data, error } = await supabase.from('notes').update({ status }).eq('id', id).select();
 
   if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
@@ -1347,10 +1365,14 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
 // Desaparece de la web pública y en el panel se muestra como archivada.
 // Nunca se borra físicamente.
 app.delete('/api/notes/:id', authenticateWriter, async (req, res) => {
+  const id = req.params.id;
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ error: 'ID de nota no válido.' });
+  }
   const { data, error } = await supabase
     .from('notes')
     .update({ archived: true })
-    .eq('id', req.params.id)
+    .eq('id', id)
     .select();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -1590,10 +1612,15 @@ function standingsRowMap(rows) {
 // Devuelve SIEMPRE la plantilla completa de clubes (roster de teams_ca) con sus
 // estadísticas guardadas o ceros si aún no se cargaron. Así la tabla pública se
 // ve desde el primer día (estado "sin actualizar") en vez de parecer un error.
+// Pasa DIF y Pts tal cual se guardaron (para que la redacción pueda escribir
+// valores que no dependen de GF-GC ni de G*3+E). Si no se guardaron aún, se
+// dejan sin definir y decoratePromericaStandings aplica su cálculo por defecto.
 function mergeStandingsRoster(teams, rows) {
   const stats = standingsRowMap(rows);
   return (teams || []).map((t) => {
     const s = stats.get(t.slug) || {};
+    const dif = (s.dif !== undefined && s.dif !== null) ? Number(s.dif) : undefined;
+    const pts = (s.pts !== undefined && s.pts !== null) ? Number(s.pts) : undefined;
     return {
       equipo_slug: t.slug,
       pj: Number(s.pj) || 0,
@@ -1602,6 +1629,8 @@ function mergeStandingsRoster(teams, rows) {
       p: Number(s.p) || 0,
       gf: Number(s.gf) || 0,
       gc: Number(s.gc) || 0,
+      dif,
+      pts,
       updated_at: s.updated_at || null
     };
   });

@@ -219,3 +219,22 @@ test('standings promerica: rutas del panel sin token responden 401', async () =>
     .send({ rows: [{ slug: 'saprissa', pj: 1, g: 1, e: 0, p: 0, gf: 1, gc: 0 }] });
   assert.equal(put.status, 401);
 });
+
+test('standings promerica: mergeStandingsRoster preserva DIF y Pts guardados', () => {
+  const merged = mergeStandingsRoster(TEAMS, [
+    { equipo_slug: 'saprissa', pj: 5, g: 3, e: 1, p: 1, gf: 8, gc: 4, dif: 5, pts: 11, updated_at: '2026-09-21T10:00:00Z' }
+  ]);
+  const saprissa = merged.find((r) => r.equipo_slug === 'saprissa');
+  assert.equal(saprissa.dif, 5);
+  assert.equal(saprissa.pts, 11);
+});
+
+test('standings promerica: sin DIF/Pts guardados decorate los computa desde la plantilla', () => {
+  const merged = mergeStandingsRoster(TEAMS, [
+    { equipo_slug: 'saprissa', pj: 5, g: 3, e: 1, p: 1, gf: 8, gc: 4 }
+  ]);
+  const view = decoratePromericaStandings(merged, TEAMS);
+  const saprissa = view.find((r) => r.slug === 'saprissa');
+  assert.equal(saprissa.dif, 4);
+  assert.equal(saprissa.pts, 10);
+});
