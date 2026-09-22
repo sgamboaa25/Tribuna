@@ -1712,6 +1712,7 @@
       const esChampions = liga === 'CL';
       const esChampionship = liga === 'ELC';
       const esBrasileirao = liga === 'BSA';
+      const esEredivisie = liga === 'DED';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1768,6 +1769,11 @@
               else if (index === 4) rowClass = 'row-playoff';
               else if (index < 11) rowClass = 'row-sudamericana';
               else if (index >= seleccion.length - 4) rowClass = 'row-relegation';
+            } else if (esEredivisie && seleccion.length >= 18) {
+              if (index === 0) rowClass = 'row-qualified';
+              else if (index < 7) rowClass = 'row-playoff';
+              else if (index === seleccion.length - 3) rowClass = 'row-playoff';
+              else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
             } else if (index < 4) rowClass = 'row-highlight';
             else if (esBundesliga && index === seleccion.length - 3) rowClass = 'row-playoff';
             else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
