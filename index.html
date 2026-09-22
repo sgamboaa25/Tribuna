@@ -1716,6 +1716,7 @@
       const esChampionship = liga === 'ELC';
       const esBrasileirao = liga === 'BSA';
       const esEredivisie = liga === 'DED';
+      const esPortuguesa = liga === 'PPL';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1777,6 +1778,13 @@
               else if (index === 1) rowClass = 'row-qualified';
               else if (index === 2) rowClass = 'row-orange';
               else if (index < 7) rowClass = 'row-playoff';
+              else if (index === seleccion.length - 3) rowClass = 'row-playoff';
+              else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
+            } else if (esPortuguesa && seleccion.length >= 18) {
+              if (index < 2) rowClass = 'row-qualified';
+              else if (index === 2) rowClass = 'row-playoff';
+              else if (index === 3) rowClass = 'row-sudamericana';
+              else if (index === 4) rowClass = 'row-orange';
               else if (index === seleccion.length - 3) rowClass = 'row-playoff';
               else if (index >= seleccion.length - 2) rowClass = 'row-relegation';
             } else if (index < 4) rowClass = 'row-highlight';
