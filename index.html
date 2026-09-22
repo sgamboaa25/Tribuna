@@ -636,6 +636,34 @@
       .player-hub-header { flex-direction:column; text-align:center; gap:var(--space-md); }
       .player-hub-photo { width:72px; height:72px; }
     }
+
+    /* ===== QUIÉNES SOMOS / EL CREADOR ===== */
+    #quienesSomos { padding-bottom:var(--space-xl); }
+    #quienesSomos .category-header { margin-bottom:var(--space-xl); }
+    .creator-card {
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:clamp(24px, 4vw, 48px);
+      align-items:start;
+      max-width:var(--col-reading);
+      border-top:1px solid var(--line);
+      padding-top:var(--space-xl);
+    }
+    .creator-photo { position:relative; width:120px; height:120px; border-radius:50%; overflow:hidden; border:1px solid var(--line); background:var(--hover-bg); flex:none; }
+    .creator-photo img { position:relative; z-index:1; width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
+    .creator-initials { position:absolute; inset:0; z-index:0; display:flex; align-items:center; justify-content:center; font:800 2.6rem/1 'Fraunces', serif; color:var(--accent-strong); text-transform:uppercase; }
+    .creator-name { font:700 clamp(1.6rem, 3vw, 2rem)/1.15 'Fraunces', serif; letter-spacing:-.02em; color:var(--ink); margin:0 0 var(--space-sm); }
+    .creator-role { color:var(--accent-strong); font-weight:700; font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; margin:0 0 var(--space-md); }
+    .creator-bio { color:var(--muted); font-size:1.02rem; line-height:1.6; margin:0 0 var(--space-lg); max-width:60ch; }
+    .creator-social { display:flex; gap:20px; align-items:center; }
+    .creator-social a { color:var(--muted); display:block; opacity:.8; transition:color .2s, opacity .2s; padding:6px; margin:-6px; }
+    .creator-social a:hover { color:var(--accent-strong); opacity:1; }
+    .creator-social svg { width:22px; height:22px; fill:currentColor; display:block; }
+    @media (max-width:560px) {
+      .creator-card { grid-template-columns:1fr; gap:var(--space-md); padding-top:var(--space-lg); }
+      .creator-photo { width:96px; height:96px; }
+      .creator-initials { font-size:2.1rem; }
+    }
     .tags-hint { display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:28px; font-size:.82rem; color:var(--muted); margin:6px 0 0; }
     .tags-hint .chip { padding:2px 10px; font-size:.75rem; }
     @media (max-width:640px) {
@@ -821,6 +849,40 @@
     <section id="teamHub" aria-labelledby="teamHubTitle" style="display:none"></section>
 
     <section id="playerHub" aria-labelledby="playerHubTitle" style="display:none"></section>
+
+    <!-- ===== QUIÉNES SOMOS · EL CREADOR ===== -->
+    <section id="quienesSomos" aria-labelledby="quienesSomosTitle" style="display:none">
+      <nav class="breadcrumb" aria-label="Ruta de navegación">
+        <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Quiénes somos</span>
+      </nav>
+      <header class="category-header">
+        <h1 id="quienesSomosTitle">Quiénes somos</h1>
+        <p>El periodismo deportivo sin ruido también tiene nombre y apellido. Conoce a la persona detrás de Tribuna.</p>
+      </header>
+
+      <article class="creator-card">
+        <div class="creator-photo">
+          <!-- >>> FOTO DE PERFIL <<< Reemplaza el valor de @src con tu foto
+               (ej. sube el archivo a /public/creador.jpg). Si falta, se muestra
+               un monograma en coral automáticamente. -->
+          <img id="creatorPhoto" src="/public/creador.jpg" alt="Foto de perfil del creador de Tribuna" onerror="this.style.display='none'" />
+          <span class="creator-initials" id="creatorInitials" aria-hidden="true">T</span>
+        </div>
+        <div>
+          <div class="tag">Creador</div>
+          <h2 class="creator-name" id="creatorName">Sebastián Gamboa Rivera</h2>
+          <p class="creator-role">Fundador de Tribuna</p>
+          <p class="creator-bio" id="creatorBio">Sebastián Gamboa es estudiante de periodismo y el creador de Tribuna, un proyecto que está construyendo poco a poco. La idea nació de las ganas de darle más espacio a la cobertura del fútbol centroamericano, un terreno que muchas veces queda en segundo plano frente a las grandes ligas europeas. Todavía es un proyecto en crecimiento, pero la meta es clara: hacer periodismo deportivo directo, sin ruido ni sensacionalismo.</p>
+          <div class="creator-social">
+            <!-- >>> REDES <<< Actualiza los enlaces con tus perfiles (Instagram / X). Estos dos marcadores usan el mismo estilo de iconos del footer. -->
+            <a href="https://www.instagram.com/s.gamboaa/" target="_blank" rel="noopener noreferrer" aria-label="Instagram del creador"><svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0 z"/></svg></a>
+            <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X del creador"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </section>
 
     <section aria-label="Buscar noticias" id="searchSection">
       <form class="search-bar" id="searchForm">
@@ -1277,6 +1339,7 @@
       <div>
         <span><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</span>
         <div class="footer-links">
+          <button type="button" onclick="navigateTo(event, '/quienes-somos')">Quiénes somos</button>
           <button type="button" onclick="openLegalModal('privacy')">Política de privacidad</button>
           <button type="button" onclick="openLegalModal('legal')">Aviso legal</button>
           <button type="button" onclick="openLegalModal('terms')">Términos de uso</button>
@@ -3244,6 +3307,20 @@
       notFoundSection.style.display = show ? 'block' : 'none';
     }
 
+    function setQuienesSomos(show) {
+      const about = document.getElementById('quienesSomos');
+      if (about) about.style.display = show ? 'block' : 'none';
+    }
+
+    function updateCreatorInitials() {
+      const initialsEl = document.getElementById('creatorInitials');
+      const nameEl = document.getElementById('creatorName');
+      if (!initialsEl || !nameEl) return;
+      const parts = nameEl.textContent.trim().split(/\s+/).filter(Boolean);
+      const initials = (parts[0] ? parts[0][0] : '') + (parts.length > 1 && parts[1] ? parts[1][0] : '');
+      initialsEl.textContent = initials.toUpperCase() || 'T';
+    }
+
     function goHomeThen(sectionId) {
       navigateTo(null, '/');
       setTimeout(() => {
@@ -3260,6 +3337,8 @@
       const categoryHeader = document.getElementById('categoryHeaderContainer');
       categoryHeader.innerHTML = '';
       paginationPage = 0;
+      setQuienesSomos(false);
+      updateCreatorInitials();
 
       let isNotFound;
       let teamSlug = null;
@@ -3279,6 +3358,8 @@
         const playerMatch = path.match(/^\/jugador\/([a-z0-9-]+)\/?$/i);
         isNotFound = !playerMatch;
         if (playerMatch) playerSlug = playerMatch[1];
+      } else if (path === '/quienes-somos') {
+        isNotFound = false;
       } else {
         isNotFound = true;
       }
@@ -3299,6 +3380,18 @@
       if (playerSlug) {
         set404Visible(false);
         await renderPlayerPage(playerSlug);
+        return;
+      }
+
+      if (path === '/quienes-somos') {
+        detail.style.display = 'none';
+        set404Visible(true);
+        notFoundSection.style.display = 'none';
+        setQuienesSomos(true);
+        document.title = 'Quiénes somos · Tribuna';
+        const metaDesc = document.getElementById('metaDesc');
+        if (metaDesc) metaDesc.setAttribute('content', 'Quiénes somos — la gente detrás de Tribuna, periodismo deportivo independiente.');
+        if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
         return;
       }
 
