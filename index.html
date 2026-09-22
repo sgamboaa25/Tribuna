@@ -27,6 +27,7 @@
       --ink: #111318; --muted: #646a73; --paper: #fbfbfc; 
       --accent: #A8321A; --accent-strong: #A8321A; --on-accent: #ffffff; --line: #eef0f3; --card-bg: #ffffff; 
       --input-bg: #fafafb; --hover-bg: #f4f5f7; 
+      --panel-bg: #111318; --panel-fg: #fbfbfc;
       --row-highlight: #f8fafc; --row-relegation: #fdf2f2;
       --watermark: rgba(17,19,24,.14);
       --badge-revision-bg: #fef3c7; --badge-revision-fg: #92400e;
@@ -464,15 +465,16 @@
     .reader-photo-form strong { font:600 1rem 'Inter', sans-serif; }
     .check-field { display:flex; align-items:flex-start; }
 
-    .newsletter { background:var(--ink); color:var(--paper); border-radius:var(--radius-xl); padding:var(--space-xl); display:flex; justify-content:space-between; align-items:center; gap:30px; margin:20px 0 54px; }
+    .newsletter { background:var(--panel-bg); color:var(--panel-fg); border-radius:var(--radius-xl); padding:var(--space-xl); display:flex; justify-content:space-between; align-items:center; gap:30px; margin:20px 0 54px; }
     .newsletter h2 { font-size:2rem; margin:0; font-family:'Fraunces', serif; } 
     .newsletter p { margin:.4rem 0 0; opacity:.72; font-size:.95rem; }
-    .newsletter button { background:var(--paper); color:var(--ink); border:0; padding:12px 28px; font-weight:700; font-size:.9rem; border-radius:var(--radius-md); white-space:nowrap; cursor:pointer; font-family:'Inter', sans-serif; transition:background .2s; }
-    .newsletter button:hover { background:#eee; }
+    .newsletter button { background:var(--panel-fg); color:var(--panel-bg); border:0; padding:12px 28px; font-weight:700; font-size:.9rem; border-radius:var(--radius-md); white-space:nowrap; cursor:pointer; font-family:'Inter', sans-serif; transition:background .2s; }
+    .newsletter button:hover { background:#e6e6e6; }
     .newsletter-form { display:flex; flex-direction:column; gap:6px; width:min(360px, 100%); }
     .newsletter-fields { display:flex; gap:10px; }
-    .newsletter-fields input { flex:1; min-width:0; padding:12px 14px; font:inherit; font-size:.9rem; border:1px solid rgba(255,255,255,.3); border-radius:var(--radius-md); background:rgba(0,0,0,.25); color:var(--paper); }
-    .newsletter-fields input::placeholder { color:rgba(255,255,255,.55); }
+    .newsletter-fields input { flex:1; min-width:0; padding:12px 14px; font:inherit; font-size:.9rem; border:1px solid rgba(255,255,255,.35); border-radius:var(--radius-md); background:rgba(255,255,255,.14); color:#fff; }
+    .newsletter-fields input::placeholder { color:rgba(255,255,255,.6); }
+    .newsletter-fields input:focus { border-color:var(--panel-fg); }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
     .newsletter-msg { margin:.2rem 0 0; font-size:.85rem; min-height:1.3em; opacity:1; }
     .newsletter-msg.error { color:#ffb3a7; }
@@ -490,19 +492,19 @@
     .reads { display:block; color:var(--muted); font-size:.72rem; margin-top:var(--space-sm); text-transform:uppercase; letter-spacing:.06em; font-family:'Inter', sans-serif; }
     .meta-date { display:block; color:var(--muted); font-size:.78rem; font-family:'Inter', sans-serif; margin-top:10px; }
 
-    footer { background:var(--ink); color:var(--paper); padding:var(--space-xl) var(--space-lg); margin-top:60px; } 
+    footer { background:var(--panel-bg); color:var(--panel-fg); padding:var(--space-xl) var(--space-lg); margin-top:60px; } 
     footer div.footer-content { max-width:1200px; margin:auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; font-size:.85rem; }
     .footer-links { display:flex; gap:var(--space-md); flex-wrap:wrap; margin-top:10px; }
-    .footer-links button { background:transparent; border:0; color:var(--paper); opacity:.72; cursor:pointer; font-size:.85rem; padding:0; text-decoration:underline; font-family:'Inter', sans-serif; }
+    .footer-links button { background:transparent; border:0; color:var(--panel-fg); opacity:.72; cursor:pointer; font-size:.85rem; padding:0; text-decoration:underline; font-family:'Inter', sans-serif; }
     .footer-links button:hover { opacity:1; }
     .social-links { display:flex; gap:20px; align-items:center; }
-    .social-links a { color:var(--paper); display:block; opacity:.72; transition:opacity .2s; }
+    .social-links a { color:var(--panel-fg); display:block; opacity:.72; transition:opacity .2s; }
     .social-links a:hover { opacity:1; }
     .social-links svg { width:20px; height:20px; fill:currentColor; }
 
     dialog { width:min(680px,calc(100% - 32px)); border:1px solid var(--line); padding:0; border-radius:var(--radius-xl); box-shadow:0 25px 60px rgba(0,0,0,.15); overflow:hidden; background:var(--card-bg); color:var(--ink); } 
     dialog::backdrop { background:rgba(0,0,0,.6); backdrop-filter:blur(4px); }
-    .modal-head { padding:var(--space-lg); background:var(--ink); color:var(--paper); display:flex; justify-content:space-between; align-items:center; } 
+    .modal-head { padding:var(--space-lg); background:var(--panel-bg); color:var(--panel-fg); display:flex; justify-content:space-between; align-items:center; } 
     .modal-head h2 { margin:0; font-size:1.2rem; font-family:'Inter', sans-serif; font-weight:700; } 
     .modal-body { padding:32px; max-height:70vh; overflow-y:auto; line-height:1.7; }
     .legal-text h3 { font-family:'Fraunces', serif; margin-top:20px; margin-bottom:var(--space-sm); }
@@ -519,7 +521,7 @@
 
     .submit { border:0; background:var(--ink); color:var(--paper); padding:12px var(--space-lg); font-weight:600; font-size:.9rem; cursor:pointer; border-radius:var(--radius-md); width:100%; transition:opacity .2s; font-family:'Inter', sans-serif; }
     .submit:hover { opacity:.9; }
-    .close { background:transparent; border:0; color:var(--paper); font-size:1.5rem; cursor:pointer; opacity:.7; } .close:hover { opacity:1; } 
+    .close { background:transparent; border:0; color:var(--panel-fg); font-size:1.5rem; cursor:pointer; opacity:.7; } .close:hover { opacity:1; } 
     .message { color:var(--accent-strong); font-size:.85rem; min-height:1.3em; margin-top:12px; text-align:center; font-weight:600; }
     
     #writerPanel { display:none; border:1px solid var(--line); border-radius:var(--radius-xl); background:var(--card-bg); padding:var(--space-xl); margin:var(--space-xl) 0; box-shadow:0 10px 40px rgba(0,0,0,.02); } 
