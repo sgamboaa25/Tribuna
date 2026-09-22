@@ -1587,6 +1587,26 @@ function standingsRowMap(rows) {
   return map;
 }
 
+// Devuelve SIEMPRE la plantilla completa de clubes (roster de teams_ca) con sus
+// estadísticas guardadas o ceros si aún no se cargaron. Así la tabla pública se
+// ve desde el primer día (estado "sin actualizar") en vez de parecer un error.
+function mergeStandingsRoster(teams, rows) {
+  const stats = standingsRowMap(rows);
+  return (teams || []).map((t) => {
+    const s = stats.get(t.slug) || {};
+    return {
+      equipo_slug: t.slug,
+      pj: Number(s.pj) || 0,
+      g: Number(s.g) || 0,
+      e: Number(s.e) || 0,
+      p: Number(s.p) || 0,
+      gf: Number(s.gf) || 0,
+      gc: Number(s.gc) || 0,
+      updated_at: s.updated_at || null
+    };
+  });
+}
+
 // Valida el payload del panel: lista acotada, clubes conocidos, enteros >= 0
 // y pj = g + e + p (integridad del conteo). Exportado para tests.
 function validateStandingsRows(payload, allowedSlugs) {
@@ -1649,7 +1669,7 @@ app.get('/api/standings/promerica', async (req, res) => {
     const body = {
       updatedAt: last ? last.updated_at : null,
       updatedBy: last ? last.updated_by : null,
-      standings: decoratePromericaStandings(db.data || [], teams)
+      standings: decoratePromericaStandings(mergeStandingsRoster(teams, db.data), teams)
     };
     promericaStandingsCache = body;
     promericaStandingsCacheAt = now;
@@ -1919,3 +1939,4 @@ module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;
 module.exports.decoratePromericaStandings = decoratePromericaStandings;
 module.exports.validateStandingsRows = validateStandingsRows;
+module.exports.mergeStandingsRoster = mergeStandingsRoster;

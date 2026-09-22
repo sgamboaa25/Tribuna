@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app } = require('./setup');
-const { decoratePromericaStandings, validateStandingsRows } = require('../server');
+const { decoratePromericaStandings, validateStandingsRows, mergeStandingsRoster } = require('../server');
 
 // ===== Ruta original /api/standings/:liga (football-data) =====
 
@@ -156,6 +156,26 @@ test('standings promerica: validación acepta una fila correcta y normaliza vac�
   assert.equal(data.length, 1);
   assert.equal(data[0].slug, 'saprissa');
   assert.equal(data[0].gf, 6);
+});
+
+test('standings promerica: mergeStandingsRoster devuelve los 10 clubes con ceros si no hay datos', () => {
+  const merged = mergeStandingsRoster(TEAMS, []);
+  assert.equal(merged.length, 3);
+  assert.equal(merged[0].pj, 0);
+  assert.equal(merged[0].updated_at, null);
+});
+
+test('standings promerica: mergeStandingsRoster preserva las estadísticas guardadas por equipo', () => {
+  const merged = mergeStandingsRoster(TEAMS, [
+    { equipo_slug: 'saprissa', pj: 5, g: 3, e: 1, p: 1, gf: 8, gc: 4, updated_at: '2026-09-21T10:00:00Z' }
+  ]);
+  assert.equal(merged.length, 3);
+  const saprissa = merged.find((r) => r.equipo_slug === 'saprissa');
+  assert.equal(saprissa.pj, 5);
+  assert.equal(saprissa.gf, 8);
+  assert.equal(saprissa.updated_at, '2026-09-21T10:00:00Z');
+  const resto = merged.filter((r) => r.equipo_slug !== 'saprissa');
+  assert.equal(resto.every((r) => r.pj === 0), true);
 });
 
 test('standings promerica: GET público sin DB responde 500 JSON elegante', async () => {
