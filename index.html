@@ -342,6 +342,13 @@
     .rumor-empty--error { color:var(--accent); }
     .settings-input-row { display:flex; gap:var(--space-sm); align-items:center; flex-wrap:wrap; }
     .settings-input-row input { flex:1; min-width:220px; }
+    .standings-admin-row { display:grid; grid-template-columns:1fr repeat(6, 72px); gap:var(--space-sm); align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+    .standings-admin-row .team-admin { display:flex; align-items:center; gap:var(--space-sm); min-width:0; }
+    .standings-admin-row .team-admin img { width:26px; height:26px; object-fit:contain; }
+    .standings-admin-row input { width:100%; text-align:center; }
+    @media (max-width:640px) {
+      .standings-admin-row { grid-template-columns:1fr repeat(3, 56px); }
+    }
     .rumor-panel-block { margin-top:34px; }
     @media (max-width:560px) {
       .rumor-route { grid-template-columns:1fr; gap:6px; }
@@ -909,7 +916,7 @@
     <section class="standings-section" id="posiciones">
       <div class="standings-header">
         <div>
-          <div class="tag">Datos en vivo</div>
+          <div class="tag" id="posicionesTag">Datos en vivo</div>
           <h2 class="section-title">Posiciones del Fútbol Internacional (2026/2027)</h2>
         </div>
         <div class="standings-controls">
@@ -927,6 +934,7 @@
               <button class="custom-option" type="button" data-value="BSA" role="menuitem">Campeonato Brasileiro Série A</button>
               <button class="custom-option" type="button" data-value="DED" role="menuitem">Eredivisie (Países Bajos)</button>
               <button class="custom-option" type="button" data-value="EC" role="menuitem">European Championship</button>
+              <button class="custom-option" type="button" data-value="promerica" role="menuitem">Liga Promérica (Costa Rica)</button>
             </div>
           </div>
           <span id="standingsStatus" class="status-indicator">En vivo</span>
@@ -1248,6 +1256,14 @@
         </div>
       </div>
 
+      <div class="promerica-panel-block">
+        <strong>Posiciones Liga Promérica</strong>
+        <p class="tags-hint">Actualización manual: ninguna API conectada cubre UNAFUT de forma confiable. Puntos (3G+E) y diferencia de gol se calculan automáticamente; llená solo PJ, G, E, P, GF y GC de cada club. La fecha de esta actualización se muestra en la portada.</p>
+        <p class="message" id="standingsPromMsg" aria-live="polite"></p>
+        <div class="standings-admin-list" id="standingsAdminList"></div>
+        <button class="submit" type="button" id="standingsPromSave">Guardar tabla</button>
+      </div>
+
       <div class="foto-panel-block">
         <strong>Fotos de lectores</strong>
         <p class="tags-hint">Aprueba o rechaza las fotos enviadas desde la portada. Las aprobadas aparecen en la galería "Fotos de lectores".</p>
@@ -1427,6 +1443,7 @@
         access.textContent = 'Redacción activa'; 
         loginMsg.textContent = '';
         loadAllNotesForPanel();
+        loadStandingsForPanel();
         panel.scrollIntoView({ behavior: scrollBehavior }); 
       } catch (err) {
         writerToken = '';
@@ -1576,19 +1593,44 @@
       ).join('');
     }
 
+    let currentStandingsLeague = 'PL';
+
+    function formatManualStamp(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      const fecha = d.toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const hora = d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+      return `${fecha}, ${hora} h`;
+    }
+
     async function loadStandings(liga) {
       standingsStatus.textContent = 'Actualizando...';
       renderSkeleton();
+      currentStandingsLeague = liga;
+      const esPromerica = liga === 'promerica';
+      const tagEl = document.getElementById('posicionesTag');
+      if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
       try {
-        const { data, error } = await supabaseClient.functions.invoke('get-standings', {
-          body: { competition: liga }
-        });
+        let seleccion;
+        let updatedAt = null;
+        let isStale = false;
 
-        if (error) throw error;
-
-        const seleccion = data?.standings || [];
-        const isStale = data?.stale || false;
+        if (esPromerica) {
+          const resp = await fetch('/api/standings/promerica');
+          const json = await resp.json().catch(() => null);
+          if (!resp.ok || !json) throw new Error('Error al cargar las posiciones de la Liga Promérica');
+          seleccion = json.standings || [];
+          updatedAt = json.updatedAt || null;
+        } else {
+          const { data, error } = await supabaseClient.functions.invoke('get-standings', {
+            body: { competition: liga }
+          });
+          if (error) throw error;
+          seleccion = data?.standings || [];
+          isStale = data?.stale || false;
+        }
 
         if (seleccion.length === 0) {
           throw new Error('No se encontraron datos para esta competición.');
@@ -1605,25 +1647,28 @@
           const gc = Number(row.gc) || 0;
           const dif = gf - gc;
           const difFormatted = dif > 0 ? '+' + dif : dif;
-          
+          const crest = row.crest || row.escudo || '';
+
           return `
             <tr class="${rowClass}">
-              <td class="pos-col">${row.pos}</td>
+              <td class="pos-col">${index + 1}</td>
               <td class="team-col">
                 <div class="team-cell">
-                  ${row.crest ? `<img src="${row.crest}" alt="${row.team}" class="team-crest" />` : ''}
-                  <span>${row.team}</span>
+                  ${crest ? `<img src="${crest}" alt="${row.team || row.equipo}" class="team-crest" />` : ''}
+                  <span>${row.team || row.equipo}</span>
                 </div>
               </td>
               <td>${row.pj}</td><td>${row.g}</td><td>${row.e}</td><td>${row.p}</td>
               <td class="hide-mobile">${gf}</td><td class="hide-mobile">${gc}</td>
               <td class="hide-mobile">${difFormatted}</td>
-              <td class="pts-col">${row.pts}</td>
+              <td class="pts-col">${row.pts !== undefined ? row.pts : (Number(row.g) || 0) * 3 + (Number(row.e) || 0)}</td>
             </tr>
           `;
         }).join('');
 
-        standingsStatus.textContent = isStale ? 'Actualizado hace un momento' : 'En vivo';
+        standingsStatus.textContent = esPromerica
+          ? (updatedAt ? `Actualizado manualmente el ${formatManualStamp(updatedAt)}` : 'Sin actualizar todavía')
+          : (isStale ? 'Actualizado hace un momento' : 'En vivo');
 
       } catch (err) {
         console.error("Error al cargar la tabla de posiciones:", err);
@@ -3539,6 +3584,99 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       await loadRumors();
     }
 
+    // ===== Posiciones Liga Promérica (panel) =====
+    const standingsAdminList = document.getElementById('standingsAdminList');
+    const standingsPromMsg = document.getElementById('standingsPromMsg');
+    const standingsPromSave = document.getElementById('standingsPromSave');
+    const headings = [{ key: 'pj', label: 'PJ' }, { key: 'g', label: 'G' }, { key: 'e', label: 'E' }, { key: 'p', label: 'P' }, { key: 'gf', label: 'GF' }, { key: 'gc', label: 'GC' }];
+
+    function standingsAdminRowHTML(team) {
+      const inputs = headings.map(h => `<div class="s-cell"><input type="number" min="0" max="999" data-slug="${team.slug}" data-key="${h.key}" value="${Number(team[h.key]) || 0}" aria-label="${h.label} de ${team.equipo}" /></div>`).join('');
+      return `<div class="standings-admin-row" data-slug="${team.slug}">
+          <div class="team-admin"><img src="${team.escudo || ''}" alt="" /><span>${escapeHtml(team.equipo)}</span></div>
+          ${inputs}
+        </div>`;
+    }
+
+    async function showStandingsMessage(msg, isError) {
+      if (!standingsPromMsg) return;
+      standingsPromMsg.textContent = msg;
+      standingsPromMsg.className = 'message' + (isError ? ' error' : '');
+    }
+
+    async function loadStandingsForPanel() {
+      if (!writerToken || !standingsAdminList) return;
+      standingsAdminList.innerHTML = '<div class="draft-item"><div><small>Cargando posiciones…</small></div></div>';
+      try {
+        const response = await fetch('/api/standings/promerica/admin', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          writerToken = '';
+          sessionStorage.removeItem('tribuna_writer_token');
+          panel.style.display = 'none';
+          access.textContent = 'Acceso redacción';
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar las posiciones.');
+        const json = await response.json();
+        standingsAdminList.innerHTML = '<div class="standings-admin-head">' +
+          '<div class="team-admin">Equipo</div>' + headings.map(h => `<div>${h.label}</div>`).join('') +
+          '</div>' + (json.standings || []).map(standingsAdminRowHTML).join('');
+        if (json.updatedAt) {
+          await showStandingsMessage(`Última actualización: ${formatManualStamp(json.updatedAt)}${json.updatedBy ? ' por ' + json.updatedBy : ''}.`, false);
+        } else {
+          await showStandingsMessage('Todavía no se ha guardado ninguna tabla.', false);
+        }
+      } catch (err) {
+        console.error('Error al cargar las posiciones del panel:', err);
+        await showStandingsMessage('No se pudieron cargar las posiciones.', true);
+      }
+    }
+
+    if (standingsPromSave) {
+      standingsPromSave.onclick = async () => {
+        if (!writerToken) return;
+        if (!standingsAdminList) return;
+        const rows = [...standingsAdminList.querySelectorAll('.standings-admin-row')].map(row => {
+          const slug = row.dataset.slug;
+          const stats = {};
+          headings.forEach(h => {
+            const input = row.querySelector(`input[data-key="${h.key}"]`);
+            stats[h.key] = input ? input.value.trim() : '0';
+          });
+          return { slug, ...stats };
+        });
+        await showStandingsMessage('Guardando…', false);
+        try {
+          const response = await fetch('/api/standings/promerica', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${writerToken}`
+            },
+            body: JSON.stringify({ rows })
+          });
+          if (response.status === 401) {
+            writerToken = '';
+            sessionStorage.removeItem('tribuna_writer_token');
+            panel.style.display = 'none';
+            access.textContent = 'Acceso redacción';
+            return;
+          }
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+          }
+          await showStandingsMessage(`Tabla guardada. Actualizado el ${formatManualStamp((await response.json()).updatedAt)}.`, false);
+          if (currentStandingsLeague === 'promerica') await loadStandings('promerica');
+        } catch (err) {
+          console.error('Error al guardar las posiciones:', err);
+          await showStandingsMessage(`No se pudo guardar: ${err.message}`, true);
+        }
+      };
+    }
+
     if (rumorVeracityInput) {
       rumorVeracityInput.addEventListener('input', () => {
         if (rumorVeracityLabel) rumorVeracityLabel.textContent = rumorVeracityInput.value + '%';
@@ -3985,6 +4123,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     loadPublicNotes();
     if (writerToken) loadAllNotesForPanel();
     if (writerToken) loadFotosForPanel();
+    if (writerToken) loadStandingsForPanel();
     loadPlayersCatalog();
     
     async function compressImage(file, maxWidth = 1600, quality = 0.8) {

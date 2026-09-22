@@ -133,6 +133,15 @@ async function main() {
   const settingsPut = await fetch(BASE + '/api/settings', { method: 'PUT', body: '{"next_transfer_window":"x"}' });
   report('/api/settings PUT sin token -> 401', settingsPut.status === 401, 'status=' + settingsPut.status);
 
+  const promericaPub = await fetch(BASE + '/api/standings/promerica');
+  report('/api/standings/promerica sin DB real -> 500 JSON', promericaPub.status === 500, 'status=' + promericaPub.status);
+
+  const promericaAdmin = await fetch(BASE + '/api/standings/promerica/admin');
+  report('/api/standings/promerica/admin sin token -> 401', promericaAdmin.status === 401, 'status=' + promericaAdmin.status);
+
+  const promericaPut = await fetch(BASE + '/api/standings/promerica', { method: 'PUT', body: '{"rows":[]}' });
+  report('/api/standings/promerica PUT sin token -> 401', promericaPut.status === 401, 'status=' + promericaPut.status);
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 

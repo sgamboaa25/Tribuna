@@ -415,3 +415,36 @@ revoke all on table public.site_settings from authenticated;
 insert into public.site_settings (key, value)
 select 'next_transfer_window', ''
 where not exists (select 1 from public.site_settings where key = 'next_transfer_window');
+
+-- ============================================================
+-- POSICIONES LIGA PROMÉRICA — ACTUALIZACIÓN MANUAL
+-- ============================================================
+-- Ninguna API conectada cubre UNAFUT de forma confiable, así que la redacción
+-- actualiza estas estadísticas a mano desde el panel (login existente) en la
+-- tabla standings_promerica. Pts y DIF NO se guardan: se calculan al leer
+-- (3G+E y GF-GC) para que nunca queden inconsistentes. Solo el backend
+-- escribe (rutas /api/standings/promerica[/admin]); anon solo lee.
+create table if not exists public.standings_promerica (
+  id uuid primary key default gen_random_uuid(),
+  equipo_slug text not null unique references public.teams_ca(slug) on delete cascade,
+  pj integer not null default 0 check (pj between 0 and 999),
+  g integer not null default 0 check (g between 0 and 999),
+  e integer not null default 0 check (e between 0 and 999),
+  p integer not null default 0 check (p between 0 and 999),
+  gf integer not null default 0 check (gf between 0 and 999),
+  gc integer not null default 0 check (gc between 0 and 999),
+  updated_by text,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.standings_promerica enable row level security;
+
+drop policy if exists "Lectura pública de posiciones manuales" on public.standings_promerica;
+create policy "Lectura pública de posiciones manuales"
+  on public.standings_promerica for select
+  to anon
+  using (true);
+
+revoke all on table public.standings_promerica from anon;
+grant select on table public.standings_promerica to anon;

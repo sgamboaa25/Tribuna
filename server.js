@@ -1495,8 +1495,9 @@ const LEAGUE_MAP = {
 const cache = {};
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
-app.get('/api/standings/:liga', async (req, res) => {
+app.get('/api/standings/:liga', async (req, res, next) => {
   const ligaKey = req.params.liga.toLowerCase();
+  if (ligaKey === 'promerica') return next();
   const leagueCode = LEAGUE_MAP[ligaKey];
 
   if (!leagueCode) return res.status(400).json({ error: 'Liga no válida.' });
@@ -1540,6 +1541,180 @@ app.get('/api/standings/:liga', async (req, res) => {
   } catch (error) {
     if (cache[ligaKey]) return res.json({ stale: true, data: cache[ligaKey].data });
     return res.status(503).json({ error: error.message });
+  }
+});
+
+// ============ Posiciones Liga Promérica (actualización manual) ============
+// Ninguna API conectada cubre UNAFUT de forma confiable, así que la redacción
+// actualiza estas estadísticas a mano desde el panel (login existente) en la
+// tabla standings_promerica. Pts y DIF NO se guardan: se calculan al leer
+// (3G+E y GF-GC) para que nunca queden inconsistentes. RLS anon solo lectura;
+// escrituras solo backend (authenticateWriter). El frontend consulta esta ruta
+// igual que consulta las demás ligas, mostrando updatedAt para no fingir
+// datos "en vivo".
+const PRO_PROMERICAS_CACHE_MS = 60 * 1000;
+let promericaStandingsCache = null;
+let promericaStandingsCacheAt = 0;
+
+// Ordena y computa la vista pública (Pts, DIF). Exportado para tests.
+function decoratePromericaStandings(rows, teams) {
+  const teamBySlug = new Map((teams || []).map((t) => [t.slug, t]));
+  const withStats = (rows || []).map((r) => {
+    const team = teamBySlug.get(r.equipo_slug) || {};
+    const pj = Number(r.pj) || 0;
+    const g = Number(r.g) || 0;
+    const e = Number(r.e) || 0;
+    const p = Number(r.p) || 0;
+    const gf = Number(r.gf) || 0;
+    const gc = Number(r.gc) || 0;
+    return {
+      slug: r.equipo_slug,
+      equipo: team.nombre || r.equipo_slug,
+      escudo: team.escudo || '',
+      pj, g, e, p, gf, gc,
+      dif: gf - gc,
+      pts: g * 3 + e
+    };
+  });
+  return withStats.sort((a, b) =>
+    b.pts - a.pts || b.dif - a.dif || b.gf - a.gf || String(a.equipo).localeCompare(String(b.equipo), 'es')
+  );
+}
+
+function standingsRowMap(rows) {
+  const map = new Map();
+  for (const r of rows || []) map.set(r.equipo_slug, r);
+  return map;
+}
+
+// Valida el payload del panel: lista acotada, clubes conocidos, enteros >= 0
+// y pj = g + e + p (integridad del conteo). Exportado para tests.
+function validateStandingsRows(payload, allowedSlugs) {
+  const rows = Array.isArray(payload && payload.rows) ? payload.rows : null;
+  if (!rows || rows.length < 1 || rows.length > 12) {
+    return { error: 'Se esperaba la lista de equipos en "rows".' };
+  }
+  const slugSet = new Set(allowedSlugs || []);
+  const nums = ['pj', 'g', 'e', 'p', 'gf', 'gc'];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') return { error: 'Fila inválida en la tabla.' };
+    const slug = sanitizeText(row.slug || '');
+    if (!slugSet.has(slug)) return { error: `Equipo no válido: "${slug}".` };
+    for (const key of nums) {
+      const v = row[key];
+      if (v === undefined || v === null || v === '') continue;
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 999) {
+        return { error: `Valor inválido en "${slug}" (${key}).` };
+      }
+    }
+    const pj = Number(row.pj) || 0;
+    const g = Number(row.g) || 0;
+    const e = Number(row.e) || 0;
+    const p = Number(row.p) || 0;
+    if (pj !== g + e + p) {
+      return { error: `En "${slug}" el PJ (${pj}) no cuadra con G+E+P (${g}+${e}+${p}).` };
+    }
+  }
+  return { data: rows };
+}
+
+async function loadTeamsSlugs() {
+  const { data, error } = await supabase.from('teams_ca').select('slug');
+  if (error) throw error;
+  return (data || []).map((t) => t.slug);
+}
+
+function lastManualUpdate(rows) {
+  let lastRow = null;
+  for (const r of rows || []) {
+    if (r.updated_at && (!lastRow || new Date(r.updated_at) > new Date(lastRow.updated_at))) lastRow = r;
+  }
+  return lastRow;
+}
+
+// GET Público: posiciones manuales de la Liga Promérica (cache 1 min).
+app.get('/api/standings/promerica', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (promericaStandingsCacheAt && now - promericaStandingsCacheAt < PRO_PROMERICAS_CACHE_MS) {
+      return res.json(promericaStandingsCache);
+    }
+    const [teams, db] = await Promise.all([
+      loadTeams(),
+      supabase.from('standings_promerica').select('*')
+    ]);
+    if (db.error) throw db.error;
+    const last = lastManualUpdate(db.data);
+    const body = {
+      updatedAt: last ? last.updated_at : null,
+      updatedBy: last ? last.updated_by : null,
+      standings: decoratePromericaStandings(db.data || [], teams)
+    };
+    promericaStandingsCache = body;
+    promericaStandingsCacheAt = now;
+    res.json(body);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET del panel: los 10 clubes con sus números (ceros si nunca se guardaron).
+app.get('/api/standings/promerica/admin', authenticateWriter, async (req, res) => {
+  try {
+    const [teams, db] = await Promise.all([
+      loadTeams(),
+      supabase.from('standings_promerica').select('*')
+    ]);
+    if (db.error) throw db.error;
+    const map = standingsRowMap(db.data);
+    const rows = (teams || []).map((t) => {
+      const s = map.get(t.slug) || {};
+      return {
+        slug: t.slug,
+        equipo: t.nombre,
+        escudo: t.escudo,
+        pj: Number(s.pj) || 0,
+        g: Number(s.g) || 0,
+        e: Number(s.e) || 0,
+        p: Number(s.p) || 0,
+        gf: Number(s.gf) || 0,
+        gc: Number(s.gc) || 0
+      };
+    });
+    const last = lastManualUpdate(db.data);
+    res.json({ standings: rows, updatedAt: last ? last.updated_at : null, updatedBy: last ? last.updated_by : null });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT Privado (panel): guarda las estadísticas de los 10 clubes de una vez.
+app.put('/api/standings/promerica', authenticateWriter, async (req, res) => {
+  try {
+    const allowed = await loadTeamsSlugs();
+    const { data, error } = validateStandingsRows(req.body, allowed);
+    if (error) return res.status(400).json({ error });
+    const updatedAt = new Date().toISOString();
+    const rowsToSave = data.map((row) => ({
+      equipo_slug: sanitizeText(row.slug),
+      pj: Number(row.pj) || 0,
+      g: Number(row.g) || 0,
+      e: Number(row.e) || 0,
+      p: Number(row.p) || 0,
+      gf: Number(row.gf) || 0,
+      gc: Number(row.gc) || 0,
+      updated_by: req.writer || null,
+      updated_at: updatedAt
+    }));
+    const { error: upsertError } = await supabase
+      .from('standings_promerica')
+      .upsert(rowsToSave, { onConflict: 'equipo_slug' });
+    if (upsertError) throw upsertError;
+    promericaStandingsCacheAt = 0;
+    res.json({ ok: true, updatedAt });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1742,3 +1917,5 @@ module.exports.validateRumor = validateRumor;
 module.exports.validateReaderPhoto = validateReaderPhoto;
 module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;
+module.exports.decoratePromericaStandings = decoratePromericaStandings;
+module.exports.validateStandingsRows = validateStandingsRows;
