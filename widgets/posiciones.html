@@ -146,7 +146,7 @@
       body.innerHTML = rows.map(function (row, index) {
         const dif = (Number(row.diferencia) || 0);
         const difFmt = dif > 0 ? '+' + dif : dif;
-        const rowClass = index === 0 ? ' leader' : (rows.length >= 8 && index >= rows.length - 2 ? ' relegation' : '');
+        const rowClass = index === 0 ? ' leader' : (rows.length >= 8 && index >= rows.length - 1 ? ' relegation' : '');
         return '<tr class="' + rowClass.trim() + '">' +
           '<td class="pos-col">' + row.posicion + '</td>' +
           '<td class="team-col"><div class="team-cell">' +
