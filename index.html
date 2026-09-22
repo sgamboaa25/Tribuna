@@ -314,33 +314,6 @@
       .fixture-row { gap:var(--space-sm); padding:12px var(--space-md); }
     }
 
-    /* ===== MERCADO DE FICHAJES (rumores) ===== */
-    #rumorList:empty { display:none; }
-    #rumorList { border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); overflow:hidden; }
-    .rumor-row { padding:16px var(--space-md); border-bottom:1px solid var(--line); }
-    .rumor-row:last-child { border-bottom:0; }
-    .rumor-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
-    .rumor-player-name { font:700 1.05rem/1.2 'Fraunces', serif; color:var(--ink); text-decoration:none; }
-    .rumor-player-name:hover { color:var(--accent-strong); }
-    .rumor-pos { font-size:.75rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
-    .rumor-route { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
-    .rumor-club { display:inline-flex; align-items:center; gap:8px; min-width:0; font-family:'Fraunces', serif; font-weight:700; font-size:1rem; color:var(--ink); text-decoration:none; }
-    .rumor-club img { width:22px; height:22px; object-fit:contain; border-radius:50%; flex-shrink:0; }
-    .rumor-club:hover { color:var(--accent-strong); }
-    .rumor-route .rumor-origen { justify-self:end; flex-direction:row-reverse; text-align:right; }
-    .rumor-arrow { font:700 1.3rem/1 'Fraunces', serif; color:var(--muted); }
-    .rumor-meter { width:120px; height:5px; border-radius:4px; background:var(--hover-bg); overflow:hidden; justify-self:center; margin-top:6px; }
-    .rumor-meter > span { display:block; height:100%; background:var(--accent); }
-    .rumor-foot { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; font-size:.8rem; color:var(--muted); }
-    .rumor-badge { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:20px; white-space:nowrap; }
-    .rumor-badge.ru-state-rumor { background:var(--hover-bg); color:var(--muted); }
-    .rumor-badge.ru-state-avanzado { background:var(--badge-revision-bg); color:var(--badge-revision-fg); }
-    .rumor-badge.ru-state-confirmado { background:var(--badge-public-bg); color:var(--badge-public-fg); }
-    .rumor-badge.ru-state-descartado { background:var(--card-bg); color:var(--danger); border:1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
-    .rumor-fuente { font-style:italic; }
-    .rumor-age { color:var(--muted); opacity:.8; }
-    .rumor-empty { color:var(--muted); padding:24px var(--space-md); text-align:center; }
-    .rumor-empty--error { color:var(--accent); }
     .settings-input-row { display:flex; gap:var(--space-sm); align-items:center; flex-wrap:wrap; }
     .settings-input-row input { flex:1; min-width:220px; }
     .standings-admin-row { display:grid; grid-template-columns:1fr repeat(8, 72px); gap:var(--space-sm); align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
@@ -350,14 +323,8 @@
     @media (max-width:640px) {
       .standings-admin-row { grid-template-columns:1fr repeat(3, 56px); }
     }
-    .rumor-panel-block { margin-top:34px; }
-    @media (max-width:560px) {
-      .rumor-route { grid-template-columns:1fr; gap:6px; }
-      .rumor-route .rumor-origen { justify-self:auto; text-align:left; flex-direction:row; }
-      .rumor-arrow { display:none; }
-      .rumor-meter { justify-self:start; }
-    }
-    
+.rumor-panel-block { margin-top:34px; }
+
     .skeleton-row td { background:var(--hover-bg); animation:pulse 1.5s infinite; color:transparent !important; border-bottom:1px solid var(--line); height:50px; }
     @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:0.3; } 100% { opacity:0.6; } }
 
@@ -799,7 +766,7 @@
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, #rumores, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top { display:none !important; }
+      .theme-toggle, .category-header, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
       a { color:inherit; text-decoration:none; }
@@ -1057,18 +1024,6 @@
       <div id="fixturesList"></div>
     </section>
 
-    <!-- ===== MERCADO DE FICHAJES (rumores) ===== -->
-    <section class="standings-section" id="rumores">
-      <div class="standings-header">
-        <div>
-          <div class="tag">Mercado</div>
-          <h2 class="section-title">Mercado de fichajes</h2>
-        </div>
-        <span id="rumorStatus" class="status-indicator">En vivo</span>
-      </div>
-      <div id="rumorList"></div>
-    </section>
-
     <!-- ===== MVP DE LA JORNADA (encuesta destacada en portada) ===== -->
     <!-- La redacción etiqueta una nota-encuesta con "mvp"; esta sección muestra
          la encuesta de la nota publicada más reciente con esa etiqueta. -->
@@ -1277,7 +1232,7 @@
 
       <div class="rumor-panel-block">
         <strong>Rastreador de fichajes</strong>
-        <p class="tags-hint">Los rumores activos aparecen en la sección "Mercado de fichajes" de la portada. Vincula clubes con su hub escribiendo el nombre tal cual aparece en el catálogo.</p>
+        <p class="tags-hint">Gestiona los rumores de fichajes. Vincula clubes con su hub escribiendo el nombre tal cual aparece en el catálogo.</p>
         <div class="draft-list" id="rumorManagerList"></div>
         <form id="rumorForm">
           <div class="editor-grid">
@@ -1312,7 +1267,7 @@
           <p class="message" id="rumorMessage" aria-live="polite"></p>
         </form>
         <div class="wide settings-pop">
-          <label for="transferWindowInput">Próxima ventana de fichajes <small>(se muestra en el mensaje de "sin rumores" de la portada)</small></label>
+          <label for="transferWindowInput">Próxima ventana de fichajes <small>(información interna para la redacción)</small></label>
           <div class="settings-input-row">
             <input id="transferWindowInput" maxlength="60" placeholder="Ej.: 5 de enero de 2027" />
             <button class="edit-note" type="button" id="transferWindowSave">Guardar fecha</button>
@@ -1847,28 +1802,7 @@
     });
     loadFixtures('pl');
 
-    // ===== Mercado de fichajes (rumores) =====
-    const rumorStatusEl = document.getElementById('rumorStatus');
-    const rumorListEl = document.getElementById('rumorList');
-    const RUMOR_STATE_LABEL = { rumor: 'Rumor', avanzado: 'Negociación avanzada', confirmado: 'Confirmado', descartado: 'Descartado' };
-    const RUMOR_STATE_CLASS = { rumor: 'ru-state-rumor', avanzado: 'ru-state-avanzado', confirmado: 'ru-state-confirmado', descartado: 'ru-state-descartado' };
-
-    function rumorClubHTML(club) {
-      if (!club || !club.nombre) return '<span class="rumor-club">—</span>';
-      const href = club.slug ? '/equipo/' + encodeURIComponent(club.slug) : null;
-      const inner = `${club.escudo ? `<img src="${club.escudo}" alt="" loading="lazy" onerror="this.style.display='none'" />` : ''}<span>${escapeHtml(club.nombre)}</span>`;
-      return href
-        ? `<a class="rumor-club" href="${href}" onclick="navigateTo(event, '${href}')">${inner}</a>`
-        : `<span class="rumor-club">${inner}</span>`;
-    }
-
-    function rumorPlayerHTML(r) {
-      const href = r.jugador_slug ? '/jugador/' + encodeURIComponent(r.jugador_slug) : null;
-      const name = escapeHtml(r.jugador || '');
-      if (!href) return `<div class="rumor-head"><span class="rumor-player-name">${name}</span>${r.posicion ? `<span class="rumor-pos">${escapeHtml(r.posicion)}</span>` : ''}</div>`;
-      return `<div class="rumor-head"><a class="rumor-player-name" href="${href}" onclick="navigateTo(event, '${href}')">${name}</a>${r.posicion ? `<span class="rumor-pos">${escapeHtml(r.posicion)}</span>` : ''}</div>`;
-    }
-
+    // ===== Configuración pública para el panel (ventana de fichajes) =====
     let nextTransferWindow = '';
     let siteSettingsLoaded = false;
 
@@ -1892,60 +1826,6 @@
       const input = document.getElementById('transferWindowInput');
       if (input) input.value = nextTransferWindow;
     }
-
-    function emptyRumorsHTML() {
-      let msg = 'Sin rumores activos por el momento.';
-      if (nextTransferWindow) msg += ` El próximo mercado de fichajes abre el <strong>${escapeHtml(nextTransferWindow)}</strong>.`;
-      msg += ' Vuelve a consultarnos.';
-      return `<div class="rumor-empty">${msg}</div>`;
-    }
-
-    function renderRumors(list) {
-      if (!list || !list.length) {
-        rumorListEl.innerHTML = emptyRumorsHTML();
-        return;
-      }
-      rumorListEl.innerHTML = list.map(r => {
-        const label = RUMOR_STATE_LABEL[r.estado] || 'Rumor';
-        const cls = RUMOR_STATE_CLASS[r.estado] || 'ru-state-rumor';
-        const veracidad = Math.max(0, Math.min(100, Number(r.veracidad) || 0));
-        const age = timeAgo(r.updated_at);
-        return `
-          <div class="rumor-row">
-            ${rumorPlayerHTML(r)}
-            <div class="rumor-route">
-              <span class="rumor-origen">${rumorClubHTML(r.origen)}</span>
-              <span class="rumor-arrow">→</span>
-              <span class="rumor-destino">${rumorClubHTML(r.destino)}</span>
-              <span class="rumor-meter"><span style="width:${veracidad}%"></span></span>
-            </div>
-            <div class="rumor-foot">
-              <span class="rumor-badge ${cls}">${escapeHtml(label)}</span>
-              <span class="rumor-score">${veracidad}%</span>
-              ${r.fuente ? `<span class="rumor-fuente">${escapeHtml(r.fuente)}</span>` : ''}
-              ${age ? `<span class="rumor-age">${age}</span>` : ''}
-            </div>
-            ${r.detalle ? `<p class="rumor-detalle">${escapeHtml(r.detalle)}</p>` : ''}
-          </div>`;
-      }).join('');
-    }
-
-    async function loadRumors() {
-      rumorStatusEl.textContent = 'Actualizando...';
-      try {
-        const resp = await fetch('/api/rumors');
-        const json = await resp.json().catch(() => null);
-        if (!resp.ok || !json) throw new Error('Error al cargar rumores');
-        if (!json.length) await ensureSiteSettings();
-        renderRumors(json);
-        rumorStatusEl.textContent = 'En vivo';
-      } catch (err) {
-        console.error("Error al cargar los rumores:", err);
-        rumorStatusEl.textContent = 'Error';
-        rumorListEl.innerHTML = '<div class="rumor-empty rumor-empty--error">No se pudieron cargar los movimientos de mercado. Inténtalo de nuevo en unos minutos.</div>';
-      }
-    }
-    loadRumors();
     ensureSiteSettings();
 
     // ===== Fotos de lectores (galería moderada) =====
@@ -3640,7 +3520,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           throw new Error((data && data.error) || `Error HTTP ${response.status}`);
         }
         await loadRumorsForPanel();
-        await loadRumors();
       } catch (err) {
         console.error('Error al eliminar el rumor:', err);
         alert('Error al eliminar el rumor: ' + err.message);
@@ -3697,7 +3576,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         console.error("Error al recargar la configuración:", err);
       }
       showTransferWindowInPanel();
-      await loadRumors();
     }
 
     // ===== Posiciones Liga Promérica (panel) =====
@@ -3843,7 +3721,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           rumorVeracityInput.value = 50;
           if (rumorVeracityLabel) rumorVeracityLabel.textContent = '50%';
           await loadRumorsForPanel();
-          await loadRumors();
         } catch (err) {
           console.error('Error al guardar el rumor:', err);
           rumorMessageEl.textContent = 'No se pudo guardar el rumor: ' + err.message;
