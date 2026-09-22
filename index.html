@@ -1689,6 +1689,9 @@
               if (index < 2) rowClass = 'row-qualified';
               else if (index < 6) rowClass = 'row-playoff';
               else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
+            } else if (esPromerica && seleccion.length >= 10) {
+              if (index < 4) rowClass = 'row-qualified';
+              else if (index === seleccion.length - 1) rowClass = 'row-relegation';
             } else if (index < 4) rowClass = 'row-highlight';
             else if (esBundesliga && index === seleccion.length - 3) rowClass = 'row-playoff';
             else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
