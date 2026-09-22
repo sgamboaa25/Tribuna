@@ -395,3 +395,23 @@ create policy "Lectura pública de fotos aprobadas"
 
 revoke all on table public.reader_photos from anon;
 grant select on table public.reader_photos to anon;
+
+-- ============ Configuración editorial (clave/valor) ============
+-- Datos ligeros que la redacción cambia desde el panel sin tocar código. Clave
+-- usada hoy: 'next_transfer_window' (fecha de la próxima ventana de fichajes,
+-- se muestra en el estado "sin rumores" de la sección Mercado). Solo el backend
+-- (service_role) escribe; el cliente público la lee vía GET /api/settings/public.
+create table if not exists public.site_settings (
+  key text primary key,
+  value text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_settings enable row level security;
+
+revoke all on table public.site_settings from anon;
+revoke all on table public.site_settings from authenticated;
+
+insert into public.site_settings (key, value)
+select 'next_transfer_window', ''
+where not exists (select 1 from public.site_settings where key = 'next_transfer_window');

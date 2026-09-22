@@ -127,6 +127,12 @@ async function main() {
   const fotosManager = await fetch(BASE + '/api/reader-photos/manager');
   report('/api/reader-photos/manager sin token -> 401', fotosManager.status === 401, 'status=' + fotosManager.status);
 
+  const settingsPublic = await fetch(BASE + '/api/settings/public');
+  report('/api/settings/public sin DB real -> 500 JSON', settingsPublic.status === 500, 'status=' + settingsPublic.status);
+
+  const settingsPut = await fetch(BASE + '/api/settings', { method: 'PUT', body: '{"next_transfer_window":"x"}' });
+  report('/api/settings PUT sin token -> 401', settingsPut.status === 401, 'status=' + settingsPut.status);
+
   child.kill();
   await new Promise(res => setTimeout(res, 300));
 

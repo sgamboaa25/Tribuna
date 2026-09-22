@@ -339,6 +339,9 @@
     .rumor-fuente { font-style:italic; }
     .rumor-age { color:var(--muted); opacity:.8; }
     .rumor-empty { color:var(--muted); padding:24px var(--space-md); text-align:center; }
+    .rumor-empty--error { color:var(--accent); }
+    .settings-input-row { display:flex; gap:var(--space-sm); align-items:center; flex-wrap:wrap; }
+    .settings-input-row input { flex:1; min-width:220px; }
     .rumor-panel-block { margin-top:34px; }
     @media (max-width:560px) {
       .rumor-route { grid-template-columns:1fr; gap:6px; }
@@ -1235,6 +1238,14 @@
           <button class="submit" type="submit">Guardar rumor</button>
           <p class="message" id="rumorMessage" aria-live="polite"></p>
         </form>
+        <div class="wide settings-pop">
+          <label for="transferWindowInput">Próxima ventana de fichajes <small>(se muestra en el mensaje de "sin rumores" de la portada)</small></label>
+          <div class="settings-input-row">
+            <input id="transferWindowInput" maxlength="60" placeholder="Ej.: 5 de enero de 2027" />
+            <button class="edit-note" type="button" id="transferWindowSave">Guardar fecha</button>
+          </div>
+          <p class="message" id="transferWindowMsg" aria-live="polite"></p>
+        </div>
       </div>
 
       <div class="foto-panel-block">
@@ -1735,9 +1746,40 @@
       return `<div class="rumor-head"><a class="rumor-player-name" href="${href}" onclick="navigateTo(event, '${href}')">${name}</a>${r.posicion ? `<span class="rumor-pos">${escapeHtml(r.posicion)}</span>` : ''}</div>`;
     }
 
+    let nextTransferWindow = '';
+    let siteSettingsLoaded = false;
+
+    async function ensureSiteSettings() {
+      if (siteSettingsLoaded) return;
+      try {
+        const resp = await fetch('/api/settings/public');
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json) throw new Error('Error al cargar configuración');
+        nextTransferWindow = (json.next_transfer_window || '').trim();
+      } catch (err) {
+        console.error("Error al cargar la configuración pública:", err);
+        nextTransferWindow = '';
+      } finally {
+        siteSettingsLoaded = true;
+      }
+      showTransferWindowInPanel();
+    }
+
+    function showTransferWindowInPanel() {
+      const input = document.getElementById('transferWindowInput');
+      if (input) input.value = nextTransferWindow;
+    }
+
+    function emptyRumorsHTML() {
+      let msg = 'Sin rumores activos por el momento.';
+      if (nextTransferWindow) msg += ` El próximo mercado de fichajes abre el <strong>${escapeHtml(nextTransferWindow)}</strong>.`;
+      msg += ' Vuelve a consultarnos.';
+      return `<div class="rumor-empty">${msg}</div>`;
+    }
+
     function renderRumors(list) {
       if (!list || !list.length) {
-        rumorListEl.innerHTML = '<div class="rumor-empty">Sin movimientos en el mercado por ahora. Vuelve pronto.</div>';
+        rumorListEl.innerHTML = emptyRumorsHTML();
         return;
       }
       rumorListEl.innerHTML = list.map(r => {
@@ -1771,15 +1813,17 @@
         const resp = await fetch('/api/rumors');
         const json = await resp.json().catch(() => null);
         if (!resp.ok || !json) throw new Error('Error al cargar rumores');
+        if (!json.length) await ensureSiteSettings();
         renderRumors(json);
         rumorStatusEl.textContent = 'En vivo';
       } catch (err) {
         console.error("Error al cargar los rumores:", err);
         rumorStatusEl.textContent = 'Error';
-        rumorListEl.innerHTML = '<div class="rumor-empty">No se pudo cargar el mercado de fichajes. Intenta de nuevo más tarde.</div>';
+        rumorListEl.innerHTML = '<div class="rumor-empty rumor-empty--error">No se pudieron cargar los movimientos de mercado. Inténtalo de nuevo en unos minutos.</div>';
       }
     }
-loadRumors();
+    loadRumors();
+    ensureSiteSettings();
 
     // ===== Fotos de lectores (galería moderada) =====
     const fotosStatusEl = document.getElementById('fotosStatus');
@@ -3440,6 +3484,59 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         console.error('Error al eliminar el rumor:', err);
         alert('Error al eliminar el rumor: ' + err.message);
       }
+    }
+
+    const transferWindowInput = document.getElementById('transferWindowInput');
+    const transferWindowSave = document.getElementById('transferWindowSave');
+    const transferWindowMsg = document.getElementById('transferWindowMsg');
+
+    if (transferWindowSave) {
+      transferWindowSave.onclick = async () => {
+        if (!writerToken) return;
+        if (!transferWindowMsg || !transferWindowInput) return;
+        transferWindowMsg.textContent = 'Guardando…';
+        try {
+          const response = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${writerToken}`
+            },
+            body: JSON.stringify({ next_transfer_window: transferWindowInput.value.trim() })
+          });
+          if (response.status === 401) {
+            writerToken = '';
+            sessionStorage.removeItem('tribuna_writer_token');
+            panel.style.display = 'none';
+            access.textContent = 'Acceso redacción';
+            return;
+          }
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+          }
+          siteSettingsLoaded = false;
+          await loadSiteSettingsOnSave();
+          transferWindowMsg.textContent = 'Fecha guardada.';
+        } catch (err) {
+          console.error('Error al guardar la ventana de fichajes:', err);
+          transferWindowMsg.textContent = `No se pudo guardar: ${err.message}`;
+        }
+      };
+    }
+
+    async function loadSiteSettingsOnSave() {
+      try {
+        const resp = await fetch('/api/settings/public');
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok || !json) throw new Error('Error al recargar configuración');
+        nextTransferWindow = (json.next_transfer_window || '').trim();
+        siteSettingsLoaded = true;
+      } catch (err) {
+        console.error("Error al recargar la configuración:", err);
+      }
+      showTransferWindowInPanel();
+      await loadRumors();
     }
 
     if (rumorVeracityInput) {

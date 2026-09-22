@@ -974,6 +974,63 @@ app.delete('/api/reader-photos/:id', authenticateWriter, async (req, res) => {
   }
 });
 
+// ============ Configuración de la redacción (clave/valor) ============
+// Campo ligero para datos editoriales que el panel actualiza sin tocar código.
+// Hoy expone la "próxima ventana de fichajes" que el frontend usa en el estado
+// "sin rumores" del Mercado. Escritura solo vía PUT autenticado; lectura pública
+// cacheada (seed site_settings.next_transfer_window = '' significa "no definida").
+const SETTINGS_CACHE_TTL_MS = 10 * 60 * 1000;
+let settingsCache = null;
+let settingsCacheAt = 0;
+
+async function loadSettingsPublic() {
+  const now = Date.now();
+  if (settingsCacheAt && now - settingsCacheAt < SETTINGS_CACHE_TTL_MS) return settingsCache;
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .eq('key', 'next_transfer_window')
+    .maybeSingle();
+  if (error) throw error;
+  settingsCache = { next_transfer_window: (data && data.value) || '' };
+  settingsCacheAt = now;
+  return settingsCache;
+}
+
+function validateTransferWindow(value) {
+  const v = sanitizeText(value == null ? '' : value);
+  if (v.length > 60) return { error: 'La fecha de la ventana resultó demasiado larga.' };
+  return { data: v };
+}
+
+// GET Público: configuración visible (la fecha de la próxima ventana).
+app.get('/api/settings/public', async (req, res) => {
+  try {
+    res.json(await loadSettingsPublic());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT Privado (panel): actualiza la próxima ventana de fichajes.
+app.put('/api/settings', authenticateWriter, async (req, res) => {
+  const { data, error } = validateTransferWindow((req.body || {}).next_transfer_window);
+  if (error) return res.status(400).json({ error });
+  try {
+    const { error: upsertError } = await supabase
+      .from('site_settings')
+      .upsert(
+        { key: 'next_transfer_window', value: data, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      );
+    if (upsertError) throw upsertError;
+    settingsCacheAt = 0;
+    res.json({ ok: true, next_transfer_window: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth', (req, res) => {
   const serverPassword = process.env.WRITER_PASSWORD;
   if (!serverPassword) {
@@ -1683,3 +1740,5 @@ module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
 module.exports.decorateRumors = decorateRumors;
 module.exports.validateRumor = validateRumor;
 module.exports.validateReaderPhoto = validateReaderPhoto;
+module.exports.validateTransferWindow = validateTransferWindow;
+module.exports.loadSettingsPublic = loadSettingsPublic;
