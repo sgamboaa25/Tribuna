@@ -28,7 +28,7 @@
       --accent: #A8321A; --accent-strong: #A8321A; --on-accent: #ffffff; --line: #eef0f3; --card-bg: #ffffff; 
       --input-bg: #fafafb; --hover-bg: #f4f5f7; 
       --panel-bg: #111318; --panel-fg: #fbfbfc;
-      --row-highlight: #f8fafc; --row-relegation: #fdf2f2;
+      --row-highlight: #f8fafc; --row-relegation: #fdf2f2; --row-playoff: #fff7d6; --playoff-ink: #8a6208;
       --watermark: rgba(17,19,24,.14);
       --badge-revision-bg: #fef3c7; --badge-revision-fg: #92400e;
       --badge-public-bg: #d1fae5; --badge-public-fg: #065f46;
@@ -43,7 +43,7 @@
       --line: #22262d; --card-bg: #111318; 
       --accent-strong: #EC6B4A; --on-accent: #ffffff; 
       --input-bg: #1a1d24; --hover-bg: #22262d;
-      --row-highlight: #141820; --row-relegation: #2a1515;
+      --row-highlight: #141820; --row-relegation: #2a1515; --row-playoff: #2b2712; --playoff-ink: #e6c96b;
       --watermark: rgba(238,240,243,.14);
       --badge-revision-bg: #332a15; --badge-revision-fg: #e6c072;
       --badge-public-bg: #14251c; --badge-public-fg: #6fd69b;
@@ -285,11 +285,14 @@
     
     .standings-table tr.row-highlight td { background:var(--row-highlight); }
     .standings-table tr.row-relegation td { background:var(--row-relegation); }
+    .standings-table tr.row-playoff td { background:var(--row-playoff); }
     /* Punto 20 · Zonas de clasificación */
     .standings-table tr.row-highlight .pos-col { color:var(--accent-strong); }
     .standings-table tr.row-relegation .pos-col { color:var(--danger); }
+    .standings-table tr.row-playoff .pos-col { color:var(--playoff-ink); }
     .standings-table tr.row-highlight td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
     .standings-table tr.row-relegation td:first-child { box-shadow:inset 3px 0 0 var(--danger); }
+    .standings-table tr.row-playoff td:first-child { box-shadow:inset 3px 0 0 var(--playoff-ink); }
 
     /* ===== PRÓXIMOS PARTIDOS (fixtures) ===== */
     #fixturesList:empty { display:none; }
@@ -1630,6 +1633,7 @@
       renderSkeleton();
       currentStandingsLeague = liga;
       const esPromerica = liga === 'promerica';
+      const esBundesliga = liga === 'BL1';
       const tagEl = document.getElementById('posicionesTag');
       if (tagEl) tagEl.textContent = esPromerica ? 'Actualización manual' : 'Datos en vivo';
 
@@ -1671,6 +1675,7 @@
           let rowClass = '';
           if (seleccion.length >= 8) {
             if (index < 4) rowClass = 'row-highlight';
+            else if (esBundesliga && index === seleccion.length - 3) rowClass = 'row-playoff';
             else if (index >= seleccion.length - 3) rowClass = 'row-relegation';
           }
 
