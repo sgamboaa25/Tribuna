@@ -19,7 +19,7 @@ const BREVO_API_KEY = env.BREVO_API_KEY || '';
 const FROM_EMAIL = env.NEWSLETTER_FROM || '';
 const FROM_NAME = env.NEWSLETTER_FROM_NAME || 'Tribuna';
 const CRON_SECRET = env.CRON_SECRET || '';
-const SITE_URL = env.SITE_URL || 'https://tribuna-idgt.onrender.com';
+const SITE_URL = env.SITE_URL || 'https://tribuna-heos.onrender.com';
 
 const MAX_NOTES = Number(env.MAX_NOTES || 5);
 const WINDOW_DAYS = Number(env.WINDOW_DAYS || 7);

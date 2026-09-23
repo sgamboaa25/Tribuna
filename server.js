@@ -92,6 +92,12 @@ app.use('/api/fixtures', standingsLimiter);
 app.use('/api/newsletter', newsletterLimiter);
 app.use('/api/reader-photos', readerPhotosLimiter);
 
+// Health check ligero (no toca la DB). Lo usa el banner de conectividad del
+// cliente para confirmar conexión real antes de mostrarse.
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true });
+});
+
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error(
     'Faltan variables de entorno de Supabase. Copia .env.example a .env y completa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (service-role: Supabase > Settings > API keys).'

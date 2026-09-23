@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:site_name" content="Tribuna" />
     <meta property="og:locale" content="es_CR" />
-    <meta property="og:url" content="https://tribuna-idgt.onrender.com/" />
+    <meta property="og:url" content="https://tribuna-heos.onrender.com/" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1491,9 +1491,27 @@
     if (connBanner) {
       const showConnBanner = () => connBanner.classList.add('is-visible');
       const hideConnBanner = () => connBanner.classList.remove('is-visible');
-      window.addEventListener('offline', showConnBanner);
-      window.addEventListener('online', hideConnBanner);
-      if (navigator.onLine === false) showConnBanner();
+      let offlineTimer = null;
+      const HEALTH_URL = window.location.origin + '/api/health';
+      const verifyAndShow = async () => {
+        try {
+          const res = await fetch(HEALTH_URL, { method: 'HEAD', cache: 'no-store' });
+          if (!res.ok) throw new Error('health no ok');
+          hideConnBanner();
+        } catch {
+          showConnBanner();
+        }
+      };
+      const onOffline = () => {
+        window.clearTimeout(offlineTimer);
+        offlineTimer = window.setTimeout(verifyAndShow, 3000);
+      };
+      const onOnline = () => {
+        window.clearTimeout(offlineTimer);
+        hideConnBanner();
+      };
+      window.addEventListener('offline', onOffline);
+      window.addEventListener('online', onOnline);
     }
 
     const themeToggle = document.getElementById('themeToggle');
