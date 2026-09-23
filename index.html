@@ -792,12 +792,18 @@
       outline-offset:3px;
     }
 
+    /* ===== ANUNCIOS (AdSense) ===== */
+    .ad-slot { display:block; width:100%; text-align:center; overflow:hidden; background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); }
+    .ad-slot ins.adsbygoogle { display:block; }
+    .ad-slot-in-article { max-width:var(--col-reading); margin:28px auto; min-height:120px; background:transparent; border:0; }
+
     @media print {
       body { background:#fff; color:#000; }
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, #goleadores, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top { display:none !important; }
+      .theme-toggle, .category-header, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top,
+      .ad-slot { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
       a { color:inherit; text-decoration:none; }
@@ -807,6 +813,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <!-- Librería de Supabase para navegador -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6012806554376582" crossorigin="anonymous"></script>
   <script type="application/ld+json" id="schemaScript">{}</script>
 </head>
 <body>
@@ -1436,6 +1443,62 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_bVjMSsdVDiGbDGr6k6zXzw_VePdvZHP'; 
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ==========================================
+    // ANUNCIOS (Google AdSense) — solo páginas públicas
+    // El Publisher ID no es secreto (viaja en el HTML como indica Google).
+    // Reemplazá los valores de ADSENSE_SLOTS por los IDs de tus unidades reales.
+    // ==========================================
+    const ADSENSE_CLIENT = 'ca-pub-6012806554376582';
+    const ADSENSE_SLOTS = {
+      article: '7545741031'
+    };
+
+    function adSlotMarkup(slot, extraClassName, mode) {
+      const mark = (attrs) => `<div class="ad-slot${extraClassName ? ' ' + extraClassName : ''}" aria-label="Publicidad">
+        <ins class="adsbygoogle"
+             ${attrs.join('\n             ')}></ins>
+      </div>`;
+      if (mode === 'in-article') {
+        return mark([
+          `style="display:block; text-align:center;"`,
+          `data-ad-layout="in-article"`,
+          `data-ad-format="fluid"`,
+          `data-ad-client="${ADSENSE_CLIENT}"`,
+          `data-ad-slot="${slot}"`
+        ]);
+      }
+      return mark([
+        `style="display:block"`,
+        `data-ad-client="${ADSENSE_CLIENT}"`,
+        `data-ad-slot="${slot}"`,
+        `data-ad-format="auto"`,
+        `data-full-width-responsive="true"`
+      ]);
+    }
+
+    function pushAdsIn(root) {
+      if (!root) return;
+      root.querySelectorAll('ins.adsbygoogle:not([data-ad-pushed])').forEach(ins => {
+        ins.setAttribute('data-ad-pushed', 'true');
+        try {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (err) {
+          console.warn('AdSense no disponible:', err);
+        }
+      });
+    }
+
+    function injectArticleAd(bodyHtml) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = bodyHtml;
+      const nodes = Array.prototype.slice.call(tmp.children);
+      if (nodes.length) {
+        const at = Math.min(Math.floor(nodes.length / 2), nodes.length - 1);
+        nodes[at].insertAdjacentHTML('afterend', adSlotMarkup(ADSENSE_SLOTS.article, 'ad-slot-in-article', 'in-article'));
+      }
+      return tmp.innerHTML;
+    }
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
@@ -2390,7 +2453,7 @@
           detailTeams.style.display = noteTeams.length ? 'flex' : 'none';
         }
 
-        document.querySelector('#detailBody').innerHTML = DOMPurify.sanitize(body);
+        document.querySelector('#detailBody').innerHTML = injectArticleAd(DOMPurify.sanitize(body));
 
         updateReactionsUI();
         updateBookmarkUI();
@@ -2398,6 +2461,7 @@
         renderPoll();
 
         detail.style.display = 'block';
+        pushAdsIn(document.getElementById('detailBody'));
         detail.focus();
         detail.scrollIntoView({behavior: scrollBehavior, block: 'start'});
         if (readingProgress) {

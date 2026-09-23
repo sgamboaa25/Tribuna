@@ -19,13 +19,28 @@ app.use(
           "'self'",
           'https://cdn.jsdelivr.net',
           'https://cdnjs.cloudflare.com',
+          'https://pagead2.googlesyndication.com',
           "'unsafe-inline'"
         ],
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'", 'https://jmsjbbubhyszrbgqrfio.supabase.co', 'https://*.supabase.co'],
+        connectSrc: [
+          "'self'",
+          'https://jmsjbbubhyszrbgqrfio.supabase.co',
+          'https://*.supabase.co',
+          'https://pagead2.googlesyndication.com',
+          'https://googleads.g.doubleclick.net',
+          'https://*.googlesyndication.com',
+          'https://*.googleadservices.com'
+        ],
+        frameSrc: [
+          'https://googleads.g.doubleclick.net',
+          'https://*.googleadservices.com',
+          'https://*.googlesyndication.com',
+          'https://*.google.com'
+        ],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         upgradeInsecureRequests: []
@@ -2135,6 +2150,12 @@ app.use(
   '/public',
   express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true })
 );
+
+// ads.txt en la raíz del dominio para Google AdSense (fuera de la SPA)
+app.get('/ads.txt', (req, res) => {
+  res.type('text/plain');
+  res.sendFile(path.join(__dirname, 'public', 'ads.txt'));
+});
 
 // 404 JSON para cualquier /api/* no registrada (evita que caiga al catch-all HTML)
 app.use('/api', (req, res) => {
