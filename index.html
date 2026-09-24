@@ -3133,7 +3133,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
