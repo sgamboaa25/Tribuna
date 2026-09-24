@@ -2151,6 +2151,14 @@ app.use(
   express.static(path.join(__dirname, 'public'), { maxAge: '7d', immutable: true })
 );
 
+// Service Worker en la raíz del dominio (scope "/" para controlar toda la SPA)
+app.get('/sw.js', (req, res) => {
+  res.set('Service-Worker-Allowed', '/');
+  res.set('Cache-Control', 'no-cache');
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
 // ads.txt en la raíz del dominio para Google AdSense (fuera de la SPA)
 app.get('/ads.txt', (req, res) => {
   res.type('text/plain');

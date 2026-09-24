@@ -10,6 +10,10 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23e03a3e'/><path d='M16 20 h32 v8 h-12 v20 h-8 v-20 h-12 z' fill='%23ffffff'/></svg>" type="image/svg+xml">
   <link rel="manifest" href="/public/manifest.json" />
   <link rel="apple-touch-icon" href="/public/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Tribuna" />
   <link rel="alternate" type="application/rss+xml" title="TRIBUNA - Feed RSS" href="https://jmsjbbubhyszrbgqrfio.supabase.co/functions/v1/feed-rss" />
   <meta name="description" content="TRIBUNA - Periodismo deportivo independiente sin ruido." id="metaDesc" />
   <meta property="og:type" content="website" />
@@ -620,6 +624,8 @@
     #teamHub { display:none; padding:0 0 72px; }
     .team-hub-header { display:flex; align-items:center; gap:var(--space-lg); margin:var(--space-lg) 0 var(--space-xl); padding-bottom:var(--space-lg); border-bottom:1px solid var(--line); }
     .team-hub-header .team-badge { width:92px; height:92px; object-fit:contain; flex:0 0 auto; }
+    .author-hub-avatar .avatar { width:92px; height:92px; font-size:2.2rem; border-radius:50%; }
+    .author-hub-avatar { flex:0 0 auto; display:inline-flex; }
     .team-hub-header h1 { font:700 clamp(1.8rem,5vw,2.8rem)/1.1 'Fraunces', serif; margin:0 0 8px; letter-spacing:-.02em; }
     .team-hub-header p { color:var(--muted); margin:0; max-width:520px; }
     .team-note-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:var(--space-lg); }
@@ -862,6 +868,7 @@
         <a href="/categoria/baloncesto" onclick="navigateTo(event, '/categoria/baloncesto')">Baloncesto</a>
         <a href="/categoria/atletismo" onclick="navigateTo(event, '/categoria/atletismo')">Atletismo</a>
         <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+        <a href="/videos" onclick="navigateTo(event, '/videos')">Videos</a>
       </div>
     </nav>
   </header>
@@ -875,6 +882,8 @@
     <section id="teamHub" aria-labelledby="teamHubTitle" style="display:none"></section>
 
     <section id="playerHub" aria-labelledby="playerHubTitle" style="display:none"></section>
+
+    <section id="authorHub" aria-labelledby="authorHubTitle" style="display:none"></section>
 
     <!-- ===== QUIÉNES SOMOS · EL CREADOR ===== -->
     <section id="quienesSomos" aria-labelledby="quienesSomosTitle" style="display:none">
@@ -2547,7 +2556,7 @@
           imgEl.removeAttribute('sizes');
         } 
         
-        document.querySelector('#detailByline').innerHTML = `<span class="byline-author">${authorAvatar(author, note.email)}POR ${escapeHtml(author.toUpperCase())}</span>${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`; 
+        document.querySelector('#detailByline').innerHTML = `${authorLinkHTML(author, note.email)}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`; 
 
         const noteTeams = noteTeamSlugs(note);
         const detailTeams = document.getElementById('detailTeams');
@@ -3124,7 +3133,7 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline"><span class="byline-author">${authorAvatar(n.author, n.email)}POR ${n.author.toUpperCase()}</span>${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
+        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a></article>`;
         hero.style.display = 'grid';
       } else { 
         hero.style.display = 'none'; 
@@ -3295,6 +3304,7 @@
     ];
     const teamHubSection = document.getElementById('teamHub');
     const playerHubSection = document.getElementById('playerHub');
+    const authorHubSection = document.getElementById('authorHub');
 
     function normalizeTeamWord(s) {
       return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -3603,7 +3613,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3647,6 +3657,7 @@
       let isNotFound;
       let teamSlug = null;
       let playerSlug = null;
+      let authorSlug = null;
       if (path === '/' || path === '/index.html') {
         isNotFound = false;
         document.title = 'Tribuna | Periodismo deportivo';
@@ -3662,6 +3673,12 @@
         const playerMatch = path.match(/^\/jugador\/([a-z0-9-]+)\/?$/i);
         isNotFound = !playerMatch;
         if (playerMatch) playerSlug = playerMatch[1];
+      } else if (path.startsWith('/autor/')) {
+        const authorMatch = path.match(/^\/autor\/([a-z0-9-]+)\/?$/i);
+        isNotFound = !authorMatch;
+        if (authorMatch) authorSlug = authorMatch[1];
+      } else if (path === '/videos') {
+        isNotFound = false;
       } else if (path === '/quienes-somos') {
         isNotFound = false;
       } else {
@@ -3687,6 +3704,12 @@
         return;
       }
 
+      if (authorSlug) {
+        set404Visible(false);
+        renderAuthorPage(authorSlug);
+        return;
+      }
+
       if (path === '/quienes-somos') {
         detail.style.display = 'none';
         set404Visible(true);
@@ -3708,6 +3731,7 @@
       heroEl.style.display = 'grid';
       document.querySelector('#futbol').innerHTML = sk.cards;
 
+      let videosMode = false;
       if (path.startsWith('/categoria/')) {
         const sportParam = path.replace('/categoria/', '');
         const sportNameDecoded = decodeURIComponent(sportParam).replace(/-/g, ' ');
@@ -3729,6 +3753,17 @@
         
         currentActiveCategory = targetCategory;
         currentDisplayNotes = await fetchNotesPage(true, targetCategory);
+      } else if (path === '/videos') {
+        videosMode = true;
+        categoryHeader.innerHTML = `
+          <nav class="breadcrumb" aria-label="Ruta de navegación">
+            <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Videos</span>
+          </nav>
+          <div class="category-header"><h1>Videos</h1></div>`;
+        currentActiveCategory = 'Videos';
+        currentDisplayNotes = (allPublicNotes || []).filter(n => !!n.video_url);
       } else {
         currentActiveCategory = '';
         currentDisplayNotes = await fetchNotesPage(false);
@@ -3736,10 +3771,15 @@
 
       renderPublicCards();
       
-      const { data: allCatData } = await supabaseClient.from('notes').select('*');
-      let totalFiltered = allCatData || [];
-      if (currentActiveCategory) {
-        totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
+      let totalFiltered;
+      if (videosMode) {
+        totalFiltered = currentDisplayNotes;
+      } else {
+        const { data: allCatData } = await supabaseClient.from('notes').select('*');
+        totalFiltered = allCatData || [];
+        if (currentActiveCategory) {
+          totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
+        }
       }
 
       if (totalFiltered.length > currentDisplayNotes.length) {
@@ -4421,6 +4461,90 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       return `<span class="avatar" aria-hidden="true"><span class="avatar-initials">${safeInitials}</span>${img}</span>`;
     }
 
+    function authorSlugOf(author) {
+      return normalizeStr(author).replace(/\s+/g, '-') || 'redaccion';
+    }
+
+    function authorLinkHTML(author, email) {
+      const safe = escapeHtml(String(author || 'Redacción'));
+      const slug = authorSlugOf(author);
+      return `<a class="byline-author" href="/autor/${slug}" onclick="navigateTo(event, '/autor/${slug}')">${authorAvatar(author, email)}POR ${safe.toUpperCase()}</a>`;
+    }
+
+    function authorNameBySlug(slug) {
+      const target = String(slug || '').toLowerCase().replace(/-/g, ' ');
+      const found = (allPublicNotes || []).find(n => authorSlugOf(n.author) === target.trim() || normalizeStr(n.author) === normalizeStr(target));
+      return found ? (found.author || 'Redacción') : null;
+    }
+
+    function setAuthorVisible(show) {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'none' : '';
+      });
+      document.getElementById('breakingContainer').style.display = show ? 'none' : '';
+      if (authorHubSection) authorHubSection.style.display = show ? 'block' : 'none';
+    }
+
+    function renderAuthorPage(slug) {
+      const name = authorNameBySlug(slug);
+      if (!name || !authorHubSection) {
+        detail.style.display = 'none';
+        setAuthorVisible(false);
+        set404Visible(true);
+        return;
+      }
+
+      const email = (allPublicNotes || []).find(n => n.author === name && n.email) ? (allPublicNotes.find(n => n.author === name && n.email) || {}).email : '';
+      const notes = (allPublicNotes || [])
+        .filter(n => n.author === name)
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+
+      const card = (n) => `<article class="team-note-card">
+          <a class="article-link open-article" href="#lectura" data-tidx="${notes.indexOf(n)}">
+            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${n.video_url ? '<span class="media-play" aria-hidden="true"></span>' : ''}</div>
+            <h3>${escapeHtml(n.title)}</h3>
+            <p>${escapeHtml(n.intro || '')}</p>
+            <span class="meta-date">${noteDate(n.created_at)}</span>
+          </a>
+        </article>`;
+
+      currentDisplayNotes = notes;
+      currentActiveCategory = '';
+
+      authorHubSection.innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">${escapeHtml(name)}</span>
+        </nav>
+        <header class="team-hub-header">
+          <span class="author-hub-avatar">${authorAvatar(name, email)}</span>
+          <div>
+            <span class="tag">Redacción</span>
+            <h1 id="authorHubTitle">${escapeHtml(name)}</h1>
+            <p>${notes.length ? `Notas publicadas: ${notes.length}.` : 'Todavía no ha publicado notas.'}</p>
+          </div>
+        </header>
+        ${notes.length
+          ? `<h2 class="section-title">Notas de ${escapeHtml(name)}</h2><section class="team-note-grid">${notes.map(card).join('')}</section>`
+          : `<div class="empty-results"><h3>Sin notas todavía</h3><p>Las notas de ${escapeHtml(name)} aparecerán aquí cuando se publiquen.</p></div>`}`;
+
+      detail.style.display = 'none';
+      set404Visible(false);
+      setAuthorVisible(true);
+      document.title = `${name} · Tribuna`;
+      const metaDesc = document.getElementById('metaDesc');
+      if (metaDesc) metaDesc.setAttribute('content', `Notas de ${name} en TRIBUNA, periodismo deportivo independiente.`);
+
+      authorHubSection.querySelectorAll('.open-article').forEach(link => {
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+      });
+      revealOnScroll();
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
     function md5(string) {
       function RotateLeft(lValue, iShiftBits) { return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits)); }
       function AddUnsigned(lX, lY) {
@@ -4910,6 +5034,12 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         message.textContent = 'Error al guardar: ' + err.message;
       }
     };
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.warn('Service Worker no registrado:', err));
+      });
+    }
   </script>
 </body>
 </html>
