@@ -1741,6 +1741,15 @@
       return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     }
 
+    function matchesSportCategory(sport, categoryLabel) {
+      const target = normalizeStr(categoryLabel);
+      const sportNorm = normalizeStr(sport);
+      if (target === 'otros deportes') {
+        return sportNorm !== '' && sportNorm !== 'futbol' && sportNorm !== 'baloncesto' && sportNorm !== 'atletismo';
+      }
+      return sportNorm === target;
+    }
+
     function setupCustomPicker(pickerId, onChangeCallback) {
       const picker = document.getElementById(pickerId);
       if (!picker) return;
@@ -1827,7 +1836,7 @@
 
       let results = data || [];
       if (sportFilter) {
-        results = results.filter(n => normalizeStr(n.sport) === sportFilter);
+        results = results.filter(n => matchesSportCategory(n.sport, document.getElementById('publicSport').dataset.value));
       }
 
       if (term) {
@@ -3230,8 +3239,7 @@
       
       let list = data || [];
       if (isCategory && categoryName) {
-        const targetNorm = normalizeStr(categoryName);
-        list = list.filter(n => normalizeStr(n.sport) === targetNorm);
+        list = list.filter(n => matchesSportCategory(n.sport, categoryName));
       }
 
       const from = 0;
@@ -3254,8 +3262,7 @@
         const { data: allCatData } = await supabaseClient.from('notes').select('*');
         let totalFiltered = allCatData || [];
         if (currentActiveCategory) {
-          const targetNorm = normalizeStr(currentActiveCategory);
-          totalFiltered = totalFiltered.filter(n => normalizeStr(n.sport) === targetNorm);
+          totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
         }
 
         if (currentDisplayNotes.length >= totalFiltered.length) {
@@ -3732,8 +3739,7 @@
       const { data: allCatData } = await supabaseClient.from('notes').select('*');
       let totalFiltered = allCatData || [];
       if (currentActiveCategory) {
-        const targetNorm = normalizeStr(currentActiveCategory);
-        totalFiltered = totalFiltered.filter(n => normalizeStr(n.sport) === targetNorm);
+        totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
       }
 
       if (totalFiltered.length > currentDisplayNotes.length) {
