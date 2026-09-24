@@ -475,6 +475,24 @@
     .newsletter-fields input:focus { border-color:var(--panel-fg); background:#fff; }
     .newsletter-fields input:-webkit-autofill { -webkit-text-fill-color:var(--panel-bg); -webkit-box-shadow:0 0 0 1000px #fff inset; box-shadow:0 0 0 1000px #fff inset; caret-color:var(--panel-bg); }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+    .skip-link { position:absolute; left:-9999px; top:-9999px; z-index:9999; background:var(--accent); color:#fff; padding:10px 16px; border-radius:8px; font-weight:700; }
+    .skip-link:focus { left:12px; top:12px; }
+    .cookie-banner { position:fixed; left:0; right:0; bottom:0; z-index:1000; background:var(--panel-bg); color:var(--panel-fg); border-top:1px solid var(--line); padding:18px 20px; box-shadow:0 -8px 24px rgba(0,0,0,.15); }
+    .cookie-banner-inner { max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; }
+    .cookie-banner p { margin:0; max-width:720px; font-size:.9rem; line-height:1.5; color:var(--panel-fg); }
+    .cookie-banner p a { color:var(--panel-fg); }
+    .cookie-banner .inline-link { background:none; border:0; padding:0; margin:0; color:var(--panel-fg); text-decoration:underline; cursor:pointer; font:inherit; }
+    .cookie-banner-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .cookie-banner .btn-cookie { border:1px solid transparent; border-radius:8px; padding:10px 14px; font-size:.85rem; font-weight:700; cursor:pointer; font-family:'Inter', sans-serif; min-height:44px; }
+    .cookie-banner .btn-accept { background:var(--accent); color:#fff; }
+    .cookie-banner .btn-necessary { background:transparent; border-color:var(--line); color:var(--panel-fg); }
+    .cookie-banner-msg[aria-live] { }
+    .footer-credit { margin-top:12px; font-size:.75rem; opacity:.6; }
+    .footer-credit a { color:inherit; }
+    .consent-field { display:flex; align-items:flex-start; gap:8px; }
+    .consent-field input { width:auto; margin-top:6px; }
+    .consent-field label { margin-bottom:0; text-transform:none; letter-spacing:0; font-weight:400; color:inherit; }
+    .consent-field label a { color:var(--accent); }
     .newsletter-msg { margin:.2rem 0 0; font-size:.85rem; min-height:1.3em; opacity:1; }
     .newsletter-msg.error { color:#ffb3a7; }
     .hp-field { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; }
@@ -813,10 +831,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <!-- Librería de Supabase para navegador -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6012806554376582" crossorigin="anonymous"></script>
   <script type="application/ld+json" id="schemaScript">{}</script>
 </head>
 <body>
+  <a class="skip-link" href="#portada">Saltar al contenido</a>
   <div class="topline"></div>
   <div id="readingProgress" class="reading-progress" aria-hidden="true"></div>
   <header>
@@ -828,7 +846,7 @@
           <span class="hide-mobile">Guardados</span>
           <span class="count-badge" id="bookmarkCount" aria-live="polite"></span>
         </button>
-        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" title="Alternar modo oscuro">🌓</button>
+        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" aria-pressed="false" title="Alternar modo oscuro">🌓</button>
       </div>
     </div>
     <div class="masthead-rule" aria-hidden="true"></div>
@@ -1146,7 +1164,7 @@
             </div>
             <div><label for="readerPhotoAutor">Tu nombre</label><input id="readerPhotoAutor" maxlength="80" required placeholder="Cómo firmamos tu foto" autocomplete="name" /></div>
             <div><label for="readerPhotoTitulo">Pie de foto</label><input id="readerPhotoTitulo" maxlength="140" placeholder="Momentazo en la grada…" /></div>
-            <div class="wide check-field"><label class="check"><input type="checkbox" required /> Aceptas que Tribuna publique tu foto con tu nombre</label></div>
+            <div class="wide check-field"><label class="check"><input type="checkbox" required /> Soy mayor de edad y cedo a Tribuna el derecho a publicar esta imagen con mi nombre. Confirmo que soy la autora/o y tengo permiso de quienes aparecen en ella.</label></div>
             <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
           </div>
           <button class="submit" type="submit">Enviar foto</button>
@@ -1199,6 +1217,7 @@
           <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <button type="submit">Suscribirme</button>
         </div>
+        <p class="consent-field"><input type="checkbox" id="newsletterConsent" required /><label for="newsletterConsent">Acepto recibir el boletín semanal y autorizo a Tribuna a guardar mi correo electrónico únicamente para ese fin, conforme a la <a href="#" onclick="event.preventDefault(); openLegalModal('privacy')">política de privacidad</a>.</label></p>
         <p class="newsletter-msg" id="newsletterMsg" aria-live="polite"></p>
       </form>
     </section>
@@ -1392,9 +1411,11 @@
         <div class="footer-links">
           <button type="button" onclick="navigateTo(event, '/quienes-somos')">Quiénes somos</button>
           <button type="button" onclick="openLegalModal('privacy')">Política de privacidad</button>
+          <button type="button" onclick="openLegalModal('cookies')">Política de cookies</button>
           <button type="button" onclick="openLegalModal('legal')">Aviso legal</button>
           <button type="button" onclick="openLegalModal('terms')">Términos de uso</button>
         </div>
+        <p class="footer-credit">Los nombres de ligas, clubes y sus escudos son marcas de sus respectivos titulares. Imágenes de stock vía <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a>.</p>
       </div>
       <div class="social-links">
         <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Página de Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
@@ -1435,6 +1456,16 @@
 
   <button class="to-top" id="toTop" type="button" aria-label="Volver arriba" title="Volver arriba">↑</button>
 
+  <div class="cookie-banner" id="cookieBanner" role="region" aria-label="Aviso de cookies" hidden>
+    <div class="cookie-banner-inner">
+      <p>Usamos cookies técnicas para que el sitio funcione (tema, sesión, guardados) y, con tu permiso, cookies de publicidad de Google AdSense. <button type="button" class="inline-link" onclick="openLegalModal('cookies')">Lee nuestra política de cookies</button>.</p>
+      <div class="cookie-banner-actions">
+        <button type="button" class="btn-cookie btn-accept" id="cookieAccept">Aceptar todas</button>
+        <button type="button" class="btn-cookie btn-necessary" id="cookieNecessary">Solo necesarias</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==========================================
     // CONFIGURACIÓN DE SUPABASE SEGURA PARA GITHUB
@@ -1453,6 +1484,65 @@
     const ADSENSE_SLOTS = {
       article: '7545741031'
     };
+
+    // ==========================================
+    // CONSENTIMIENTO DE COOKIES (ePrivacy / GDPR)
+    // Las cookies técnicas (tema, sesión, guardados) son imprescindibles y
+    // siempre se usan. La publicidad de Google AdSense solo se carga si el
+    // visitante la acepta expresamente.
+    // ==========================================
+    const COOKIE_CONSENT_KEY = 'tribuna_cookie_consent';
+
+    function getConsent() {
+      try {
+        const raw = localStorage.getItem(COOKIE_CONSENT_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (err) { return null; }
+    }
+
+    function setConsent(consent) {
+      try { localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consent)); } catch (err) { /* almacenamiento no disponible */ }
+    }
+
+    let adsenseEnabled = !!(getConsent() || {}).advertising;
+
+    function loadAdsenseIfAllowed() {
+      if (!adsenseEnabled) return;
+      if (document.getElementById('adsenseLoader')) return;
+      const s = document.createElement('script');
+      s.id = 'adsenseLoader';
+      s.async = true;
+      s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADSENSE_CLIENT;
+      s.crossOrigin = 'anonymous';
+      document.head.appendChild(s);
+    }
+
+    function initCookieBanner() {
+      const banner = document.getElementById('cookieBanner');
+      if (!banner) return;
+      const consent = getConsent();
+      if (consent) {
+        banner.hidden = true;
+        if (consent.advertising) loadAdsenseIfAllowed();
+        return;
+      }
+      banner.hidden = false;
+      const acceptBtn = document.getElementById('cookieAccept');
+      const necessaryBtn = document.getElementById('cookieNecessary');
+      if (acceptBtn) acceptBtn.onclick = () => {
+        setConsent({ version: 1, advertising: true });
+        adsenseEnabled = true;
+        banner.hidden = true;
+        loadAdsenseIfAllowed();
+        document.querySelectorAll('ins.adsbygoogle').forEach(ins => ins.removeAttribute('data-ad-pushed'));
+        pushAdsIn(document);
+      };
+      if (necessaryBtn) necessaryBtn.onclick = () => {
+        setConsent({ version: 1, advertising: false });
+        adsenseEnabled = false;
+        banner.hidden = true;
+      };
+    }
 
     function adSlotMarkup(slot, extraClassName, mode) {
       const mark = (attrs) => `<div class="ad-slot${extraClassName ? ' ' + extraClassName : ''}" aria-label="Publicidad">
@@ -1478,7 +1568,7 @@
     }
 
     function pushAdsIn(root) {
-      if (!root) return;
+      if (!root || !adsenseEnabled) return;
       root.querySelectorAll('ins.adsbygoogle:not([data-ad-pushed])').forEach(ins => {
         ins.setAttribute('data-ad-pushed', 'true');
         try {
@@ -1581,17 +1671,21 @@
     const root = document.documentElement;
     const storedTheme = localStorage.getItem('tribuna_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     root.setAttribute('data-theme', storedTheme);
+    themeToggle.setAttribute('aria-pressed', storedTheme === 'dark');
     
     themeToggle.addEventListener('click', () => {
       const newTheme = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       const applyTheme = () => {
         root.setAttribute('data-theme', newTheme);
+        themeToggle.setAttribute('aria-pressed', newTheme === 'dark');
         localStorage.setItem('tribuna_theme', newTheme);
         document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.content = newTheme === 'dark' ? '#0a0c10' : '#111318');
       };
       if (document.startViewTransition) document.startViewTransition(applyTheme);
       else applyTheme();
     });
+
+    initCookieBanner();
 
     const dialog = document.querySelector('#loginDialog'), access = document.querySelector('#accessButton'), panel = document.querySelector('#writerPanel'); 
     let writerToken = sessionStorage.getItem('tribuna_writer_token') || '';
@@ -4471,10 +4565,98 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       } 
     }
 
+    // ===== Contenido legal (políticas completas) =====
+    // Contacto del responsable. Si cambias el medio de contacto, actualiza aquí.
+    const LEGAL_CONTACT = 'Instagram @s.gamboaa o TikTok @s.gamboaaa (canales públicos del medio)';
+
+    const LEGAL_TITLES = {
+      privacy: 'Política de privacidad',
+      cookies: 'Política de cookies',
+      legal: 'Aviso legal',
+      terms: 'Términos de uso'
+    };
+
+    const LEGAL_CONTENT = {
+      privacy: `
+        <h3>1. Responsable del tratamiento</h3>
+        <p>TRIBUNA es un medio digital de periodismo deportivo independiente operado por su fundador, Sebastián Gamboa. Para ejercer cualquiera de tus derechos puedes contactar al responsable por <strong>${LEGAL_CONTACT}</strong>.</p>
+        <h3>2. Qué datos tratamos y para qué</h3>
+        <ul>
+          <li><strong>Boletín semanal:</strong> el correo electrónico que usas para suscribirte se guarda en nuestra base de datos (Supabase) únicamente para enviarte el boletín. Base legal: tu consentimiento explícito. Puedes darte de baja cuando quieras.</li>
+          <li><strong>Fotos de lectores:</strong> nombre, imagen y pie de foto. Con tu consentimiento y solo si eres mayor de edad; afirmas tener autorización de las personas que aparecen. Se publican tras moderación y se pueden retirar a petición.</li>
+          <li><strong>Reacciones y encuestas:</strong> solo guardamos contadores anónimos (aplausos, sorpresa, molestia y votos). En tu navegador se guarda una marca local para evitar votos duplicados; no recogemos tu identidad.</li>
+          <li><strong>Notas publicadas:</strong> nombre y correo de las personas autoras, que se muestran como dato editorial en el artículo.</li>
+        </ul>
+        <h3>3. Almacenamiento en tu navegador</h3>
+        <p>Usamos almacenamiento local estrictamente necesario para que el sitio funcione: tu tema claro/oscuro, modo de lectura, notas guardadas y la marca de votos. Estos datos no salen de tu navegador.</p>
+        <h3>4. Proveedores y servicios de terceros</h3>
+        <ul>
+          <li><strong>Supabase</strong> — alojamiento, base de datos, envío del boletín y almacenamiento de imágenes.</li>
+          <li><strong>Google AdSense</strong> — publicidad. Solo se activa si aceptas las cookies de publicidad. Google puede usar cookies para anuncios personalizados.</li>
+          <li><strong>Google Fonts</strong> — tipografías (fontes); tu dirección IP se envía a Google al cargar las fuentes.</li>
+          <li><strong>Gravatar</strong> — avatar del perfil público de las personas autoras.</li>
+          <li><strong>TheSportsDB y football-data.org</strong> — datos públicos de competiciones y escudos de clubes.</li>
+          <li><strong>Unsplash</strong> — fotografías de archivo.</li>
+          <li><strong>Redes sociales</strong> — enlaces salientes a Facebook, Instagram, TikTok y X.</li>
+        </ul>
+        <p>Estos servicios tienen sus propias políticas de privacidad; te recomendamos revisarlas.</p>
+        <h3>5. Tus derechos</h3>
+        <p>De acuerdo con la Ley de Protección de la Persona frente al Tratamiento de sus Datos Personales (Ley 8968 de Costa Rica) y, si resides en la Unión Europea, el RGPD, puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y revocar tu consentimiento en cualquier momento.</p>
+        <h3>6. Conservación y seguridad</h3>
+        <p>Los correos del boletín se conservan mientras quieras recibirlo; las fotos de lectores, mientras no solicites su retirada. El sitio usa conexión cifrada (HTTPS), control de acceso sobre los datos sensibles y políticas de seguridad en la base de datos.</p>
+        <h3>7. Cambios</h3>
+        <p>Actualizaremos esta política cuando cambien los datos tratados o los servicios utilizados. La versión vigente es la publicada en esta página.</p>
+      `,
+      cookies: `
+        <h3>¿Qué son las cookies?</h3>
+        <p>Las cookies y el almacenamiento local del navegador guardan pequeños datos en tu dispositivo para que el sitio funcione o para personalizar tu visita.</p>
+        <h3>Cookies que usamos</h3>
+        <ul>
+          <li><strong>Estrictamente necesarias (siempre activas):</strong> tema claro/oscuro, modo de lectura, notas guardadas, marca de votos y la sesión del panel de redacción. Sin ellas el sitio no funciona correctamente y no requieren tu consentimiento.</li>
+          <li><strong>Registro de tu elección:</strong> guardamos tu decisión de cookies para no volver a mostrarte el aviso.</li>
+          <li><strong>Publicidad (solo si aceptas):</strong> Google AdSense y sus socios (autorizadas por Google) instalan cookies como <em>NID</em>, <em>IDE</em> o <em>ANID</em> para mostrar anuncios relevantes, medir su rendimiento y evitar anuncios repetidos. No se carga ningún anuncio si eliges "Solo necesarias".</li>
+        </ul>
+        <h3>Configuración y revocación</h3>
+        <p>En el aviso puedes elegir "Aceptar todas" o "Solo necesarias". Puedes borrar o bloquear cookies desde la configuración de tu navegador. Para anuncios personalizados puedes gestionar tus preferencias en <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">adssettings.google.com</a> y en <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">aboutads.info</a>.</p>
+        <h3>Base legal</h3>
+        <p>Los datos que tratamos se ajustan a la Ley 8968 de Costa Rica y, para visitantes en la Unión Europea, a la directiva ePrivacy y al RGPD. Las cookies necesarias se basan en el interés legítimo de prestar el servicio; la publicidad se basa en tu consentimiento.</p>
+      `,
+      legal: `
+        <h3>Identificación</h3>
+        <p>Este sitio, <strong>TRIBUNA</strong>, es un medio digital de periodismo deportivo independiente operado por su fundador, Sebastián Gamboa, sin personalidad jurídica propia.</p>
+        <h3>Responsabilidad editorial</h3>
+        <p>El contenido publicado tiene finalidad informativa y de entretenimiento deportivo. Se hace un esfuerzo razonable por verificar los datos, pero la información sobre resultados, posiciones y fichajes puede contener errores o estar desactualizada. No constituye asesoramiento profesional ni financiero.</p>
+        <h3>Propiedad intelectual y marcas</h3>
+        <p>Los textos, imágenes propias y el diseño de TRIBUNA están protegidos por la normativa de propiedad intelectual. Los nombres, escudos y marcas de ligas y clubes pertenecen a sus respectivos titulares y se utilizan únicamente con fines informativos y periodísticos. Los escudos provienen de fuentes públicas (TheSportsDB) y las fotografías de archivo de Unsplash bajo su licencia.</p>
+        <h3>Fotos de lectores y derechos de imagen</h3>
+        <p>Las imágenes enviadas por lectores se publican únicamente con el consentimiento expreso de la persona autora, que declara ser mayor de edad y contar con la autorización de las personas fotografiadas.</p>
+        <h3>Retirada de contenido</h3>
+        <p>Si consideras que algún contenido vulnera tus derechos (imagen, marca o propiedad intelectual), puedes solicitarnos su retirada contactándonos por ${LEGAL_CONTACT}. Atenderemos la solicitud en un plazo razonable.</p>
+        <h3>Enlaces externos</h3>
+        <p>Los enlaces a sitios externos (redes sociales, fuentes de datos) se ofrecen por conveniencia; no nos responsabilizamos de su contenido ni de sus políticas.</p>
+        <h3>Legislación aplicable</h3>
+        <p>Este sitio se rige por la legislación de la República de Costa Rica. Para controversias, se aplican los tribunales competentes de Costa Rica.</p>
+      `,
+      terms: `
+        <h3>Condiciones de uso</h3>
+        <p>Al acceder a TRIBUNA aceptas estas condiciones. Si no estás de acuerdo, te pedimos que no utilices el sitio.</p>
+        <h3>Uso del contenido</h3>
+        <p>Puedes compartir y citar nuestros artículos citando la fuente. Queda prohibida la reproducción comercial, el scraping masivo, la redistribución sin autorización y cualquier uso que infrinja derechos de autor.</p>
+        <h3>Contenido enviado por usuarios</h3>
+        <p>Al enviar una foto de lector cedes a TRIBUNA una licencia no exclusiva para publicarla, moderarla y retirarla del sitio. No se publicará tu contenido sin moderación previa, y nos reservamos el derecho a rechazar contenido que no cumpla estas condiciones. Eres responsable de no enviar contenido que viole derechos de terceros, incluido el derecho de imagen de las personas fotografiadas.</p>
+        <h3>Boletín</h3>
+        <p>La suscripción al boletín es voluntaria y puedes darte de baja en cualquier momento. Tu correo se usa únicamente para enviarte el boletín.</p>
+        <h3>Exclusión de responsabilidad</h3>
+        <p>El medio no garantiza la disponibilidad permanente del sitio ni la exactitud total de los datos. No nos hacemos responsables por daños derivados del uso de la información publicada.</p>
+        <h3>Modificaciones</h3>
+        <p>Podemos actualizar estas condiciones cuando lo consideremos necesario. La versión vigente es la publicada en esta página.</p>
+      `
+    };
+
     function openLegalModal(type) {
       const modal = document.getElementById('legalDialog');
-      document.getElementById('legalTitle').textContent = type.toUpperCase();
-      document.getElementById('legalContent').innerHTML = '<p>Contenido legal del portal TRIBUNA.</p>';
+      document.getElementById('legalTitle').textContent = LEGAL_TITLES[type] || 'Información legal';
+      document.getElementById('legalContent').innerHTML = LEGAL_CONTENT[type] || '<p>Contenido no disponible.</p>';
       modal.showModal();
     }
 
@@ -4489,6 +4671,13 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         msg.textContent = 'Introduce un correo electrónico válido.';
         msg.className = 'newsletter-msg error';
         input.focus();
+        return;
+      }
+      const consentBox = document.querySelector('#newsletterConsent');
+      if (consentBox && !consentBox.checked) {
+        msg.textContent = 'Debes aceptar la política de privacidad para recibir el boletín.';
+        msg.className = 'newsletter-msg error';
+        consentBox.focus();
         return;
       }
       btn.disabled = true;
