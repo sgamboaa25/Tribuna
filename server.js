@@ -1107,6 +1107,86 @@ app.post('/api/auth', (req, res) => {
   return res.json({ token, expiresAt });
 });
 
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function authorSlugOf(name) {
+  const slug = normalizeText(name).replace(/\s+/g, '-');
+  return slug || 'redaccion';
+}
+
+// GET Privado (panel): perfil del redactor con sesión activa (vínculo por email).
+app.get('/api/writers/me', authenticateWriter, async (req, res) => {
+  const email = String(req.writer || '').trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: 'Sesión sin correo.' });
+  try {
+    const { data, error } = await supabase
+      .from('authors')
+      .select('email, name, slug, bio, avatar_url')
+      .eq('email', email)
+      .maybeSingle();
+    if (error) throw error;
+    res.json({ email, profile: data || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT Privado (panel): crea o actualiza bio y foto de perfil del redactor.
+app.put('/api/writers/me', authenticateWriter, async (req, res) => {
+  const email = String(req.writer || '').trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: 'Sesión sin correo.' });
+
+  const bio = typeof req.body?.bio === 'string' ? req.body.bio.trim().slice(0, 300) : '';
+  const avatar_url = typeof req.body?.avatar_url === 'string' ? req.body.avatar_url.trim().slice(0, 500) : '';
+  if (avatar_url && !/^https?:\/\//i.test(avatar_url)) {
+    return res.status(400).json({ error: 'URL de foto de perfil no válida.' });
+  }
+
+  try {
+    const { data: current, error: fetchError } = await supabase
+      .from('authors')
+      .select('id, name, slug')
+      .eq('email', email)
+      .maybeSingle();
+    if (fetchError) throw fetchError;
+
+    let name = (current && current.name) || '';
+    let slug = (current && current.slug) || '';
+    if (!name) {
+      let lastNote = null;
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select('author')
+        .eq('email', email)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!noteError) lastNote = noteData;
+      name = String((lastNote && lastNote.author) || 'Redacción').trim().slice(0, 120);
+      slug = authorSlugOf(name);
+    }
+
+    const { data: upserted, error: upsertError } = await supabase
+      .from('authors')
+      .upsert(
+        { email, name, slug, bio, avatar_url, updated_at: new Date().toISOString() },
+        { onConflict: 'email' }
+      )
+      .select('email, name, slug, bio, avatar_url')
+      .maybeSingle();
+    if (upsertError) throw upsertError;
+    res.json({ ok: true, profile: upserted || { email, name, slug, bio, avatar_url } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET Público: Obtiene solo las notas publicadas
 app.get('/api/notes', async (req, res) => {
   try {

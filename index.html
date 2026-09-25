@@ -359,6 +359,11 @@
       .scorers-admin-row { grid-template-columns:1fr .9fr 52px 52px 32px; }
     }
 .rumor-panel-block { margin-top:34px; }
+    .writer-profile-block { margin-top:34px; }
+    .profile-edit { display:flex; gap:var(--space-md); align-items:flex-start; flex-wrap:wrap; }
+    .profile-fields { flex:1 1 260px; display:grid; gap:12px; }
+    .profile-actions { display:flex; align-items:center; gap:var(--space-sm); margin-top:14px; flex-wrap:wrap; }
+    .author-bio { margin:4px 0 0; color:var(--muted); }
 
     .skeleton-row td { background:var(--hover-bg); animation:pulse 1.5s infinite; color:transparent !important; border-bottom:1px solid var(--line); height:50px; }
     @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:0.3; } 100% { opacity:0.6; } }
@@ -1404,6 +1409,27 @@
         <p class="tags-hint">Aprueba o rechaza las fotos enviadas desde la portada. Las aprobadas aparecen en la galería "Fotos de lectores".</p>
         <div class="draft-list" id="fotoManagerList"></div>
       </div>
+
+      <div class="writer-profile-block" id="writerProfileBlock">
+        <strong>Mi perfil</strong>
+        <p class="tags-hint">Tu foto sustituye el círculo de iniciales en portada y en tu página de autor. Edita bio y foto y guárdalos con el botón de abajo.</p>
+        <div class="profile-edit">
+          <span class="author-hub-avatar" id="myProfilePreview"></span>
+          <div class="profile-fields">
+            <label for="profilePhotoFile">Foto de perfil</label>
+            <label class="file-drop" for="profilePhotoFile">
+              <input id="profilePhotoFile" type="file" accept="image/*" />
+              <span class="file-name">Seleccionar foto…</span>
+            </label>
+            <label for="profileBio">Bio corta</label>
+            <textarea id="profileBio" class="field-textarea" maxlength="300" placeholder="Una línea sobre ti como periodista…"></textarea>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="submit" type="button" id="profileSave">Guardar perfil</button>
+          <p class="message" id="profileMsg" aria-live="polite"></p>
+        </div>
+      </div>
     </section>
   </main>
   
@@ -1730,6 +1756,7 @@
         loadAllNotesForPanel();
         loadStandingsForPanel();
         loadScorersForPanel();
+        loadMyProfile();
         panel.scrollIntoView({ behavior: scrollBehavior }); 
       } catch (err) {
         writerToken = '';
@@ -2336,6 +2363,7 @@
     let currentDisplayNotes = [];
     let teamsCatalog = [];
     let playersCatalog = [];
+    let authorProfiles = {};
     let allPanelNotes = [];
     let editingId = null;
     let editingImageUrl = '';
@@ -3813,8 +3841,22 @@
 
     window.addEventListener('popstate', () => { closeNav(); runView(() => handleRoute()); });
 
+    async function loadAuthorProfiles() {
+      try {
+        const { data } = await supabaseClient.from('authors').select('email, name, slug, bio, avatar_url');
+        authorProfiles = {};
+        (data || []).forEach(prof => {
+          authorProfiles[String(prof.email || '').trim().toLowerCase()] = prof;
+          if (prof.slug) authorProfiles['slug:' + prof.slug] = prof;
+        });
+      } catch (err) {
+        console.warn('No se pudieron cargar los perfiles de redacción.', err);
+      }
+    }
+
     async function loadPublicNotes(){ 
-try { 
+      await loadAuthorProfiles();
+      try { 
 const { data, error } = await supabaseClient.from('notes').select('*').eq('archived', false);
         if (error) throw error;
         allPublicNotes = (data && data.length > 0) ? data : fallbackNotes;
@@ -3852,6 +3894,89 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       } catch (err) {
         console.error("Error crítico al cargar notas para el panel de redacción:", err);
       } 
+    }
+
+    // ===== Mi perfil (panel): foto + bio del redactor =====
+    const myProfileInput = document.getElementById('profilePhotoFile');
+    const myProfilePreview = document.getElementById('myProfilePreview');
+    const myProfileBio = document.getElementById('profileBio');
+    const myProfileSave = document.getElementById('profileSave');
+    const myProfileMsg = document.getElementById('profileMsg');
+    let myProfileAvatarFile = null;
+
+    async function loadMyProfile() {
+      if (!writerToken || !myProfilePreview) return;
+      try {
+        const response = await fetch('/api/writers/me', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        const prof = data.profile || {};
+        const fallbackName = String(data.email || 'Redacción').split('@')[0];
+        myProfileBio.value = prof.bio || '';
+        myProfilePreview.innerHTML = authorAvatar(prof.name || fallbackName, data.email);
+      } catch (err) {
+        console.warn('No se pudo cargar tu perfil.', err);
+      }
+    }
+
+    if (myProfileInput) {
+      myProfileInput.addEventListener('change', () => {
+        const file = myProfileInput.files && myProfileInput.files[0];
+        if (!file) return;
+        myProfileAvatarFile = file;
+        const objectUrl = URL.createObjectURL(file);
+        myProfilePreview.innerHTML = `<span class="avatar" style="width:100%;height:100%;"><img class="avatar-img" alt="" src="${objectUrl}" /></span>`;
+      });
+    }
+
+    function refreshAuthorUI() {
+      document.querySelectorAll('.byline-author').forEach(link => {
+        const authorName = link.dataset.author;
+        const authorEmail = link.dataset.email;
+        if (authorName === undefined) return;
+        link.innerHTML = `${authorAvatar(authorName, authorEmail)}POR ${escapeHtml(String(authorName || 'Redacción')).toUpperCase()}`;
+      });
+    }
+
+    if (myProfileSave) {
+      myProfileSave.onclick = async () => {
+        myProfileMsg.textContent = 'Guardando perfil…';
+        myProfileSave.disabled = true;
+        try {
+          let avatarUrl = '';
+          if (myProfileAvatarFile) {
+            const compressed = await compressImage(myProfileAvatarFile, 512, 0.82);
+            const ext = (compressed.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+            const path = `authors/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const { error: uploadError } = await supabaseClient.storage.from('notes-images').upload(path, compressed, { upsert: true, contentType: compressed.type });
+            if (uploadError) throw uploadError;
+            const { data: pubData } = supabaseClient.storage.from('notes-images').getPublicUrl(path);
+            avatarUrl = pubData ? pubData.publicUrl : '';
+            myProfileAvatarFile = null;
+          }
+          const payload = { bio: myProfileBio.value };
+          if (avatarUrl) payload.avatar_url = avatarUrl;
+          const response = await fetch('/api/writers/me', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${writerToken}` },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error((data && data.error) || 'No se pudo guardar el perfil.');
+          await loadAuthorProfiles();
+          refreshAuthorUI();
+          if (authorHubSection && authorHubSection.style.display !== 'none') handleRoute();
+          loadMyProfile();
+          myProfileInput.value = '';
+          myProfileMsg.textContent = 'Perfil guardado.';
+        } catch (err) {
+          myProfileMsg.textContent = err.message || 'Error al guardar el perfil.';
+        } finally {
+          myProfileSave.disabled = false;
+        }
+      };
     }
 
     // ===== Rastreador de fichajes (panel) =====
@@ -4468,8 +4593,11 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     function authorAvatar(name, email) {
       const safeInitials = escapeHtml(initialsOf(name));
       const cleanEmail = String(email || '').trim().toLowerCase();
+      const prof = authorProfiles[cleanEmail];
       let img = '';
-      if (cleanEmail) {
+      if (prof && prof.avatar_url) {
+        img = `<img class="avatar-img" loading="lazy" alt="" src="${escapeHtml(prof.avatar_url)}" />`;
+      } else if (cleanEmail) {
         const hash = md5(cleanEmail);
         img = `<img class="avatar-img" loading="lazy" alt="" src="https://www.gravatar.com/avatar/${hash}?s=80&d=404&r=g" onerror="this.remove()" />`;
       }
@@ -4483,7 +4611,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     function authorLinkHTML(author, email) {
       const safe = escapeHtml(String(author || 'Redacción'));
       const slug = authorSlugOf(author);
-      return `<a class="byline-author" href="/autor/${slug}" onclick="navigateTo(event, '/autor/${slug}')">${authorAvatar(author, email)}POR ${safe.toUpperCase()}</a>`;
+      return `<a class="byline-author" data-author="${escapeHtml(String(author || 'Redacción'))}" data-email="${escapeHtml(String(email || ''))}" href="/autor/${slug}" onclick="navigateTo(event, '/autor/${slug}')">${authorAvatar(author, email)}POR ${safe.toUpperCase()}</a>`;
     }
 
     function authorNameBySlug(slug) {
@@ -4511,6 +4639,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       }
 
       const email = (allPublicNotes || []).find(n => n.author === name && n.email) ? (allPublicNotes.find(n => n.author === name && n.email) || {}).email : '';
+      const profile = email ? authorProfiles[String(email).trim().toLowerCase()] : null;
       const notes = (allPublicNotes || [])
         .filter(n => n.author === name)
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
@@ -4544,6 +4673,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           <div>
             <span class="tag">Redacción</span>
             <h1 id="authorHubTitle">${escapeHtml(name)}</h1>
+            ${profile && profile.bio ? `<p class="author-bio">${escapeHtml(profile.bio)}</p>` : ''}
             <p>${notes.length ? `Notas publicadas: ${notes.length}.` : 'Todavía no ha publicado notas.'}</p>
           </div>
         </header>
@@ -4868,6 +4998,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     if (writerToken) loadFotosForPanel();
     if (writerToken) loadStandingsForPanel();
     if (writerToken) loadScorersForPanel();
+    if (writerToken) loadMyProfile();
     loadPlayersCatalog();
     
     async function compressImage(file, maxWidth = 1600, quality = 0.8) {

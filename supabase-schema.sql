@@ -396,6 +396,37 @@ create policy "Lectura pública de fotos aprobadas"
 revoke all on table public.reader_photos from anon;
 grant select on table public.reader_photos to anon;
 
+-- ============================================================
+-- PERFILES DE REDACCIÓN (FOTO + BIO)
+-- ============================================================
+-- Perfil opcional de cada redactor: avatar (foto propia, guardada en el bucket
+-- público "notes-images", carpeta authors/) y bio corta. Se vincula a las notas
+-- por el campo `email` (obligatorio en notes), así el nombre en las notas puede
+-- seguir siendo texto libre sin depender de un FK.
+-- Lectura pública para anon; toda escritura pasa por el backend (service_role)
+-- vía GET/PUT /api/writers/me.
+create table if not exists public.authors (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  name text not null,
+  slug text not null,
+  bio text default '',
+  avatar_url text default '',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.authors enable row level security;
+
+drop policy if exists "Lectura pública de autores" on public.authors;
+create policy "Lectura pública de autores"
+  on public.authors for select
+  to anon
+  using (true);
+
+revoke all on table public.authors from anon;
+grant select on table public.authors to anon;
+
 -- ============ Configuración editorial (clave/valor) ============
 -- Datos ligeros que la redacción cambia desde el panel sin tocar código. Clave
 -- usada hoy: 'next_transfer_window' (fecha de la próxima ventana de fichajes,
