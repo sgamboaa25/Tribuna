@@ -628,12 +628,6 @@
     .author-hub-avatar { flex:0 0 auto; display:inline-flex; }
     .team-hub-header h1 { font:700 clamp(1.8rem,5vw,2.8rem)/1.1 'Fraunces', serif; margin:0 0 8px; letter-spacing:-.02em; }
     .team-hub-header p { color:var(--muted); margin:0; max-width:520px; }
-    .team-note-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:var(--space-lg); }
-    .team-note-grid .open-article { display:block; border-top:1px solid var(--line); padding-top:var(--space-md); text-decoration:none; color:inherit; }
-    .team-note-grid h3 { font:700 1.2rem/1.25 'Fraunces', serif; margin:var(--space-sm) 0 6px; }
-    .team-note-grid p { color:var(--muted); font-size:.95rem; margin:0 0 8px; }
-    .team-note-grid .meta-date { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
-    .team-note-grid .card-media { margin-bottom:var(--space-md); }
     #teamHub .empty-results { text-align:center; padding:48px 0; }
     #teamHub .empty-results h3 { font:700 1.4rem/1.2 'Fraunces', serif; margin:0 0 var(--space-sm); }
     #teamHub .empty-results p { color:var(--muted); max-width:440px; margin:0 auto; }
@@ -3458,15 +3452,20 @@
         .filter(n => (n.teams || []).indexOf(team.slug) !== -1)
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
 
-      const card = (n) => `<div class="team-note-card">
-          <a class="article-link open-article" href="#lectura" data-tidx="${related.indexOf(n)}">
-            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
-            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span></div>
-            <h3>${escapeHtml(n.title)}</h3>
+      const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
+          <a class="article-link open-article" href="#lectura" data-id="${idx}">
+            <div class="card-media">
+              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              ${playBadge(n)}
+            </div>
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
+            <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
             <span class="meta-date">${noteDate(n.created_at)}</span>
+            ${teamChipsRowHTML(noteTeamSlugs(n))}
           </a>
-        </div>`;
+          ${bookmarkBtn(n)}
+        </article>`;
 
       currentDisplayNotes = related;
       currentActiveCategory = '';
@@ -3488,7 +3487,7 @@
           </div>
         </header>
         ${related.length
-          ? `<h2 class="section-title">Notas relacionadas</h2><section class="team-note-grid">${related.map(card).join('')}</section>`
+          ? `<h2 class="section-title">Notas relacionadas</h2><section class="grid">${related.map(card).join('')}</section>`
           : `<div class="empty-results"><h3>Sin historias de ${escapeHtml(team.nombre)} todavía</h3><p>Cuando la redacción publique una nota con las etiquetas de este equipo, aparecerá automáticamente aquí.</p></div>`}
         <h2 class="section-title">Plantilla</h2>
         ${squadRowsHTML(team.slug)}`;
@@ -3501,7 +3500,7 @@
       if (metaDesc) metaDesc.setAttribute('content', `Noticias de ${team.nombre}, Liga Promérica.`);
 
       teamHubSection.querySelectorAll('.open-article').forEach(link => {
-        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
       });
       revealOnScroll();
       if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
@@ -3531,15 +3530,20 @@
         .filter(n => (n.players || []).indexOf(player.slug) !== -1)
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
 
-      const card = (n) => `<div class="team-note-card">
-          <a class="article-link open-article" href="#lectura" data-tidx="${related.indexOf(n)}">
-            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
-            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span></div>
-            <h3>${escapeHtml(n.title)}</h3>
+      const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
+          <a class="article-link open-article" href="#lectura" data-id="${idx}">
+            <div class="card-media">
+              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              ${playBadge(n)}
+            </div>
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
+            <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
             <span class="meta-date">${noteDate(n.created_at)}</span>
+            ${teamChipsRowHTML(noteTeamSlugs(n))}
           </a>
-        </div>`;
+          ${bookmarkBtn(n)}
+        </article>`;
 
       currentDisplayNotes = related;
       currentActiveCategory = '';
@@ -3576,7 +3580,7 @@
         </header>
         ${player.fecha_nacimiento ? `<p class="player-sub">Nacimiento: ${formatPlayerDate(player.fecha_nacimiento)}</p>` : ''}
         ${related.length
-          ? `<h2 class="section-title">Notas relacionadas</h2><section class="team-note-grid">${related.map(card).join('')}</section>`
+          ? `<h2 class="section-title">Notas relacionadas</h2><section class="grid">${related.map(card).join('')}</section>`
           : `<div class="empty-results"><h3>${escapeHtml(player.nombre)} todavía no tiene notas propias</h3><p>Cuando la redacción publique una nota que lo mencione (tags), aparecerá automáticamente aquí.</p></div>`}`;
 
       detail.style.display = 'none';
@@ -3587,7 +3591,7 @@
       if (metaDesc) metaDesc.setAttribute('content', `Ficha de ${player.nombre}${team ? ', ' + team.nombre : ''}, Liga Promérica.`);
 
       playerHubSection.querySelectorAll('.open-article').forEach(link => {
-        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
       });
       revealOnScroll();
       if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
@@ -4511,14 +4515,19 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         .filter(n => n.author === name)
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
 
-      const card = (n) => `<article class="team-note-card">
-          <a class="article-link open-article" href="#lectura" data-tidx="${notes.indexOf(n)}">
-            ${n.image ? `<div class="card-media"><img src="${fitImage(n.image)}" srcset="${imgSrcset(n.image)}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" /></div>` : ''}
-            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${n.video_url ? '<span class="media-play" aria-hidden="true"></span>' : ''}</div>
-            <h3>${escapeHtml(n.title)}</h3>
+      const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
+          <a class="article-link open-article" href="#lectura" data-id="${idx}">
+            <div class="card-media">
+              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+              ${playBadge(n)}
+            </div>
+            <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
+            <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
             <span class="meta-date">${noteDate(n.created_at)}</span>
+            ${teamChipsRowHTML(noteTeamSlugs(n))}
           </a>
+          ${bookmarkBtn(n)}
         </article>`;
 
       currentDisplayNotes = notes;
@@ -4539,7 +4548,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           </div>
         </header>
         ${notes.length
-          ? `<h2 class="section-title">Notas de ${escapeHtml(name)}</h2><section class="team-note-grid">${notes.map(card).join('')}</section>`
+          ? `<h2 class="section-title">Notas de ${escapeHtml(name)}</h2><section class="grid">${notes.map(card).join('')}</section>`
           : `<div class="empty-results"><h3>Sin notas todavía</h3><p>Las notas de ${escapeHtml(name)} aparecerán aquí cuando se publiquen.</p></div>`}`;
 
       detail.style.display = 'none';
@@ -4550,7 +4559,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       if (metaDesc) metaDesc.setAttribute('content', `Notas de ${name} en TRIBUNA, periodismo deportivo independiente.`);
 
       authorHubSection.querySelectorAll('.open-article').forEach(link => {
-        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.tidx)); };
+        link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
       });
       revealOnScroll();
       if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
