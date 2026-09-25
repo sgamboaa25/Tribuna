@@ -3115,17 +3115,17 @@
     }
     setInterval(renderBreakingBanner, 60000);
 
+    const bookmarkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>';
+    const playBadge = (n) => (n && n.video_url) ? '<span class="media-play" aria-hidden="true"></span>' : '';
+    const ultimaHoraBadge = (n) => (n && n.urgent) ? '<span class="ultima-hora-badge">Última hora</span>' : '';
+    const bookmarkBtn = (n, extraClass) => `<button type="button" class="bookmark-btn ${extraClass || ''}" data-id="${n.id}" aria-pressed="false" aria-label="Guardar para después" onclick="toggleBookmarkFromCard(this)">${bookmarkSvg}</button>`;
+
     function renderPublicCards(){ 
       const hero = document.querySelector('#heroContainer');
       const grid = document.querySelector('#futbol');
       const ranking = document.querySelector('#rankingContainer');
-      const playBadge = (n) => (n && n.video_url) ? '<span class="media-play" aria-hidden="true"></span>' : '';
-      const ultimaHoraBadge = (n) => (n && n.urgent) ? '<span class="ultima-hora-badge">Última hora</span>' : '';
 
       renderBreakingBanner();
-
-      const bookmarkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>';
-      const bookmarkBtn = (n, extraClass) => `<button type="button" class="bookmark-btn ${extraClass || ''}" data-id="${n.id}" aria-pressed="false" aria-label="Guardar para después" onclick="toggleBookmarkFromCard(this)">${bookmarkSvg}</button>`;
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
