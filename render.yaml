@@ -9,7 +9,7 @@ services:
     region: frankfurt
     plan: free
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: npm start
     healthCheckPath: /robots.txt
     autoDeployTrigger: commit
     envVars:
@@ -18,6 +18,8 @@ services:
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
         sync: false
       - key: FOOTBALL_DATA_API_KEY
         sync: false
