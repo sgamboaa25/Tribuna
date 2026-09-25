@@ -23,7 +23,7 @@ jobs:
         run: npm ci
 
       - name: Verificación de sintaxis
-        run: node --check server.js && node --check public/service-worker.js
+        run: node --check server.js && node --check public/sw.js
 
       - name: Tests unitarios
         run: npm run test:unit

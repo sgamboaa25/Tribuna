@@ -2344,6 +2344,7 @@
     let playersCatalog = [];
     let allPanelNotes = [];
     let editingId = null;
+    let editingImageUrl = '';
     let editingVideoUrl = '';
     let paginationPage = 0;
     const pageSize = 9;
@@ -3050,6 +3051,7 @@
         button.textContent = 'Editar'; 
         button.onclick = () => {
           editingId = note.id; 
+          editingImageUrl = note.image || '';
           editingVideoUrl = note.video_url || '';
           document.querySelector('#title').value = note.title; 
           setCustomPickerValue('sportPicker', note.sport);
@@ -3170,12 +3172,21 @@
       mostReadSection.style.display = allPublicNotes.length ? '' : 'none';
       ranking.innerHTML = '';
       allPublicNotes.slice(0, 3).forEach((n, id) => {
-        ranking.innerHTML += `<article class="rank-item reveal" style="transition-delay:${Math.min(id, 5) * 40}ms"><div class="rank-number">0${id + 1}</div><div><a class="open-article" href="#lectura" data-id="${id}">${n.title}</a><span class="reads">Tendencia</span></div></article>`;
+        ranking.innerHTML += `<article class="rank-item reveal" style="transition-delay:${Math.min(id, 5) * 40}ms"><div class="rank-number">0${id + 1}</div><div><a class="open-ranking" href="#lectura" data-id="${n.id}">${n.title}</a><span class="reads">Tendencia</span></div></article>`;
       });
 
       renderTrending();
 
       document.querySelectorAll('.open-article').forEach(link => link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); });
+
+      document.querySelectorAll('.open-ranking').forEach(link => {
+        link.onclick = e => {
+          e.preventDefault();
+          if (!openNoteById(link.dataset.id)) {
+            alert('Esta nota ya no está disponible.');
+          }
+        };
+      });
 
       renderMvpSection();
 
@@ -4911,7 +4922,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
 
       const fileInput = document.querySelector('#photoFile');
       const videoInput = document.querySelector('#videoFile');
-      let imageUrl = 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'; 
+      let imageUrl = editingId !== null ? editingImageUrl : 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80'; 
       let videoUrl = editingId !== null ? editingVideoUrl : ''; 
 
       try {
@@ -5017,6 +5028,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
 
         message.textContent = '¡Nota guardada con éxito!';
         editingId = null;
+        editingImageUrl = '';
         editingVideoUrl = '';
         e.target.reset();
         refreshTeamsHint();
