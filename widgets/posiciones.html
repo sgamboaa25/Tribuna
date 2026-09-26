@@ -130,6 +130,15 @@
     statusEl.textContent = 'Error';
   }
 
+  // Estado vacío editorial: la Liga Promérica se carga a mano y, sin datos, el
+  // backend devuelve el roster de clubes con ceros. No es un error ni una tabla
+  // real, así que se explica en lugar de mostrar diez filas en cero.
+  function renderEmpty() {
+    body.innerHTML = '<tr><td colspan="10" class="widget-error"><strong>Aún no hemos cargado esta tabla</strong><br>' +
+      'Las posiciones de la Liga Promérica se actualizan a mano, jornada por jornada. Vuelve pronto.</td></tr>';
+    statusEl.textContent = 'Sin datos todavía';
+  }
+
   // Normaliza los dos formatos que devuelve el backend: ligas externas
   // ({ data: [{ posicion, equipo, escudo, jugados, ... }] }) y la Liga Promérica
   // manual ({ standings: [{ slug, equipo, escudo, pj, g, e, p, gf, gc, dif, pts }] }).
@@ -161,6 +170,11 @@
       const json = await res.json();
       const rawRows = Array.isArray(json.data) ? json.data : (Array.isArray(json.standings) ? json.standings : []);
       const rows = rawRows.map(normalizeRow);
+
+      if (liga === 'promerica' && !json.updatedAt) {
+        renderEmpty();
+        return;
+      }
 
       if (rows.length === 0) {
         renderError();

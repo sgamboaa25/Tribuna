@@ -188,6 +188,10 @@
     .field-textarea:focus { border-color:var(--accent); background:var(--card-bg); }
     .modal-intro { margin-top:0; color:var(--muted); font-size:.9rem; margin-bottom:20px; }
     td.standings-error { padding:30px; color:var(--accent-strong); font-weight:600; }
+    /* Estado vacío editorial: la tabla aún no tiene datos cargados (no es un error). */
+    td.standings-empty { padding:36px 30px; text-align:center; }
+    td.standings-empty strong { display:block; font:700 1.15rem/1.3 'Fraunces', serif; color:var(--ink); margin-bottom:6px; }
+    td.standings-empty span { color:var(--muted); font-size:.9rem; }
     .grid .empty-results { grid-column:1/-1; }
 
     .custom-picker { position:relative; min-width:280px; } 
@@ -207,6 +211,8 @@
     .tag[data-sport="otros deportes"] { color:var(--tag-others); }
     
     .hero { display:grid; grid-template-columns:1.6fr 1fr; gap:48px; padding-bottom:54px; border-bottom:1px solid var(--line); align-items:center; }
+    /* Hero sin imagen ni video: una sola columna, sin hueco de medio. */
+    .hero.is-solo { grid-template-columns:1fr; }
     /* Punto 10 · Separador ornamental */
     .section-fleuron { display:flex; align-items:center; justify-content:center; gap:18px; margin:10px 0 6px; }
     .section-fleuron::before, .section-fleuron::after { content:''; flex:1; max-width:120px; height:1px; background:var(--line); }
@@ -214,7 +220,7 @@
     .hero-image { width:100%; height:auto; display:block; min-height:440px; border-radius:var(--radius-lg); object-fit:cover; background-color:var(--img-placeholder); aspect-ratio:16/10; }
     h1,h2,h3,p { margin-top:0; } 
     h1 { font: 800 clamp(2.2rem,4.5vw,4rem)/1.05 'Fraunces', serif; letter-spacing:-.04em; margin:.2rem 0 1.2rem; color:var(--ink); }
-    .hero-copy { display:flex; flex-direction:column; justify-content:center; } 
+    .hero-copy { display:flex; flex-direction:column; justify-content:center; position:relative; } 
     .lead { font:400 clamp(1.05rem,1.4vw,1.2rem)/1.6 'Fraunces', serif; color:var(--muted); margin-bottom:0; }
     .byline { font-size:.78rem; font-weight:700; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; margin-top:var(--space-lg); }
     .byline-author { display:inline-flex; align-items:center; gap:var(--space-sm); }
@@ -614,8 +620,8 @@
 
     .to-top { position:fixed; right:max(20px, env(safe-area-inset-right)); bottom:max(20px, env(safe-area-inset-bottom)); z-index:40; width:48px; height:48px; border-radius:50%; border:0; background:conic-gradient(from 0deg, var(--accent) calc(var(--progress,0) * 1%), var(--ink) calc(var(--progress,0) * 1%)); color:var(--paper); font-size:1.15rem; cursor:pointer; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .25s ease, transform .25s ease; box-shadow:0 8px 24px rgba(0,0,0,.18); font-family:'Inter', sans-serif; }
     .to-top.is-visible { opacity:1; pointer-events:auto; transform:translateY(0); }
-    .conn-banner { position:fixed; left:max(16px, env(safe-area-inset-left)); bottom:max(16px, env(safe-area-inset-bottom)); z-index:45; max-width:calc(100% - 32px); background:var(--accent); color:#fff; padding:10px var(--space-md); border-radius:var(--radius-md); font-size:.85rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.18); opacity:0; transform:translateY(12px); pointer-events:none; transition:opacity .25s ease, transform .25s ease; font-family:'Inter', sans-serif; }
-    .conn-banner.is-visible { opacity:1; transform:translateY(0); }
+    .conn-banner { position:fixed; left:max(16px, env(safe-area-inset-left)); bottom:max(16px, env(safe-area-inset-bottom)); z-index:45; max-width:calc(100% - 32px); background:var(--accent); color:#fff; padding:10px var(--space-md); border-radius:var(--radius-md); font-size:.85rem; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.18); opacity:0; visibility:hidden; transform:translateY(12px); pointer-events:none; transition:opacity .25s ease, transform .25s ease, visibility .25s ease; font-family:'Inter', sans-serif; }
+    .conn-banner.is-visible { opacity:1; visibility:visible; transform:translateY(0); }
     .suggestions h2 { font:700 1.2rem/1.2 'Fraunces', serif; color:var(--ink); margin-bottom:20px; }
     .chip-list { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .chip { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); text-decoration:none; padding:var(--space-sm) 18px; border-radius:20px; font-size:.85rem; font-weight:600; transition:all .2s; }
@@ -910,9 +916,11 @@
           <p class="creator-role">Fundador de Tribuna</p>
           <p class="creator-bio" id="creatorBio">Sebastián Gamboa es estudiante de periodismo y el creador de Tribuna, un proyecto que está construyendo poco a poco. La idea nació de las ganas de darle más espacio a la cobertura del fútbol centroamericano, un terreno que muchas veces queda en segundo plano frente a las grandes ligas europeas. Todavía es un proyecto en crecimiento, pero la meta es clara: hacer periodismo deportivo directo, sin ruido ni sensacionalismo.</p>
           <div class="creator-social">
-            <!-- >>> REDES <<< Actualiza los enlaces con tus perfiles (Instagram / X). Estos dos marcadores usan el mismo estilo de iconos del footer. -->
+            <!-- >>> REDES <<< Enlaza solo perfiles que existan de verdad: un icono que
+                 lleva a la portada de una plataforma (x.com/, sin usuario) es peor que
+                 no ponerlo. Cuando tengas la cuenta de X confirmada, añade aquí el
+                 mismo SVG del footer, apuntando a tu perfil, y también al footer. -->
             <a href="https://www.instagram.com/s.gamboaa/" target="_blank" rel="noopener noreferrer" aria-label="Instagram del creador"><svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0 z"/></svg></a>
-            <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X del creador"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
           </div>
         </div>
       </article>
@@ -1671,29 +1679,78 @@
 
     const connBanner = document.getElementById('connBanner');
     if (connBanner) {
-      const showConnBanner = () => connBanner.classList.add('is-visible');
-      const hideConnBanner = () => connBanner.classList.remove('is-visible');
-      let offlineTimer = null;
       const HEALTH_URL = window.location.origin + '/api/health';
-      const verifyAndShow = async () => {
-        try {
-          const res = await fetch(HEALTH_URL, { method: 'HEAD', cache: 'no-store' });
-          if (!res.ok) throw new Error('health no ok');
-          hideConnBanner();
-        } catch {
-          showConnBanner();
+      const PROBE_TIMEOUT = 4000;
+      const SELF_HEAL_MS = 5000;
+      const MAX_STRIKES = 2;
+      // Un token por sonda: si llega un 'online' o una sonda más nueva mientras la
+      // anterior está en vuelo, el resultado viejo se descarta y no puede encender
+      // el banner (esa carrera producía falsos positivos permanentes).
+      let probeToken = 0;
+      let strikes = 0;
+      let selfHealTimer = null;
+
+      const showConnBanner = () => {
+        connBanner.classList.add('is-visible');
+        if (selfHealTimer) return;
+        selfHealTimer = window.setInterval(() => {
+          if (navigator.onLine !== false) check();
+        }, SELF_HEAL_MS);
+      };
+
+      const hideConnBanner = () => {
+        connBanner.classList.remove('is-visible');
+        if (selfHealTimer) {
+          window.clearInterval(selfHealTimer);
+          selfHealTimer = null;
         }
       };
-      const onOffline = () => {
-        window.clearTimeout(offlineTimer);
-        offlineTimer = window.setTimeout(verifyAndShow, 3000);
+
+      // Sonda acotada por AbortController. Solo declara "sin conexión" si además el
+      // navegador reporta offline, o si la sonda falla dos veces seguidas (captive
+      // portal / Wi-Fi sin internet, donde nunca se dispara el evento 'offline').
+      const check = async () => {
+        const token = ++probeToken;
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), PROBE_TIMEOUT);
+        let reachable = false;
+        try {
+          const res = await fetch(HEALTH_URL, { method: 'GET', cache: 'no-store', signal: controller.signal });
+          reachable = res.ok;
+        } catch {
+          reachable = false;
+        }
+        window.clearTimeout(timeout);
+        if (token !== probeToken) return;
+        if (reachable) {
+          strikes = 0;
+          hideConnBanner();
+          return;
+        }
+        strikes += 1;
+        if (navigator.onLine === false || strikes >= MAX_STRIKES) showConnBanner();
       };
+
+      // 'offline' espurio (cambio de adaptador, VPN, Wake) no debe encender nada:
+      // sin navigator.onLine===false no hay ni sonda ni banner.
+      const onOffline = () => {
+        if (navigator.onLine !== false) return;
+        check();
+      };
+
       const onOnline = () => {
-        window.clearTimeout(offlineTimer);
+        probeToken += 1;
+        strikes = 0;
         hideConnBanner();
       };
+
       window.addEventListener('offline', onOffline);
       window.addEventListener('online', onOnline);
+      // Auto-recuperación: al volver a la pestaña solo re-sondea si el aviso está
+      // en pantalla, para que desaparezca sin depender de un evento 'online'.
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && connBanner.classList.contains('is-visible')) check();
+      });
     }
 
     const themeToggle = document.getElementById('themeToggle');
@@ -1974,6 +2031,21 @@
           isStale = !!json.stale;
         }
 
+        // La Liga Promérica se carga a mano. Mientras no se guarde ninguna fila,
+        // updatedAt llega null y el endpoint devuelve el roster completo de clubes
+        // con ceros: la "tabla vacía" no se detecta por longitud, sino por updatedAt.
+        if (esPromerica && (!updatedAt || seleccion.length === 0)) {
+          standingsBody.innerHTML = `
+            <tr>
+              <td colspan="10" class="standings-empty">
+                <strong>Aún no hemos cargado esta tabla</strong>
+                <span>Las posiciones de la Liga Promérica se actualizan a mano, jornada por jornada. Vuelve pronto.</span>
+              </td>
+            </tr>`;
+          standingsStatus.textContent = 'Sin datos todavía';
+          return;
+        }
+
         if (seleccion.length === 0) {
           throw new Error('No se encontraron datos para esta competición.');
         }
@@ -2113,7 +2185,14 @@
         if (!resp.ok || !json) throw new Error('Error al cargar goleadores');
         const rows = json.data || [];
         if (!rows.length) {
-          if (json.updatedAt !== undefined || liga === 'promerica') {
+          if (liga === 'promerica') {
+            scorersBodyEl.innerHTML = '<tr><td colspan="5" class="standings-empty"><strong>Aún no hemos cargado esta tabla</strong><span>El máximo de goleadores de la Liga Promérica se actualiza a mano, jornada por jornada. Vuelve pronto.</span></td></tr>';
+            scorersStatusEl.textContent = json.updatedAt
+              ? `Actualizado ${formatManualStamp(json.updatedAt)}`
+              : 'Sin datos todavía';
+            return;
+          }
+          if (json.updatedAt !== undefined) {
             scorersBodyEl.innerHTML = '<tr><td colspan="5" class="standings-error">Todavía no se han cargado goleadores para esta competición.</td></tr>';
             scorersStatusEl.textContent = json.updatedAt
               ? `Actualizado ${formatManualStamp(json.updatedAt)}`
@@ -2404,6 +2483,9 @@
     }
 
     const isMobileLayout = () => window.matchMedia('(max-width:768px)').matches;
+    // Imagen válida y transparente (1x1). Aparca los <img> sin imagen: un <img> sin src
+    // queda en estado "no disponible" (dispara onerror y puede pintar el alt).
+    const BLANK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E";
     const fitImage = (url) => {
       if (!url || !url.includes('images.unsplash.com')) return url;
       return url.replace(/([?&])w=\d+/i, '$1w=' + (isMobileLayout() ? '768' : '1200'));
@@ -2564,6 +2646,7 @@
         const imgEl = document.querySelector('#detailImage'); 
         const detailMedia = document.querySelector('#detailMedia');
         imgEl.classList.remove('loaded');
+        imgEl.onload = null;
         if (image) {
           imgEl.src = fitImage(image); 
           const srcset = imgSrcset(image);
@@ -2573,10 +2656,14 @@
           if (detailMedia) detailMedia.style.display = 'block';
           imgEl.onload = () => imgEl.classList.add('loaded');
         } else {
+          // Sin imagen: se oculta el bloque entero (no queda hueco) y el <img> se aparca
+          // en un SVG transparente válido. Un <img> al que se le quita el src no es un nodo
+          // neutro: queda en estado "no disponible", dispara onerror y puede pintar el alt.
           if (detailMedia) detailMedia.style.display = 'none';
-          imgEl.removeAttribute('src');
           imgEl.removeAttribute('srcset');
           imgEl.removeAttribute('sizes');
+          imgEl.alt = '';
+          imgEl.src = BLANK_IMAGE;
         } 
         
         document.querySelector('#detailByline').innerHTML = `${authorLinkHTML(author, note.email)}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`; 
@@ -2695,6 +2782,17 @@
         detailBtn.setAttribute('aria-label', saved ? 'Quitar de guardados' : 'Guardar para después');
       }
     }
+
+    // El contador del header no debe depender de renderPublicCards(): si el fetch de
+    // notas falla (API caída o sin conexión) el badge se quedaba vacío con guardados
+    // existentes. Se pinta al cargar y se sincroniza si otra pestaña los cambia.
+    updateBookmarkUI();
+    window.addEventListener('storage', (e) => {
+      if (e.key !== null && e.key !== BOOKMARKS_KEY) return;
+      updateBookmarkUI();
+      const dialog = document.getElementById('bookmarksDialog');
+      if (dialog && dialog.open) renderBookmarksDialog();
+    });
 
     function renderBookmarksDialog() {
       const container = document.getElementById('bookmarksList');
@@ -3145,6 +3243,20 @@
 
     const bookmarkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>';
     const playBadge = (n) => (n && n.video_url) ? '<span class="media-play" aria-hidden="true"></span>' : '';
+    // Bloque de medio de tarjeta/hero. Si la nota no tiene imagen NI video no se
+    // emite nada: emitir <img src=""> hace que el navegador resuelva el src vacío
+    // contra la URL actual, intente decodificar el HTML como imagen y pinte el
+    // icono de imagen rota, dejando además el envoltorio como hueco vacío.
+    const mediaBlockHTML = (n, opts) => {
+      const o = opts || {};
+      const image = (n && n.image) || '';
+      const badge = playBadge(n);
+      if (!image && !badge) return '';
+      const img = image
+        ? `<img${o.imgClass ? ` class="${o.imgClass}"` : ''} src="${fitImage(image)}" srcset="${imgSrcset(image)}" sizes="${o.sizes || '(max-width:768px) 100vw, 400px'}" alt="${escapeHtml((n && n.title) || '')}" ${o.imgAttrs || 'loading="lazy" onload="this.classList.add(\'loaded\')"'} onerror="this.style.display='none'" />`
+        : '';
+      return `<div class="${o.wrapper || 'card-media'}">${img}${badge}${o.extra || ''}</div>`;
+    };
     const ultimaHoraBadge = (n) => (n && n.urgent) ? '<span class="ultima-hora-badge">Última hora</span>' : '';
     const bookmarkBtn = (n, extraClass) => `<button type="button" class="bookmark-btn ${extraClass || ''}" data-id="${n.id}" aria-pressed="false" aria-label="Guardar para después" onclick="toggleBookmarkFromCard(this)">${bookmarkSvg}</button>`;
 
@@ -3157,9 +3269,12 @@
 
       if (currentDisplayNotes.length > 0) {
         const n = currentDisplayNotes[0];
-        hero.innerHTML = `<div class="hero-media"><img class="hero-image" src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 690px" alt="${n.title}" fetchpriority="high" decoding="async" onerror="this.style.display='none'" />${playBadge(n)}${bookmarkBtn(n, 'hero-bookmark')}</div><article class="hero-copy"><a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></article>`;
+        const heroMedia = mediaBlockHTML(n, { wrapper: 'hero-media', imgClass: 'hero-image', sizes: '(max-width:768px) 100vw, 690px', imgAttrs: 'fetchpriority="high" decoding="async"', extra: bookmarkBtn(n, 'hero-bookmark') });
+        hero.innerHTML = `${heroMedia}<article class="hero-copy">${heroMedia ? '' : bookmarkBtn(n, 'hero-bookmark')}<a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></article>`;
+        hero.classList.toggle('is-solo', !heroMedia);
         hero.style.display = 'grid';
       } else { 
+        hero.classList.remove('is-solo');
         hero.style.display = 'none'; 
       }
 
@@ -3170,10 +3285,7 @@
           const featured = (id % 4 === 0) ? ' card-featured' : '';
           grid.innerHTML += `<article class="card reveal${featured}" style="transition-delay:${Math.min(id - 1, 5) * 40}ms">
             <a class="article-link open-article" href="#lectura" data-id="${id}">
-              <div class="card-media">
-                <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${n.title}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
-                ${playBadge(n)}
-              </div>
+              ${mediaBlockHTML(n)}
               <div><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}</div>
               <h2>${n.title}</h2>
               <p>${n.intro}</p>
@@ -3482,10 +3594,7 @@
 
       const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
           <a class="article-link open-article" href="#lectura" data-id="${idx}">
-            <div class="card-media">
-              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
-              ${playBadge(n)}
-            </div>
+            ${mediaBlockHTML(n)}
             <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
             <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
@@ -3560,10 +3669,7 @@
 
       const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
           <a class="article-link open-article" href="#lectura" data-id="${idx}">
-            <div class="card-media">
-              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
-              ${playBadge(n)}
-            </div>
+            ${mediaBlockHTML(n)}
             <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
             <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
@@ -4646,10 +4752,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
 
       const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
           <a class="article-link open-article" href="#lectura" data-id="${idx}">
-            <div class="card-media">
-              <img src="${fitImage(n.image || '')}" srcset="${imgSrcset(n.image || '')}" sizes="(max-width:768px) 100vw, 400px" alt="${escapeHtml(n.title)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
-              ${playBadge(n)}
-            </div>
+            ${mediaBlockHTML(n)}
             <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
             <h2>${escapeHtml(n.title)}</h2>
             <p>${escapeHtml(n.intro || '')}</p>
