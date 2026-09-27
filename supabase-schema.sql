@@ -67,29 +67,19 @@ revoke all on table public.notes from anon;
 grant select on table public.notes to anon;
 grant update (reactions) on table public.notes to anon;
 
-insert into public.notes (sport, title, intro, author, email, tags, body, status)
-select 'Fútbol', 'Cuando el juego pide una mirada más profunda', 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', 'Marta Villalobos', 'marta@tribuna.test', 'análisis, fútbol', 'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.', 'publicada'
-where not exists (select 1 from public.notes where title = 'Cuando el juego pide una mirada más profunda');
+-- NOTAS DE MUESTRA: DESACTIVADAS (2026-09-27)
+-- Estas cinco notas de ejemplo (cuatro de contenido genérico y una
+-- encuesta "MVP de la jornada") se insertaron al aplicar este schema en
+-- producción porque sus títulos no existían ahí. Quedaron de cabecera en la
+-- portada, con autores ficticios @tribuna.test y la encuesta con votos falsos
+-- (24/11/9). Se borraron de la base y se comentan aquí para que una
+-- instalación nueva no los herede ni los ejecute por error.
+-- Descomenta este bloque solo si necesitas datos de prueba en local.
 
-insert into public.notes (sport, title, intro, author, email, tags, body, status)
-select 'Fútbol', 'La grada también juega el partido', 'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.', 'Marta Villalobos', 'marta@tribuna.test', 'crónica, afición', 'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.', 'publicada'
-where not exists (select 1 from public.notes where title = 'La grada también juega el partido');
-
-insert into public.notes (sport, title, intro, author, email, tags, body, status)
-select 'Baloncesto', 'El talento joven ya no espera turno', 'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.', 'Diego Morales', 'diego@tribuna.test', 'baloncesto, liga', 'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.', 'publicada'
-where not exists (select 1 from public.notes where title = 'El talento joven ya no espera turno');
-
-insert into public.notes (sport, title, intro, author, email, tags, body, status, reactions)
-select 'Fútbol', 'La victoria tiene más de una medida', 'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.', 'Sofía Campos', 'sofia@tribuna.test', 'opinión, atletismo', 'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.', 'publicada', '{"clap":0,"wow":0,"angry":0}'::jsonb
-where not exists (select 1 from public.notes where title = 'La victoria tiene más de una medida');
-
--- MVP DE LA JORNADA (MUESTRA): nota-encuesta etiquetada "mvp" que la sección
--- "MVP de la jornada" de la portada destaca automáticamente. La redacción crea
--- una igual desde el panel (marcom "Añadir una encuesta rápida" y etiqueta mvp);
--- o re-publica esta actualizando pregunta/opciones/votos.
-insert into public.notes (sport, title, intro, author, email, tags, body, status, reactions)
-select 'Fútbol', '¿Quién fue el MVP de la jornada?', 'Elegí al mejor del partido del fin de semana en la Liga Promérica.', 'Redacción Tribuna', 'redaccion@tribuna.test', 'mvp, liga promerica, jornada', 'El voto de los lectores define al jugador destacado de cada jornada. Resultados en tiempo real al votar.', 'publicada', '{"clap":0,"wow":0,"angry":0,"poll":{"question":"¿Quién fue el MVP de la jornada?","options":["Joel Campbell","Alexander López","Alonso Martínez"]},"poll_votes":{"0":24,"1":11,"2":9}}'::jsonb
-where not exists (select 1 from public.notes where title = '¿Quién fue el MVP de la jornada?');
+-- MVP DE LA JORNADA: la sección homónima de la portada destaca
+-- automáticamente cualquier nota con la etiqueta "mvp". No hace falta
+-- sembrarla: la redacción crea una desde el panel con el marcap
+-- "Añadir una encuesta rápida", o etiqueta como "mvp" una nota existente.
 
 -- ============================================================
 -- NEWSLETTER SEMANAL
