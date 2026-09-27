@@ -221,6 +221,170 @@ insert into public.teams_ca (nombre, escudo, slug, aliases)
 select 'Sporting San José', 'https://r2.thesportsdb.com/images/media/team/badge/7wzxlo1606770023.png', 'sporting-san-jose', '{"sporting san jose","sporting"}'
 where not exists (select 1 from public.teams_ca where slug = 'sporting-san-jose');
 
+-- ============================================================
+-- COLORES DE CLUB (marcadores de la sección "Próximos partidos")
+-- ============================================================
+-- Ningún proveedor de fixtures expone un color utilizable:
+--   - football-data.org v4: el objeto de equipo en el recurso Match no trae
+--     color; `clubColors` solo existe en /teams/{id} y es texto libre
+--     ("Green / White"), no un hex.
+--   - API-Football: el objeto de equipo es {id, name, logo}, sin color.
+-- Por eso el color se guarda aquí, con fuente TheSportsDB (strColour1/2/3).
+-- Para los clubes donde strColour1 era blanco, gris o negro —invisible como
+-- franja sobre la tarjeta, y negro invisible en el tema oscuro— se tomó el
+-- color de identidad de strColour2/strColour3.
+--
+-- Se cruza por NOMBRE normalizado (normalizeTeamText en server.js) contra
+-- nombre + aliases, no por id de proveedor: un id mal escrito pintaría el color
+-- del club equivocado, mientras que un nombre que no casa simplemente no pinta
+-- color. `color` acepta null a propósito: el club queda sin franja.
+--
+-- Seed con `where not exists`, igual que teams_ca: si alguien corrige un color a
+-- mano en el SQL Editor, la próxima migración NO lo pisa. Para rellenar un null:
+--   update public.team_colors set color = '#aabbcc' where nombre = 'Nombre Club';
+create table if not exists public.team_colors (
+  nombre text primary key,
+  color text,
+  aliases text[] not null default '{}',
+  liga text not null default ''
+);
+
+-- El color llega a un atributo style del cliente, así que se valida aquí: solo
+-- #rrggbb o null. Cualquier otra cosa (url(...), rgb(), punto y coma...) se rechaza.
+alter table public.team_colors drop constraint if exists team_colors_formato;
+alter table public.team_colors
+  add constraint team_colors_formato check (color is null or color ~ '^#[0-9a-fA-F]{6}$');
+
+alter table public.team_colors enable row level security;
+
+drop policy if exists "Lectura pública de colores" on public.team_colors;
+create policy "Lectura pública de colores"
+  on public.team_colors for select
+  to anon
+  using (true);
+
+revoke all on table public.team_colors from anon;
+grant select on table public.team_colors to anon;
+
+-- ---- Premier League ----
+insert into public.team_colors (nombre, color, aliases, liga) select 'Arsenal', '#ef0107', '{"arsenal fc","arsenal football club","gunners"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Arsenal');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Aston Villa', '#490125', '{"aston villa fc","villa"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Aston Villa');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Bournemouth', '#b50e12', '{"afc bournemouth","bournemouth fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Bournemouth');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Brentford', '#e30613', '{"brentford fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Brentford');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Brighton and Hove Albion', '#0057b8', '{"brighton","brighton hove albion","brighton & hove albion","brighton and hove albion fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Brighton and Hove Albion');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Burnley', '#6c1d45', '{"burnley fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Burnley');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Chelsea', '#034694', '{"chelsea fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Chelsea');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Crystal Palace', '#1b458f', '{"crystal palace fc","palace"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Crystal Palace');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Everton', '#003399', '{"everton fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Everton');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Fulham', '#cc0000', '{"fulham fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Fulham');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Leeds United', '#1d428a', '{"leeds","leeds united fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Leeds United');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Liverpool', '#c8102e', '{"liverpool fc","lfc","reds"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Liverpool');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Manchester City', '#6cabdd', '{"manchester city fc","man city","mcfc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Manchester City');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Manchester United', '#da291c', '{"manchester united fc","man united","man utd","mufc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Manchester United');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Newcastle United', null, '{"newcastle","newcastle united fc","magpies"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Newcastle United');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Nottingham Forest', null, '{"forest","nottingham forest fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Nottingham Forest');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Sunderland', '#ff0000', '{"sunderland fc","black cats"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Sunderland');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Tottenham Hotspur', '#132257', '{"tottenham","spurs","tottenham hotspur fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Tottenham Hotspur');
+insert into public.team_colors (nombre, color, aliases, liga) select 'West Ham United', '#7c2c3b', '{"west ham","west ham united fc","the hammers"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'West Ham United');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Wolverhampton Wanderers', '#fdb913', '{"wolves","wolverhampton","wolverhampton wanderers fc"}', 'Premier League' where not exists (select 1 from public.team_colors where nombre = 'Wolverhampton Wanderers');
+
+-- ---- La Liga ----
+insert into public.team_colors (nombre, color, aliases, liga) select 'Deportivo Alavés', '#0761af', '{"alaves","alavés","deportivo alaves"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Deportivo Alavés');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Athletic Bilbao', '#ee2523', '{"athletic club","athletic bilbao","athletic"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Athletic Bilbao');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Atlético Madrid', '#cb3524', '{"atletico madrid","atlético madrid","atleti","atletico de madrid"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Atlético Madrid');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Barcelona', '#004d98', '{"fc barcelona","barça","barca"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Barcelona');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Celta Vigo', '#8ac3ee', '{"celta de vigo","celta"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Celta Vigo');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Espanyol', '#007fc8', '{"espanyol de barcelona","rcd espanyol"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Espanyol');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Getafe', '#005999', '{"getafe cf"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Getafe');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Girona', '#cd2534', '{"girona fc","girona de"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Girona');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Levante', '#c60b46', '{"levante ud","levante fc"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Levante');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Mallorca', '#e20613', '{"rcd mallorca","mallorca ca"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Mallorca');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Osasuna', '#0a346f', '{"osasuna ca","ca osasuna"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Osasuna');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Real Oviedo', null, '{"oviedo"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Real Oviedo');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Rayo Vallecano', '#e53027', '{"rayo","rayo vallecano de madrid"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Rayo Vallecano');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Real Betis', '#0bb363', '{"betis","real betis balompie"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Real Betis');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Real Madrid', '#00529f', '{"real madrid cf","madrid","los blancos"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Real Madrid');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Real Sociedad', '#0067b1', '{"sociedad","real sociedad de futbol","txuri-urdin"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Real Sociedad');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Sevilla', '#f43333', '{"sevilla fc","club atletico sevilla"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Sevilla');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Valencia', '#ff671f', '{"valencia cf"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Valencia');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Villarreal', '#005187', '{"villarreal cf"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Villarreal');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Elche', '#05642c', '{"elche cf"}', 'La Liga' where not exists (select 1 from public.team_colors where nombre = 'Elche');
+
+-- ---- Serie A ----
+insert into public.team_colors (nombre, color, aliases, liga) select 'Atalanta', '#1e71b8', '{"atalanta bc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Atalanta');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Bologna', '#a21c26', '{"bologna fc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Bologna');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Cagliari', '#002350', '{"cagliari calcio"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Cagliari');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Como', '#114169', '{"como 1907"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Como');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Cremonese', '#ed1c24', '{"cremonese calcio"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Cremonese');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Fiorentina', '#482e92', '{"acf fiorentina"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Fiorentina');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Genoa', '#ad1919', '{"genoa cfc","ac genoa"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Genoa');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Hellas Verona', '#ffe74a', '{"verona","hellas verona fc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Hellas Verona');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Inter Milan', '#010e80', '{"inter","internazionale","inter de milan","fc internazionale"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Inter Milan');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Juventus', null, '{"juve","juventus fc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Juventus');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lazio', '#87d8f7', '{"ss lazio","lazio roma"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Lazio');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lecce', '#fff200', '{"us lecce"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Lecce');
+insert into public.team_colors (nombre, color, aliases, liga) select 'AC Milan', '#fb090b', '{"milan","ac milan","a.c. milan"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'AC Milan');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Napoli', '#12a0d7', '{"ssc napoli","napoli ssc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Napoli');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Parma', '#1b4094', '{"parma calcio"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Parma');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Roma', '#8e1f2f', '{"as roma","roma cf"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Roma');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Sassuolo', '#00a752', '{"us sassuolo"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Sassuolo');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Torino', '#8a1e03', '{"torino fc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Torino');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Udinese', '#8b7d37', '{"udinese calcio"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Udinese');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Pisa', null, '{"pisa sc"}', 'Serie A' where not exists (select 1 from public.team_colors where nombre = 'Pisa');
+
+-- ---- Bundesliga ----
+insert into public.team_colors (nombre, color, aliases, liga) select 'Augsburg', '#ba3733', '{"fc augsburg"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Augsburg');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Bayer Leverkusen', '#e32221', '{"bayer 04 leverkusen","leverkusen"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Bayer Leverkusen');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Bayern Munich', '#dc052d', '{"bayern munchen","bayern münchen","fc bayern","bayern"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Bayern Munich');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Bochum', '#005ca9', '{"vfl bochum"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Bochum');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Borussia Dortmund', '#fde100', '{"bvb","borussia dortmund"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Borussia Dortmund');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Borussia Mönchengladbach', null, '{"borussia monchengladbach","gladbach","borussia m gladbach","monchengladbach"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Borussia Mönchengladbach');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Eintracht Frankfurt', '#e1000f', '{"frankfurt","eintracht"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Eintracht Frankfurt');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Freiburg', '#fd1220', '{"sc freiburg"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Freiburg');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Heidenheim', '#e2001a', '{"1 fc heidenheim","heidenheim"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Heidenheim');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Hoffenheim', '#1961b5', '{"tsg hoffenheim","1899 hoffenheim"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Hoffenheim');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Köln', '#ed1c24', '{"koln","cologne","1 fc koln","1. fc köln"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Köln');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Mainz', '#c3141e', '{"mainz 05","1 fsv mainz 05","mainz"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Mainz');
+insert into public.team_colors (nombre, color, aliases, liga) select 'RB Leipzig', '#dd013f', '{"leipzig","rb leipzig"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'RB Leipzig');
+insert into public.team_colors (nombre, color, aliases, liga) select 'St Pauli', '#624839', '{"st pauli","fc st pauli","pauli"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'St Pauli');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Stuttgart', '#e32219', '{"vfb stuttgart","stuttgart"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Stuttgart');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Union Berlin', '#eb1923', '{"1 fc union berlin","fc union berlin"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Union Berlin');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Werder Bremen', '#1d9053', '{"sv werder bremen","werder"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Werder Bremen');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Wolfsburg', '#09633d', '{"vfl wolfsburg","wolfsburg"}', 'Bundesliga' where not exists (select 1 from public.team_colors where nombre = 'Wolfsburg');
+
+-- ---- Ligue 1 ----
+insert into public.team_colors (nombre, color, aliases, liga) select 'Angers', null, '{"angers sco","sco angers"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Angers');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Auxerre', '#4087bf', '{"aj auxerre"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Auxerre');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Brest', '#ed1c24', '{"stade brestois","stade brestois 29"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Brest');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Le Havre', '#79bce7', '{"havre ac","le havre ac"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Le Havre');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lens', '#fff200', '{"rc lens"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Lens');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lille', '#e01e13', '{"losc","losc lille","lille osc"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Lille');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lorient', '#f58113', '{"fc lorient"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Lorient');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Lyon', '#0f23aa', '{"ol","olympique lyonnais","olympique de lyon"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Lyon');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Marseille', '#00a1df', '{"olympique de marseille","om"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Marseille');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Monaco', '#e51b22', '{"as monaco","as_monaco"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Monaco');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Nantes', '#fcd405', '{"fc nantes"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Nantes');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Nice', '#ed1c24', '{"ogc nice"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Nice');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Paris Saint-Germain', '#004170', '{"psg","paris saint germain","paris sg"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Paris Saint-Germain');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Stade de Reims', '#ee2223', '{"reims"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Stade de Reims');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Rennes', '#e13327', '{"stade rennais","stade rennes"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Rennes');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Strasbourg', '#009fe3', '{"rc strasbourg"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Strasbourg');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Toulouse', '#492359', '{"toulouse fc"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Toulouse');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Metz', '#6e0f12', '{"fc metz"}', 'Ligue 1' where not exists (select 1 from public.team_colors where nombre = 'Metz');
+
+-- ---- Liga Promérica (Costa Rica) ----
+-- TheSportsDB no tiene color para 9 de los 10: quedan en null a propósito.
+insert into public.team_colors (nombre, color, aliases, liga) select 'Alajuelense', null, '{"ld alajuelense","liga deportiva alajuelense","manudos"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Alajuelense');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Cartaginés', null, '{"cartagines","club sport cartagines","brumosos"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Cartaginés');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Deportivo Saprissa', null, '{"saprissa","deportivo saprissa fc"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Deportivo Saprissa');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Escorpiones de Belén', '#f3d718', '{"escorpiones de belen","belen","escorpiones"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Escorpiones de Belén');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Herediano', null, '{"club sport herediano","cs herediano","herediano fc"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Herediano');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Inter de San Carlos', null, '{"inter san carlos","inter de san carlos fc"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Inter de San Carlos');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Pérez Zeledón', null, '{"perez zeledon","municipal perez zeledon"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Pérez Zeledón');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Puntarenas', null, '{"municipal puntarenas","puntarenas fc"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Puntarenas');
+insert into public.team_colors (nombre, color, aliases, liga) select 'San Carlos', null, '{"club sport san carlos","san carlos fc"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'San Carlos');
+insert into public.team_colors (nombre, color, aliases, liga) select 'Sporting San José', null, '{"sporting san jose","sporting de san jose"}', 'Liga Promérica' where not exists (select 1 from public.team_colors where nombre = 'Sporting San José');
+
 -- Las notas publicadas antes de esta migración no tienen equipos vinculados.
 -- Cuando una de ellas mencione un equipo, re-guárdala (PUT /api/notes/:id) y
 -- el backend recalculará el campo teams desde sus etiquetas.

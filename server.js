@@ -666,6 +666,95 @@ function decorateNoteTeams(note, teams) {
   return { ...note, teams: [...new Set([...stored, ...resolveTeamSlugs(note.tags, teams)])] };
 }
 
+// ============================================================
+// COLORES DE CLUB para los marcadores de "Próximos partidos"
+// ============================================================
+// Ningún proveedor de fixtures da un color utilizable, así que el color se
+// guarda en team_colors (supabase-schema.sql) y se cruza por nombre
+// normalizado. Se cruza por nombre y no por id de proveedor a propósito: un id
+// mal escrito pintaría el color del club equivocado, mientras que un nombre
+// que no casa simplemente deja al equipo sin franja.
+
+const TEAM_COLORS_CACHE_TTL_MS = 60 * 60 * 1000;
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+let teamColorsCache = [];
+let teamColorsByName = new Map();
+let teamColorsCacheAt = 0;
+
+// El color se inyecta en un atributo style del cliente, así que se valida en
+// cada frontera. Fuera de #rrggbb (url(), rgb(), punto y coma...) se descarta.
+function sanitizeHexColor(value) {
+  const raw = String(value || '').trim();
+  if (!HEX_COLOR_RE.test(raw)) return '';
+  return raw.toLowerCase();
+}
+
+function indexTeamColors(rows) {
+  const map = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const color = sanitizeHexColor(row && row.color);
+    if (!color) continue;
+    const keys = [row.nombre, ...(Array.isArray(row.aliases) ? row.aliases : [])]
+      .map(normalizeTeamText)
+      .filter(Boolean);
+    for (const key of keys) {
+      // La primera fila gana: el orden de la tabla define la prioridad, así
+      // que un alias repetido no pisa el color de otro club.
+      if (!map.has(key)) map.set(key, color);
+    }
+  }
+  return map;
+}
+
+async function loadTeamColors() {
+  const now = Date.now();
+  if (teamColorsCacheAt && now - teamColorsCacheAt < TEAM_COLORS_CACHE_TTL_MS) {
+    return { rows: teamColorsCache, byName: teamColorsByName };
+  }
+  const { data, error } = await supabase
+    .from('team_colors')
+    .select('nombre, color, aliases')
+    .order('nombre');
+  if (error) throw error;
+  teamColorsCache = data || [];
+  teamColorsByName = indexTeamColors(teamColorsCache);
+  teamColorsCacheAt = now;
+  return { rows: teamColorsCache, byName: teamColorsByName };
+}
+
+// Nunca lanza: si la tabla no existe (migración no aplicada) o Supabase falla,
+// los marcadores se pintan igual, solo que sin franja de color.
+async function loadTeamColorsGraceful() {
+  try {
+    return (await loadTeamColors()).byName;
+  } catch {
+    return new Map();
+  }
+}
+
+function colorForTeamName(byName, name) {
+  const key = normalizeTeamText(name);
+  if (!key) return '';
+  return (byName && byName.get(key)) || '';
+}
+
+// Añade `color` al lado local/visitante de cada fixture. Devuelve nuevos
+// objetos; no muta la entrada.
+function applyTeamColors(fixtures, byName) {
+  if (!Array.isArray(fixtures) || !byName || byName.size === 0) return fixtures;
+  return fixtures.map((f) => {
+    if (!f) return f;
+    const out = { ...f };
+    for (const side of ['local', 'visitante']) {
+      const team = f[side];
+      if (!team) continue;
+      const color = colorForTeamName(byName, team.equipo);
+      if (color) out[side] = { ...team, color };
+    }
+    return out;
+  });
+}
+
 // GET Público: catálogo de equipos (nombre, escudo, slug) para los hubs.
 app.get('/api/teams', async (req, res) => {
   try {
@@ -2050,18 +2139,27 @@ app.get('/api/fixtures/:liga', async (req, res) => {
 
   const now = Date.now();
   const cacheKey = fixturesCacheKey(ligaKey);
-  if (cache[cacheKey] && now - cache[cacheKey].timestamp < CACHE_TTL_MS) {
-    return res.json({ stale: false, data: cache[cacheKey].data });
+  const cached = cache[cacheKey] && now - cache[cacheKey].timestamp < CACHE_TTL_MS;
+
+  // El color se aplica al SERVIR, nunca al cachear: el cache de fixtures (2h)
+  // guarda los datos crudos del proveedor y así un cambio en team_colors se ve
+  // en cuanto caduca su propia caché (1h), sin esperar a la de fixtures.
+  if (cached) {
+    const data = applyTeamColors(cache[cacheKey].data, await loadTeamColorsGraceful());
+    return res.json({ stale: false, data });
   }
 
   try {
-    const transformed = isPromerica
+    const raw = isPromerica
       ? await fetchApiFootballFixtures()
       : await fetchFootballDataFixtures(leagueCode);
-    cache[cacheKey] = { timestamp: now, data: transformed };
-    return res.json({ stale: false, data: transformed });
+    cache[cacheKey] = { timestamp: now, data: raw };
+    return res.json({ stale: false, data: applyTeamColors(raw, await loadTeamColorsGraceful()) });
   } catch (error) {
-    if (cache[cacheKey]) return res.json({ stale: true, data: cache[cacheKey].data });
+    if (cache[cacheKey]) {
+      const data = applyTeamColors(cache[cacheKey].data, await loadTeamColorsGraceful());
+      return res.json({ stale: true, data });
+    }
     return res.status(503).json({ error: error.message });
   }
 });
@@ -2352,6 +2450,10 @@ module.exports.maybeAutopostNote = maybeAutopostNote;
 module.exports.resolveTeamSlugs = resolveTeamSlugs;
 module.exports.computeEditStamp = computeEditStamp;
 module.exports.validateNote = validateNote;
+module.exports.sanitizeHexColor = sanitizeHexColor;
+module.exports.indexTeamColors = indexTeamColors;
+module.exports.colorForTeamName = colorForTeamName;
+module.exports.applyTeamColors = applyTeamColors;
 module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
 module.exports.decorateRumors = decorateRumors;
 module.exports.validateRumor = validateRumor;

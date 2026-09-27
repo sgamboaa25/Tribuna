@@ -339,6 +339,16 @@
     .fixture-team { font-family:'Fraunces', serif; font-weight:700; font-size:1rem; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .fixture-home .fixture-team-wrap { flex-direction:row-reverse; }
     .fixture-crest { width:28px; height:28px; object-fit:contain; flex-shrink:0; }
+    /* Color de club: franja vertical + tinte suave tras el escudo. El color
+       NUNCA se aplica al texto del nombre: un color de club arbitrario sobre
+       --card-bg no garantiza contraste, y en tema oscuro seria peor. */
+    .fixture-team-wrap.has-color { position:relative; padding-left:11px; }
+    .fixture-team-wrap.has-color::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); width:3px; height:1.15em; border-radius:2px; background:var(--team-color); }
+    .fixture-team-wrap.has-color .fixture-crest { background:color-mix(in srgb, var(--team-color) 15%, transparent); border-radius:50%; padding:2px; box-sizing:content-box; }
+    /* El local va a la derecha: la franja se dibuja en su borde exterior para
+       que ambos equipos queden simétricos. */
+    .fixture-home .fixture-team-wrap.has-color { padding-left:0; padding-right:11px; }
+    .fixture-home .fixture-team-wrap.has-color::before { left:auto; right:0; }
     .fixture-center { display:flex; flex-direction:column; align-items:center; gap:4px; padding:0 var(--space-sm); }
     .fixture-time { font:700 1.15rem/1 'Fraunces', serif; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
     .fixture-round { font-size:.72rem; font-weight:600; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.04em; line-height:1.3; }
@@ -2283,9 +2293,22 @@
       return `${String(h.getHours()).padStart(2, '0')}:${String(h.getMinutes()).padStart(2, '0')}`;
     }
 
+    // El backend valida el hex (sanitizeHexColor) y aquí se revalida antes de
+    // meterlo en un atributo style: si por lo que sea arrives algo que no sea
+    // #rrggbb, el equipo se pinta sin franja en vez de inyectar CSS.
+    function teamColorVar(team) {
+      const raw = String((team && team.color) || '').trim();
+      if (!/^#[0-9a-fA-F]{6}$/.test(raw)) return '';
+      return ` style="--team-color:${raw.toLowerCase()}"`;
+    }
+
     function fixtureTeamHtml(team) {
       if (!team || !team.equipo) return '<span class="fixture-team">?</span>';
-      return `<span class="fixture-team-wrap">${team.escudo ? `<img class="fixture-crest" src="${team.escudo}" alt="${escapeHtml(team.equipo)}" />` : ''}<span class="fixture-team">${escapeHtml(team.equipo)}</span></span>`;
+      const color = teamColorVar(team);
+      const badge = color ? ' has-color' : '';
+      // Orden escudo -> nombre: .fixture-home usa row-reverse para el local.
+      const crest = team.escudo ? `<img class="fixture-crest" src="${escapeHtml(team.escudo)}" alt="${escapeHtml(team.equipo)}" />` : '';
+      return `<span class="fixture-team-wrap${badge}"${color}>${crest}<span class="fixture-team">${escapeHtml(team.equipo)}</span></span>`;
     }
 
     function renderFixtures(data) {

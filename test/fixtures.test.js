@@ -186,3 +186,84 @@ test('fixtures: API caída con caché previo devuelve datos obsoletos (stale)', 
     global.fetch = originalFetch;
   }
 });
+
+// --- Colores de club ---
+
+const { sanitizeHexColor, indexTeamColors, colorForTeamName, applyTeamColors } = require('../server');
+
+test('color hex: solo acepta #rrggbb y normaliza a minusculas', () => {
+  assert.equal(sanitizeHexColor('#C8102E'), '#c8102e');
+  assert.equal(sanitizeHexColor('  #C8102E  '), '#c8102e');
+});
+
+test('color hex: rechaza cualquier cosa que no sea #rrggbb', () => {
+  const malos = [
+    undefined, null, '', '   ', 'C8102E', '#FFF', '#GGGGGG', '#1234567',
+    'red', 'rgb(1,2,3)', 'url(x)', '#fff; background:url(evil)',
+    'expression(alert(1))', 'var(--x)', '#c8102e;color:red'
+  ];
+  for (const v of malos) assert.equal(sanitizeHexColor(v), '', `deberia rechazar: ${v}`);
+});
+
+test('colores: indexa por nombre y por alias, ignorando nulos e invalidos', () => {
+  const map = indexTeamColors([
+    { nombre: 'Arsenal', color: '#ef0107', aliases: ['arsenal fc'] },
+    { nombre: 'Newcastle United', color: null, aliases: ['newcastle'] },
+    { nombre: 'Bad', color: 'url(evil)', aliases: [] },
+    { nombre: 'Real Madrid', color: '#00529F', aliases: ['real madrid cf'] }
+  ]);
+  assert.equal(map.get('arsenal'), '#ef0107');
+  assert.equal(map.get('arsenal fc'), '#ef0107');
+  assert.equal(map.get('real madrid cf'), '#00529f');
+  assert.equal(map.has('newcastle'), false);
+  assert.equal(map.has('newcastle united'), false);
+  assert.equal(map.has('bad'), false);
+});
+
+test('colores: la primera fila gana si dos comparten alias', () => {
+  const map = indexTeamColors([
+    { nombre: 'A', color: '#111111', aliases: ['comun'] },
+    { nombre: 'B', color: '#222222', aliases: ['comun'] }
+  ]);
+  assert.equal(map.get('comun'), '#111111');
+});
+
+test('colores: la busqueda ignora mayusculas y acentos', () => {
+  const map = indexTeamColors([
+    { nombre: 'Atlético Madrid', color: '#cb3524', aliases: [] },
+    { nombre: 'Deportivo Alavés', color: '#0761af', aliases: ['alaves'] }
+  ]);
+  assert.equal(colorForTeamName(map, 'atlético madrid'), '#cb3524');
+  assert.equal(colorForTeamName(map, 'ATLETICO MADRID'), '#cb3524');
+  assert.equal(colorForTeamName(map, 'Deportivo Alaves'), '#0761af');
+  assert.equal(colorForTeamName(map, 'Club Desconocido'), '');
+  assert.equal(colorForTeamName(map, ''), '');
+});
+
+test('colores: applyTeamColors anade color y no muta la entrada', () => {
+  const byName = indexTeamColors([{ nombre: 'Arsenal', color: '#ef0107', aliases: [] }]);
+  const entrada = [{ local: { equipo: 'Arsenal', escudo: 'c.png' }, visitante: { equipo: 'Colchester', escudo: '' } }];
+  const salida = applyTeamColors(entrada, byName);
+  assert.equal(salida[0].local.color, '#ef0107');
+  assert.equal(salida[0].visitante.color, undefined);
+  assert.equal(entrada[0].local.color, undefined, 'no debe mutar la entrada');
+  // El lado con color se copia; el que no tiene color se reutiliza tal cual
+  // (no se muta, asi que compartir referencia es seguro).
+  assert.notEqual(salida[0].local, entrada[0].local);
+  assert.equal(salida[0].visitante, entrada[0].visitante);
+});
+
+test('colores: sin catalogo o sin color los fixtures salen intactos', () => {
+  const entrada = [{ local: { equipo: 'Arsenal' }, visitante: { equipo: 'Chelsea' } }];
+  assert.deepEqual(applyTeamColors(entrada, new Map()), entrada);
+  assert.deepEqual(applyTeamColors(entrada, null), entrada);
+  assert.equal(applyTeamColors(null, new Map()), null);
+  assert.equal(applyTeamColors(entrada, indexTeamColors([{ nombre: 'Arsenal', color: null, aliases: [] }]))[0].local.color, undefined);
+});
+
+test('colores: tolera fixtures con lados ausentes', () => {
+  const byName = indexTeamColors([{ nombre: 'Arsenal', color: '#ef0107', aliases: [] }]);
+  const salida = applyTeamColors([{ local: null, visitante: undefined }], byName);
+  assert.equal(salida[0].local, null);
+  assert.equal(salida[0].visitante, undefined);
+});
