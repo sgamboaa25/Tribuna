@@ -1,4 +1,4 @@
-const CACHE = 'tribuna-v1';
+const CACHE = 'tribuna-v2';
 const SHELL = [
   '/',
   '/public/manifest.json',
@@ -7,6 +7,12 @@ const SHELL = [
   '/public/icon-maskable-512.png',
   '/public/tribuna-logo-wordmark.jpg'
 ];
+
+const isDocument = (req, url) =>
+  req.mode === 'navigate' ||
+  req.destination === 'document' ||
+  url.pathname === '/' ||
+  url.pathname.endsWith('.html');
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -30,23 +36,23 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
 
-  if (req.mode === 'navigate') {
+  if (isDocument(req, url)) {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put('/', copy)).catch(() => {});
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(req, copy)).catch(() => {});
+          }
           return res;
         })
-        .catch(() => caches.match('/'))
+        .catch(() => caches.match(req).then((hit) => hit || caches.match('/')))
     );
     return;
   }
-
-  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(req).then((hit) => {
