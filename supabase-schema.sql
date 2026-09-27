@@ -34,6 +34,17 @@ alter table public.notes add column if not exists x_posted_at timestamptz;
 -- al guardar una nota a partir de sus etiquetas; los usa el hub /equipo/:slug.
 alter table public.notes add column if not exists teams text[] not null default '{}';
 
+-- Historial de ediciones visible al lector (transparencia editorial).
+-- last_edited_at la escribe SOLO el backend (server.js) cuando se guarda una
+-- edición sobre una nota que ya estaba publicada y el contenido cambió de verdad.
+-- Por eso no se usa updated_at, que se mueve en cada escritura. La referencia
+-- para saber si es posterior a la publicación es created_at.
+-- edit_note es la nota breve de "qué se corrigió" (opcional, la escribe la
+-- redacción). Ambas columnas son públicas a propósito: el detalle de la nota
+-- las muestra al lector.
+alter table public.notes add column if not exists last_edited_at timestamptz;
+alter table public.notes add column if not exists edit_note text;
+
 -- Row Level Security:
 -- El cliente público (rol anon) solo puede leer notas publicadas y
 -- incrementar las reacciones. Todas las escrituras editoriales pasan

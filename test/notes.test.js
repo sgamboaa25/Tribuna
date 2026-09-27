@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { request, app } = require('./setup');
 
 const toPublicNote = require('../server').toPublicNote;
+const { computeEditStamp, validateNote } = require('../server');
 
 async function loginToken() {
   const res = await request(app)
@@ -146,4 +147,67 @@ test('api pública: /api/public/notes responde JSON aunque la DB no esté dispon
   assert.equal(res.status, 500);
   assert.ok(res.body.error);
   assert.equal(typeof res.body, 'object');
+});
+
+// --- Historial de ediciones (last_edited_at + edit_note) ---
+
+const NOTA = {
+  title: 'Titular',
+  sport: 'Futbol',
+  intro: 'Entradilla',
+  author: 'Redaccion',
+  email: 'redaccion@tribuna.test',
+  body: '<p>Cuerpo</p>',
+  status: 'publicada'
+};
+
+test('edit stamp: una nota ya publicada que cambia se sella', () => {
+  const stamp = computeEditStamp(NOTA, { title: 'Otro titular' }, '2026-09-26T10:00:00.000Z');
+  assert.equal(stamp, '2026-09-26T10:00:00.000Z');
+});
+
+test('edit stamp: publicar un borrador por primera vez NO se sella', () => {
+  const borrador = { ...NOTA, status: 'borrador' };
+  assert.equal(computeEditStamp(borrador, { title: 'Otro titular' }, '2026-09-26T10:00:00.000Z'), null);
+  assert.equal(computeEditStamp(borrador, { status: 'publicada' }, '2026-09-26T10:00:00.000Z'), null);
+});
+
+test('edit stamp: guardar sin cambiar nada NO se sella', () => {
+  const patch = { title: NOTA.title, intro: NOTA.intro, status: 'publicada' };
+  assert.equal(computeEditStamp(NOTA, patch, '2026-09-26T10:00:00.000Z'), null);
+});
+
+test('edit stamp: los reactions no cuentan como edicion', () => {
+  assert.equal(computeEditStamp(NOTA, { reactions: { clap: 99 } }, '2026-09-26T10:00:00.000Z'), null);
+});
+
+test('edit stamp: sin nota previa no se sella', () => {
+  assert.equal(computeEditStamp(null, { title: 'x' }, '2026-09-26T10:00:00.000Z'), null);
+  assert.equal(computeEditStamp(undefined, { title: 'x' }, '2026-09-26T10:00:00.000Z'), null);
+});
+
+test('edit stamp: genera ISO si no se pasa fecha', () => {
+  const stamp = computeEditStamp(NOTA, { title: 'Otro' });
+  assert.ok(!Number.isNaN(new Date(stamp).getTime()));
+});
+
+test('validateNote: acepta edit_note, permite vacio y corta a 200', () => {
+  assert.equal(validateNote({ ...NOTA, edit_note: 'Se corrigio el marcador' }).error, undefined);
+  assert.equal(validateNote({ ...NOTA, edit_note: '' }).error, undefined);
+  const corto = validateNote({ ...NOTA, edit_note: 'x'.repeat(200) });
+  assert.equal(corto.error, undefined);
+  assert.equal(corto.data.edit_note.length, 200);
+  const largo = validateNote({ ...NOTA, edit_note: 'x'.repeat(201) });
+  assert.match(largo.error, /edit_note/);
+});
+
+test('validateNote: edit_note se sanea sin HTML', () => {
+  assert.equal(validateNote({ ...NOTA, edit_note: '<b>Marcador</b> corregido' }).data.edit_note, 'Marcador corregido');
+  // El contenido de <script> se descarta entero, no solo las etiquetas.
+  assert.equal(validateNote({ ...NOTA, edit_note: '<script>alert(1)</script>Marcador' }).data.edit_note, 'Marcador');
+});
+
+test('validateNote: el cliente NO puede fijar last_edited_at', () => {
+  const res = validateNote({ ...NOTA, last_edited_at: '2000-01-01T00:00:00.000Z' });
+  assert.equal(res.data.last_edited_at, undefined);
 });

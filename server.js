@@ -214,7 +214,25 @@ const NOTE_ALLOWED_FIELDS = [
   'urgent',
   'image',
   'reactions',
-  'video_url'
+  'video_url',
+  'edit_note'
+];
+// Campos que, si cambian, cuentan como una edición real de una nota ya publicada.
+// `reactions` queda fuera a propósito: las cuenta cambiantes entre el guardado y
+// esta comparación no son una corrección editorial.
+const NOTE_EDITABLE_FIELDS = [
+  'title',
+  'sport',
+  'intro',
+  'author',
+  'email',
+  'tags',
+  'body',
+  'status',
+  'urgent',
+  'image',
+  'video_url',
+  'edit_note'
 ];
 const REQUIRED_FIELDS = ['title', 'sport', 'intro', 'author', 'email', 'body'];
 const NOTE_LENGTHS = {
@@ -226,7 +244,8 @@ const NOTE_LENGTHS = {
   tags: 300,
   body: 100000,
   image: 500,
-  video_url: 500
+  video_url: 500,
+  edit_note: 200
 };
 const VALID_STATUSES = ['borrador', 'en revisión', 'publicada'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -479,7 +498,8 @@ function validateNote(body, partial) {
     'email',
     'tags',
     'image',
-    'video_url'
+    'video_url',
+    'edit_note'
   ]) {
     if (clean[field] === undefined) continue;
     if (typeof clean[field] !== 'string') return { error: `El campo ${field} debe ser texto.` };
@@ -487,7 +507,14 @@ function validateNote(body, partial) {
       field === 'email' || field === 'image' || field === 'video_url'
         ? clean[field].trim()
         : sanitizeText(clean[field]);
-    if (clean[field] === '' && field !== 'tags' && field !== 'image' && field !== 'video_url') {
+    // edit_note puede quedar vacío: es opcional y vacío significa "sin nota".
+    if (
+      clean[field] === '' &&
+      field !== 'tags' &&
+      field !== 'image' &&
+      field !== 'video_url' &&
+      field !== 'edit_note'
+    ) {
       return { error: `El campo ${field} no puede estar vacío.` };
     }
     if (clean[field].length > NOTE_LENGTHS[field]) {
@@ -1415,6 +1442,26 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
   res.json(data[0]);
 });
 
+// Decide si un guardado debe estampar `last_edited_at` (historial de ediciones
+// visible al lector) y devuelve el ISO a guardar, o null si no aplica.
+//
+// Reglas:
+//  - Solo si la nota YA estaba publicada. Publicar un borrador por primera vez
+//    no es una edición, así que no se sella (por eso no sirve updated_at).
+//  - Solo si algún campo editable cambió de verdad. Un "Guardar" sin tocar nada
+//    no debe poner un "Actualizado" falso en una nota viva.
+//  - `reactions` se excluye a propósito: los contadores cambian entre el guardado
+//    y esta comparación y no son una corrección editorial.
+//  - La fecha la pone el backend, nunca el cliente.
+function computeEditStamp(current, patch, nowIso) {
+  if (!current || current.status !== 'publicada') return null;
+  const changed = NOTE_EDITABLE_FIELDS.some(
+    (f) => patch[f] !== undefined && patch[f] !== current[f]
+  );
+  if (!changed) return null;
+  return nowIso || new Date().toISOString();
+}
+
 app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
   const id = req.params.id;
   if (!UUID_RE.test(id)) {
@@ -1431,6 +1478,22 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
       /* catálogo no disponible */
     }
   }
+
+  // Estado previo: hace falta para distinguir una edición de una nota ya
+  // publicada (que se sella) de un borrador nuevo o de una primera publicación
+  // (que no se sellan). Se lee solo lo imprescindible, nunca last_edited_at:
+  // si no viene en el cuerpo, se conserva el sello anterior.
+  const { data: currentRows, error: currentError } = await supabase
+    .from('notes')
+    .select(NOTE_EDITABLE_FIELDS.join(', '))
+    .eq('id', id)
+    .limit(1);
+  if (currentError) return res.status(500).json({ error: currentError.message });
+  const current = currentRows && currentRows[0];
+  if (!current) return res.status(404).json({ error: 'Nota no encontrada.' });
+
+  const stamp = computeEditStamp(current, clean);
+  if (stamp) clean.last_edited_at = stamp;
 
   const { data, error } = await supabase
     .from('notes')
@@ -2287,6 +2350,8 @@ module.exports.oauth1Signature = oauth1Signature;
 module.exports.oauth1Authorization = oauth1Authorization;
 module.exports.maybeAutopostNote = maybeAutopostNote;
 module.exports.resolveTeamSlugs = resolveTeamSlugs;
+module.exports.computeEditStamp = computeEditStamp;
+module.exports.validateNote = validateNote;
 module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
 module.exports.decorateRumors = decorateRumors;
 module.exports.validateRumor = validateRumor;

@@ -397,12 +397,21 @@
     #articleDetail .lead,
     #articleDetail .detail-content,
     #articleDetail .detail-byline,
+    #articleDetail .detail-edited,
     #articleDetail .reactions-group,
     #articleDetail .share-group {
       max-width:var(--col-reading);
       margin-left:auto;
       margin-right:auto;
     }
+    /* Historial de ediciones: aviso discreto, sin robar protagonismo al titular. */
+    .detail-edited { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; margin-top:-8px; margin-bottom:var(--space-md); padding:8px 12px; border-left:2px solid var(--line); color:var(--muted); font:500 .82rem/1.5 'Inter', sans-serif; }
+    /* Necesario: un display:flex de autor pisa el display:none que el navegador
+       aplica a [hidden], y el aviso se vería (vacío) en notas sin editar. */
+    .detail-edited[hidden] { display:none; }
+    .detail-edited b { font-weight:700; color:var(--ink); }
+    .detail-edited i { font-style:normal; }
+    .detail-edited i::before { content:'·'; margin-right:6px; }
     #articleDetail .tag { display:block; width:fit-content; } 
     .detail-content p { margin-bottom:1.2em; margin-top:0; }
     /* Punto 19 · Entradilla del cuerpo */
@@ -590,6 +599,13 @@
 
     .draft-actions { display:flex; gap:var(--space-sm); align-items:center; }
     .status-select { width:auto !important; margin-bottom:0 !important; padding:6px 10px !important; font-size:.8rem !important; }
+
+    /* Etiqueta "opcional" en labels del formulario de redacción. */
+    .optional-tag { color:var(--muted); font-weight:400; font-size:.85em; }
+
+    /* Marcador de nota ya editada tras publicarse, en la lista de redacción. */
+    .draft-edited-flag { display:inline-flex; align-items:center; gap:5px; margin-top:4px; padding:3px 8px; border:1px solid var(--line); border-radius:999px; background:var(--badge-revision-bg); color:var(--badge-revision-fg); font:600 .72rem/1.4 'Inter', sans-serif; letter-spacing:.02em; }
+    .draft-edited-flag::before { content:'✎'; font-size:.85em; }
 
     .trash-note { border:1px solid var(--line); border-radius:var(--radius-md); background:var(--card-bg); color:var(--accent); padding:var(--space-sm) var(--space-md); font-size:.8rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:all .2s; font-family:'Inter', sans-serif; }
     .trash-note:hover { border-color:var(--accent); background:var(--accent); color:var(--paper); }
@@ -969,6 +985,7 @@
       <video id="detailVideo" class="detail-video" controls playsinline preload="metadata"></video>
       <div class="detail-content" id="detailBody"></div>
       <p class="byline detail-byline" id="detailByline"></p>
+      <p class="detail-edited" id="detailEdited" hidden></p>
 
       <div id="detailPoll"></div>
 
@@ -1328,6 +1345,11 @@
             <p class="field-hint">Sube una imagen o un video como medio principal, no ambos. Si eliges video, idealmente un clip de 15-30 s y máx. 50 MB.</p>
           </div>
           <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
+          <div class="wide">
+            <label for="editNote">Nota de corrección <span class="optional-tag">(opcional)</span></label>
+            <input id="editNote" maxlength="200" placeholder="Se corrigió el resultado del partido" />
+            <p class="field-hint">Al guardar una edición de una nota ya publicada, el lector verá "Actualizado: fecha" con este texto al lado. Si lo dejas vacío, solo verá la fecha.</p>
+          </div>
           <div class="wide poll-block">
             <label class="check"><input id="pollEnabled" type="checkbox" /> Añadir una encuesta rápida</label>
             <div id="pollFields" class="poll-fields">
@@ -2666,7 +2688,28 @@
           imgEl.src = BLANK_IMAGE;
         } 
         
-        document.querySelector('#detailByline').innerHTML = `${authorLinkHTML(author, note.email)}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`; 
+        document.querySelector('#detailByline').innerHTML = `${authorLinkHTML(author, note.email)}${noteDate(note.created_at) ? ' · ' + noteDate(note.created_at) : ''} · ${minutesToRead(note.body)}`;
+
+        // Transparencia editorial: el backend solo sella last_edited_at cuando se
+        // guardó una edición sobre una nota que ya estaba publicada, así que que
+        // exista y sea posterior a created_at ya significa "editada tras publicar".
+        const editedEl = document.getElementById('detailEdited');
+        if (editedEl) {
+          const editedAt = note.last_edited_at ? new Date(note.last_edited_at) : null;
+          const publishedAt = note.created_at ? new Date(note.created_at) : null;
+          const showEdited =
+            editedAt &&
+            !Number.isNaN(editedAt.getTime()) &&
+            (!publishedAt || Number.isNaN(publishedAt.getTime()) || editedAt > publishedAt);
+          if (showEdited) {
+            const nota = String(note.edit_note || '').trim();
+            editedEl.innerHTML = `<b>Actualizado:</b> <time datetime="${note.last_edited_at}" title="${escapeHtml(formatFullDate(note.last_edited_at))}">${escapeHtml(formatManualStamp(note.last_edited_at))}</time>${nota ? `<i>${escapeHtml(nota)}</i>` : ''}`;
+            editedEl.hidden = false;
+          } else {
+            editedEl.innerHTML = '';
+            editedEl.hidden = true;
+          }
+        } 
 
         const noteTeams = noteTeamSlugs(note);
         const detailTeams = document.getElementById('detailTeams');
@@ -3161,6 +3204,18 @@
         const meta = document.createElement('small'); 
         meta.textContent = `${note.sport} · Por ${note.author}`; 
         text.append(name, meta); 
+
+        // Marca de transparencia: la nota tiene una edición registrada y visible
+        // al lector. El backend solo la escribe sobre notas ya publicadas.
+        if (note.last_edited_at) {
+          const editedAt = new Date(note.last_edited_at);
+          if (!Number.isNaN(editedAt.getTime())) {
+            const flag = document.createElement('span');
+            flag.className = 'draft-edited-flag';
+            flag.textContent = `Editada ${formatManualStamp(note.last_edited_at)}`;
+            text.appendChild(flag);
+          }
+        }
         
         const actions = document.createElement('div');
         actions.className = 'draft-actions';
@@ -3183,6 +3238,7 @@
           document.querySelector('#authorName').value = note.author; 
           document.querySelector('#authorEmail').value = note.email; 
           document.querySelector('#urgent').checked = Boolean(note.urgent);
+          document.querySelector('#editNote').value = note.edit_note || '';
           const poll = (note.reactions || {}).poll || null;
           if (pollEnabledInput) pollEnabledInput.checked = Boolean(poll);
           if (pollFieldsBox) {
@@ -5247,6 +5303,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           urgent: document.querySelector('#urgent').checked,
           image: imageUrl,
           video_url: videoUrl,
+          edit_note: document.querySelector('#editNote').value,
           reactions
         }; 
 
@@ -5282,6 +5339,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         document.querySelector('#photoFile').closest('.file-drop').querySelector('.file-name').textContent = 'Seleccionar imagen…';
         document.querySelector('#videoFile').closest('.file-drop').querySelector('.file-name').textContent = 'Seleccionar video…';
         document.querySelector('#bodyEditor').innerHTML = '';
+        document.querySelector('#editNote').value = '';
         await loadAllNotesForPanel();
         await loadPublicNotes();
       } catch (err) {
