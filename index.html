@@ -606,6 +606,19 @@
     .status-revision { background:var(--badge-revision-bg); color:var(--badge-revision-fg); }
     .status-publicada { background:var(--badge-public-bg); color:var(--badge-public-fg); }
     .status-archived { background:var(--accent); color:var(--paper); }
+    /* Estados de rumor. Las mismas cuatro clases que valida RUMOR_STATES en el
+       servidor, que es lo que ofrece el picker rumorStatusPicker. */
+    .status-rumor { background:var(--line); color:var(--muted); }
+    .status-avanzado { background:var(--badge-revision-bg); color:var(--badge-revision-fg); }
+    .status-confirmado { background:var(--badge-public-bg); color:var(--badge-public-fg); }
+    .status-descartado { background:var(--line); color:var(--muted); text-decoration:line-through; }
+    /* La antigüedad se marca con un filo lateral y no con otra pastilla: así la
+       fila de badges sigue significando solo "estado". El inset evita que el
+       layout se mueva al aplicarlo. */
+    .draft-item.rumor-stale { box-shadow:inset 3px 0 0 var(--badge-revision-fg); }
+    .draft-item.rumor-stale-critical { box-shadow:inset 3px 0 0 var(--accent); }
+    .draft-item .rumor-age { color:var(--badge-revision-fg); font-weight:600; }
+    .draft-item .rumor-age-critical { color:var(--accent); font-weight:600; }
 
     .draft-actions { display:flex; gap:var(--space-sm); align-items:center; }
     .status-select { width:auto !important; margin-bottom:0 !important; padding:6px 10px !important; font-size:.8rem !important; }
@@ -4172,6 +4185,15 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     const rumorMessageEl = document.getElementById('rumorMessage');
     const rumorVeracityInput = document.getElementById('rumorVeracity');
     const rumorVeracityLabel = document.getElementById('rumorVeracityLabel');
+    // Etiquetas de los estados de rumor, en el mismo orden que RUMOR_STATES en
+    // el servidor. Antes se usaba esta constante sin haberla definido, y eso
+    // reventaba renderRumorManager con ReferenceError en el primer rumor.
+    const RUMOR_STATE_LABEL = {
+      rumor: 'Rumor',
+      avanzado: 'Negociación avanzada',
+      confirmado: 'Confirmado',
+      descartado: 'Descartado'
+    };
 
     function setRumorForm(rumor) {
       editingRumorId = rumor ? rumor.id : null;
@@ -4198,9 +4220,29 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         rumorManagerListEl.append(empty);
         return;
       }
-      allPanelRumors.forEach(rumor => {
+      // Orden de triaje: primero lo que hay que decidir y lo que más lleva sin
+      // tocarse. Ordenar solo por fecha metía arriba un descartado de hace un
+      // año y tapaba los rumors abiertos que sí exigen una decisión, así que el
+      // desactualizado (que el servidor ya calculó) manda, luego los abiertos
+      // antes que los cerrados y, a igualdad, el más antiguo primero.
+      // Solo se ordena una copia: allPanelRumors es el estado del panel.
+      const RUMOR_CERRADOS = new Set(['confirmado', 'descartado']);
+      const antiguedad = (r) => Date.parse(r.updated_at || '') || 0;
+      const sorted = allPanelRumors.slice().sort((a, b) => {
+        const nivel = (b.desactualizado || 0) - (a.desactualizado || 0);
+        if (nivel) return nivel;
+        const cerrado = (RUMOR_CERRADOS.has(a.estado) ? 1 : 0) - (RUMOR_CERRADOS.has(b.estado) ? 1 : 0);
+        if (cerrado) return cerrado;
+        return antiguedad(a) - antiguedad(b);
+      });
+      sorted.forEach(rumor => {
         const item = document.createElement('div');
         item.className = 'draft-item';
+        // El nivel (0 al día / 1 viejo / 2 para cerrar) lo decide el servidor
+        // en rumorStaleness, que solo marca los estados abiertos.
+        const nivel = rumor.desactualizado || 0;
+        if (nivel === 2) item.classList.add('rumor-stale-critical');
+        else if (nivel === 1) item.classList.add('rumor-stale');
         const text = document.createElement('div');
         const name = document.createElement('strong');
         name.textContent = rumor.jugador;
@@ -4218,6 +4260,17 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         const destino = rumor.destino ? rumor.destino.nombre : '—';
         const origen = rumor.origen ? rumor.origen.nombre : '¿?';
         meta.textContent = `${origen} → ${destino} · ${rumor.veracidad}% · ${rumor.fuente || 'sin fuente'}`;
+        // Solo se muestra la edad de los que están abiertos: un rumor cerrado
+        // no necesita que le recordemos cuánto lleva ahí.
+        if (nivel > 0 && rumor.updated_at) {
+          const age = document.createElement('span');
+          age.className = nivel === 2 ? 'rumor-age rumor-age-critical' : 'rumor-age';
+          // timeAgo devuelve "Hace 3 meses"; aquí va dentro de una frase, así
+          // que se baja la mayúscula inicial.
+          const rel = timeAgo(rumor.updated_at);
+          age.textContent = ` · Sin revisar ${rel.charAt(0).toLowerCase()}${rel.slice(1)}`;
+          meta.appendChild(age);
+        }
         text.append(name, meta);
 
         const actions = document.createElement('div');

@@ -837,6 +837,19 @@ const RUMOR_FIELDS = [
 ];
 const RUMOR_STATES = ['rumor', 'avanzado', 'confirmado', 'descartado'];
 const RUMOR_CACHE_TTL_MS = 10 * 60 * 1000;
+
+// Antigüedad de un rumor: 0 al día, 1 si lleva demasiado sin tocarse, 2 si
+// lleva tanto que conviene cerrarlo. Solo se mide en los estados abiertos,
+// porque un rumor confirmado o descartado ya está resuelto y no gana nada con
+// que le recordemos su edad.
+//
+// OJO con lo que mide: updated_at lo pone el PUT en cada guardado, así que
+// dice "última vez que la redacción lo tocó", no "verificado como cierto hoy".
+// Corregir una errata reactiva un rumor viejo. Es una señal de triaje, no un
+// reloj de veracidad.
+const RUMOR_STALE_DAYS = 30;
+const RUMOR_DEAD_DAYS = 60;
+const RUMOR_OPEN_STATES = ['rumor', 'avanzado'];
 const RUMOR_TEXT_LIMITS = {
   jugador: 120,
   posicion: 60,
@@ -845,6 +858,21 @@ const RUMOR_TEXT_LIMITS = {
   fuente: 120,
   detalle: 500
 };
+
+// nowIso existe para que los tests no dependan del reloj.
+function rumorStaleness(rumor, nowIso) {
+  const estado = rumor && rumor.estado ? rumor.estado : 'rumor';
+  if (!RUMOR_OPEN_STATES.includes(estado)) return 0;
+  const stamp = rumor && (rumor.updated_at || rumor.created_at);
+  const then = Date.parse(stamp || '');
+  if (!Number.isFinite(then)) return 0;
+  const now = nowIso === undefined ? Date.now() : Date.parse(nowIso);
+  if (!Number.isFinite(now)) return 0;
+  const days = Math.floor((now - then) / 86400000);
+  if (days >= RUMOR_DEAD_DAYS) return 2;
+  if (days >= RUMOR_STALE_DAYS) return 1;
+  return 0;
+}
 let rumorsCache = [];
 let rumorsCacheAt = 0;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -926,7 +954,8 @@ function decorateRumors(rumors, teams, players) {
     fuente: r.fuente || '',
     detalle: r.detalle || '',
     activo: r.activo !== false,
-    updated_at: r.updated_at || r.created_at || null
+    updated_at: r.updated_at || r.created_at || null,
+    desactualizado: rumorStaleness(r)
   }));
 }
 
@@ -2457,6 +2486,7 @@ module.exports.applyTeamColors = applyTeamColors;
 module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
 module.exports.decorateRumors = decorateRumors;
 module.exports.validateRumor = validateRumor;
+module.exports.rumorStaleness = rumorStaleness;
 module.exports.validateReaderPhoto = validateReaderPhoto;
 module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;

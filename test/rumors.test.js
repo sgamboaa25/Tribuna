@@ -1,7 +1,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app } = require('./setup');
-const { decorateRumors, validateRumor } = require('../server');
+const { decorateRumors, validateRumor, rumorStaleness } = require('../server');
+
+// 2026-06-01T00:00:00Z como "ahora" fijo para los tests de antigüedad.
+const HOY = '2026-06-01T00:00:00.000Z';
+const dias = (n) => new Date(Date.parse(HOY) - n * 86400000).toISOString();
+// decorateRumors no recibe reloj y usa Date.now(), así que para probarlo las
+// fechas tienen que ser relativas a ahora, no a HOY.
+const haceDias = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
 const TEAMS = [
   { slug: 'saprissa', nombre: 'Deportivo Saprissa', escudo: 'https://escudo.example/sap.png' },
@@ -83,4 +90,52 @@ test('rumores: sin DB disponible responde 500 JSON elegante', async () => {
   const res = await request(app).get('/api/rumors');
   assert.equal(res.status, 500);
   assert.ok(res.body.error);
+});
+
+test('rumores: la antigüedad marca 30 y 60 días en los estados abiertos', () => {
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: dias(1) }, HOY), 0);
+  assert.equal(rumorStaleness({ estado: 'avanzado', updated_at: dias(29) }, HOY), 0);
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: dias(30) }, HOY), 1);
+  assert.equal(rumorStaleness({ estado: 'avanzado', updated_at: dias(59) }, HOY), 1);
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: dias(60) }, HOY), 2);
+  assert.equal(rumorStaleness({ estado: 'avanzado', updated_at: dias(400) }, HOY), 2);
+});
+
+test('rumores: un rumor cerrado nunca se marca como desactualizado', () => {
+  // Un descartado de hace un año no necesita que le recordemos su edad.
+  assert.equal(rumorStaleness({ estado: 'descartado', updated_at: dias(400) }, HOY), 0);
+  assert.equal(rumorStaleness({ estado: 'confirmado', updated_at: dias(400) }, HOY), 0);
+});
+
+test('rumores: la antigüedad cae a created_at y tolera datos basura', () => {
+  assert.equal(rumorStaleness({ estado: 'rumor', created_at: dias(90) }, HOY), 2);
+  // Sin updated_at se usa created_at aunque venga null.
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: null, created_at: dias(45) }, HOY), 1);
+  // Basura: sin fecha, fecha inválida o estado desconocido (se asume 'rumor').
+  assert.equal(rumorStaleness({ estado: 'rumor' }, HOY), 0);
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: 'no-es-fecha' }, HOY), 0);
+  assert.equal(rumorStaleness({ updated_at: dias(90) }, HOY), 2);
+  assert.equal(rumorStaleness(null, HOY), 0);
+  // Un reloj en el futuro (skew) no debe marcar nada.
+  assert.equal(rumorStaleness({ estado: 'rumor', updated_at: dias(-10) }, HOY), 0);
+});
+
+test('rumores: decorateRumors expone desactualizado y el updated_at resuelto', () => {
+  const out = decorateRumors(
+    [
+      { jugador: 'Viejo', estado: 'rumor', updated_at: haceDias(90) },
+      { jugador: 'Nuevo', estado: 'avanzado', updated_at: haceDias(2) },
+      { jugador: 'Cerrado', estado: 'descartado', updated_at: haceDias(90) }
+    ],
+    null,
+    null
+  );
+  assert.equal(out[0].desactualizado, 2);
+  assert.equal(out[1].desactualizado, 0);
+  assert.equal(out[2].desactualizado, 0);
+  assert.equal(out[0].updated_at, haceDias(90));
+  // Sin ninguna de las dos fechas, updated_at queda en null y no revienta.
+  const sinFecha = decorateRumors([{ jugador: 'X' }], null, null)[0];
+  assert.equal(sinFecha.updated_at, null);
+  assert.equal(sinFecha.desactualizado, 0);
 });
