@@ -121,11 +121,17 @@ test('rumores: la antigüedad cae a created_at y tolera datos basura', () => {
 });
 
 test('rumores: decorateRumors expone desactualizado y el updated_at resuelto', () => {
+  // Las fechas se guardan en variables y se comparan contra ellas. Volver a
+  // llamar a haceDias(90) en la aserción comparaba contra otro Date.now(), y
+  // el teste fallaba de forma intermitente por un milisegundo de deriva.
+  const viejo = haceDias(90);
+  const nuevo = haceDias(2);
+  const cerrado = haceDias(90);
   const out = decorateRumors(
     [
-      { jugador: 'Viejo', estado: 'rumor', updated_at: haceDias(90) },
-      { jugador: 'Nuevo', estado: 'avanzado', updated_at: haceDias(2) },
-      { jugador: 'Cerrado', estado: 'descartado', updated_at: haceDias(90) }
+      { jugador: 'Viejo', estado: 'rumor', updated_at: viejo },
+      { jugador: 'Nuevo', estado: 'avanzado', updated_at: nuevo },
+      { jugador: 'Cerrado', estado: 'descartado', updated_at: cerrado }
     ],
     null,
     null
@@ -133,7 +139,8 @@ test('rumores: decorateRumors expone desactualizado y el updated_at resuelto', (
   assert.equal(out[0].desactualizado, 2);
   assert.equal(out[1].desactualizado, 0);
   assert.equal(out[2].desactualizado, 0);
-  assert.equal(out[0].updated_at, haceDias(90));
+  assert.equal(out[0].updated_at, viejo);
+  assert.equal(out[1].updated_at, nuevo);
   // Sin ninguna de las dos fechas, updated_at queda en null y no revienta.
   const sinFecha = decorateRumors([{ jugador: 'X' }], null, null)[0];
   assert.equal(sinFecha.updated_at, null);
