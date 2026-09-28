@@ -45,6 +45,14 @@ alter table public.notes add column if not exists teams text[] not null default 
 alter table public.notes add column if not exists last_edited_at timestamptz;
 alter table public.notes add column if not exists edit_note text;
 
+-- Contador de lecturas. Lo incrementa SOLO el backend (server.js) en
+-- POST /api/notes/:id/view: si se dejara en manos del cliente bastaría con
+-- llamar al endpoint en bucle para inflar el ranking de "más leídas", así que
+-- no se otorga ningún permiso de escritura al rol anon sobre esta columna.
+-- Se mantiene una columna y no una tabla de eventos porque el sitio solo
+-- necesita el total, no la serie temporal ni los visitantes únicos.
+alter table public.notes add column if not exists views integer not null default 0;
+
 -- Row Level Security:
 -- El cliente público (rol anon) solo puede leer notas publicadas y
 -- incrementar las reacciones. Todas las escrituras editoriales pasan

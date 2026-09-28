@@ -115,6 +115,32 @@ async function main() {
   const playerRes = await fetch(BASE + '/jugador/christian-bolanos');
   report('ruta /jugador/:slug devuelve index.html (SPA)', playerRes.status === 200 && playerRes.headers.get('content-type')?.includes('text/html'), 'status=' + playerRes.status + ' ct=' + playerRes.headers.get('content-type'));
 
+  const smBody = await fetch(BASE + '/sitemap.xml').then(r => r.text());
+  report('sitemap incluye /mercado, /videos y /etiquetas', smBody.includes('/mercado') && smBody.includes('/videos') && smBody.includes('/etiquetas'), 'mercado=' + smBody.includes('/mercado') + ' videos=' + smBody.includes('/videos') + ' etiquetas=' + smBody.includes('/etiquetas'));
+
+  const playerRes2 = await fetch(BASE + '/etiquetas');
+  report('ruta /etiquetas devuelve index.html (SPA)', playerRes2.status === 200 && playerRes2.headers.get('content-type')?.includes('text/html'), 'status=' + playerRes2.status);
+
+  const tagRes = await fetch(BASE + '/tag/municipal');
+  report('ruta /tag/:slug devuelve index.html (SPA)', tagRes.status === 200 && tagRes.headers.get('content-type')?.includes('text/html'), 'status=' + tagRes.status);
+
+  const mercadoRes = await fetch(BASE + '/mercado');
+  report('ruta /mercado devuelve index.html (SPA)', mercadoRes.status === 200 && mercadoRes.headers.get('content-type')?.includes('text/html'), 'status=' + mercadoRes.status);
+
+  // El feed no puede generarse sin DB, pero tampoco debe caer al catch-all de la
+  // SPA: si devolviera index.html con status 200, cualquier agregador guardaría
+  // HTML como si fuera un canal RSS.
+  const rssRes = await fetch(BASE + '/rss.xml');
+  report('/rss.xml sin DB real -> 503 (no HTML de la SPA)', rssRes.status === 503 && !rssRes.headers.get('content-type')?.includes('text/html'), 'status=' + rssRes.status + ' ct=' + rssRes.headers.get('content-type'));
+
+  const rssRedirect = await fetch(BASE + '/feed', { redirect: 'manual' });
+  report('/feed redirige 301 a /rss.xml', rssRedirect.status === 301 && rssRedirect.headers.get('location') === '/rss.xml', 'status=' + rssRedirect.status);
+
+  // El contador de lecturas valida el UUID antes de tocar la DB: un id basura
+  // devuelve 400, no 500.
+  const viewBad = await post('/api/notes/no-es-uuid/view', {}, {});
+  report('POST /api/notes/:id/view con id invalido -> 400', viewBad.status === 400, 'status=' + viewBad.status);
+
   const rumorsPublic = await fetch(BASE + '/api/rumors');
   report('/api/rumors sin DB real -> 500 JSON', rumorsPublic.status === 500, 'status=' + rumorsPublic.status);
 

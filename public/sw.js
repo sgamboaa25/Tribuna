@@ -38,6 +38,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
+  // El feed se regenera con cada nota nueva. Cache-first lo serviría desde la
+  // copia vieja sin avisar, así que un suscriptor con la PWA instalada
+  // simplemente dejaría de recibir noticias nuevas.
+  if (url.pathname === '/rss.xml' || url.pathname === '/feed') return;
 
   if (isDocument(req, url)) {
     event.respondWith(

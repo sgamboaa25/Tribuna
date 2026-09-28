@@ -70,7 +70,25 @@ const writeLimiter = rateLimit({
   limit: 60,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  // POST /api/notes/:id/view no es una escritura editorial sino un contador de
+  // lecturas que dispara el cliente al abrir cada nota. Si compartiera este
+  // cupo, un lector que recorre cinco notas agotaría el del panel de redacción
+  // y no podría guardar nada. Va con su propio limiter (viewLimiter).
+  skip: (req) => /^\/api\/notes\/[0-9a-f-]{36}\/view\/?$/i.test(req.originalUrl || ''),
   message: { error: 'Demasiadas peticiones de escritura. Intenta de nuevo.' }
+});
+
+// Registrar una lectura no es una escritura editorial: va por su propio
+// limiter para que saltar entre notas no consuma el cupo del panel de redacción.
+// El valor es alto a propósito, porque un lector que recorre cinco notas
+// seguidas dispara cinco peticiones, y lo que evita el inflado de verdad es el
+// deduplicado por IP de registerNoteView.
+const viewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas lecturas registradas. Intenta de nuevo.' }
 });
 
 const standingsLimiter = rateLimit({
@@ -101,6 +119,12 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
+// Solo el contador de lecturas, no todo lo que cuelgue de /api/notes: montado
+// sobre el prefijo entero, el mismo cupo de 120 leería/15 min lo consumirían las
+// peticiones GET del listado y de la búsqueda, que son las que hace el lector al
+// navegar, y el endpoint de vistas acabaría pidiendo 429 sin haber registrado
+// nada.
+app.use('/api/notes/:id/view', viewLimiter);
 app.use('/api/notes', writeLimiter);
 app.use('/api/standings', standingsLimiter);
 app.use('/api/fixtures', standingsLimiter);
@@ -1405,6 +1429,75 @@ app.get('/api/notes/tag/:tag', async (req, res) => {
   }
 });
 
+// Contador de lecturas de una nota. Lo llama el cliente una vez por apertura
+// de artículo; alimenta "Las notas más leídas" y el panel de redacción.
+//
+// Por qué pasa por el backend y no como una columna que sube el anon por RLS
+// (como las reacciones): un UPDATE directo se puede repetir en bucle desde la
+// consola del navegador, y un ranking en el que manda quien repita la llamada
+// sería cualquiera: "más leídas" dejaría de significar algo en cuanto alguien
+// quisiera inflar su nota. Aquí el límite lo ponen dos cosas del servidor: el
+// dedupe por IP+nota y un contador que solo avanza de uno en uno.
+//
+// El dedupe NO es perfecto: se pierde una lectura si el mismo lector abre la
+// misma nota desde la misma IP más de una vez dentro de la ventana. Se acepta
+// porque este contador no pretende precisión, sino tendencia.
+const VIEW_DEDUPE_WINDOW_MS = 30 * 60 * 1000;
+const VIEW_DEDUPE_MAX = 20000;
+const viewDedupe = new Map();
+
+// Poda las claves más antiguas para que el mapa no crezca sin límite en un
+// proceso de larga vida. Se ejecuta a mitad de ventana: una clave entra al
+// principio de su ventana y solo sobrevive una poda, así que nunca se pierde
+// una marca antes de que expire.
+function pruneViewDedupe() {
+  const cutoff = Date.now() - VIEW_DEDUPE_WINDOW_MS;
+  for (const [key, at] of viewDedupe) {
+    if (at < cutoff) viewDedupe.delete(key);
+  }
+  if (viewDedupe.size <= VIEW_DEDUPE_MAX) return;
+  const ordered = [...viewDedupe.entries()].sort((a, b) => a[1] - b[1]);
+  for (let i = 0; i < ordered.length - VIEW_DEDUPE_MAX; i++) {
+    viewDedupe.delete(ordered[i][0]);
+  }
+}
+setInterval(pruneViewDedupe, VIEW_DEDUPE_WINDOW_MS / 2).unref();
+
+app.post('/api/notes/:id/view', async (req, res) => {
+  const id = req.params.id;
+  if (!UUID_RE.test(id)) return res.status(400).json({ error: 'ID de nota no válido.' });
+
+  const dedupeKey = `${req.ip || 'unknown'}|${id}`;
+  const seenAt = viewDedupe.get(dedupeKey);
+  if (seenAt && Date.now() - seenAt < VIEW_DEDUPE_WINDOW_MS) {
+    return res.status(202).json({ counted: false });
+  }
+  viewDedupe.set(dedupeKey, Date.now());
+
+  try {
+    const { data: rows, error: readError } = await supabase
+      .from('notes')
+      .select('views')
+      .eq('id', id)
+      .eq('status', 'publicada')
+      .eq('archived', false)
+      .limit(1);
+    if (readError) throw readError;
+    if (!rows || rows.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+
+    // La lectura y la escritura no comparten transacción: dos peticiones
+    // simultáneas pueden leer el mismo valor y escribir el mismo +1. Preferimos
+    // esa pérdida a un contador inflado, y es la razón por la que el dedupe por
+    // IP importa más que la atomicidad.
+    const next = Math.max(0, Number(rows[0].views) || 0) + 1;
+    const { error: writeError } = await supabase.from('notes').update({ views: next }).eq('id', id);
+    if (writeError) throw writeError;
+    res.json({ counted: true, views: next });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET Autor Público
 app.get('/api/notes/author/:author', async (req, res) => {
   const authorParam = req.params.author.toLowerCase().replace(/-/g, ' ');
@@ -1510,7 +1603,7 @@ app.get('/api/stats', authenticateWriter, async (req, res) => {
       supabase.from('notes').select('id', { count: 'exact', head: true })
         .eq('status', 'publicada').eq('archived', false);
     const reactionsQuery = () =>
-      supabase.from('notes').select('id, title, reactions')
+      supabase.from('notes').select('id, title, reactions, views')
         .eq('status', 'publicada').eq('archived', false);
     const subsQuery = () =>
       supabase.from('subscribers').select('id', { count: 'exact', head: true }).eq('confirmed', true);
@@ -1529,11 +1622,24 @@ app.get('/api/stats', authenticateWriter, async (req, res) => {
       .sort((a, b) => b.total - a.total || a.titulo.localeCompare(b.titulo))
       .slice(0, 5);
 
+    // Lecturas: total acumulado y las notas más leídas. El mismo contador que
+    // ordena el bloque "Las notas más leídas" de la portada, para que lo que ve
+    // la redacción y lo que ve el lector no se contradigan.
+    const lecturas = (notes.data || [])
+      .map((n) => ({
+        id: n.id,
+        titulo: n.title,
+        vistas: Math.max(0, Number(n.views) || 0)
+      }))
+      .sort((a, b) => b.vistas - a.vistas || String(a.titulo).localeCompare(String(b.titulo)));
+
     res.json({
       notas_publicadas: total.count || 0,
       suscriptores: subs.count || 0,
       reacciones_totales: top.reduce((acc, n) => acc + n.total, 0),
-      top_reacciones: top
+      top_reacciones: top,
+      lecturas_totales: lecturas.reduce((acc, n) => acc + n.vistas, 0),
+      top_lecturas: lecturas.slice(0, 5)
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1733,6 +1839,100 @@ app.get('/api/newsletter/unsubscribe', async (req, res) => {
   }
 });
 
+// ============ Feed RSS ============
+// El <link rel="alternate"> de index.html apuntaba a una Edge Function
+// (feed-rss) que no vive en este repo: si alguien la borraba del panel de
+// Supabase, el enlace del <head> se quedaba apuntando al vacío. El feed se
+// genera aquí, junto al sitemap, y así la promesa del HTML es verificable.
+const RSS_FEED_LIMIT = 30;
+const RSS_ITEMS_CACHE_TTL_MS = 5 * 60 * 1000;
+let rssItemsCache = null;
+let rssItemsCacheAt = 0;
+
+// Escapa texto para un nodo XML. El body de la nota es HTML (viene ya
+// sanitizado al guardarse), así que se le quitan las etiquetas: en RSS lo que
+// se muestra es el texto, y escaparlo sin limpiar produciría &lt;p&gt; en el
+// lector.
+function rssText(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+async function loadRssItems() {
+  const now = Date.now();
+  if (rssItemsCache && now - rssItemsCacheAt < RSS_ITEMS_CACHE_TTL_MS) return rssItemsCache;
+  const { data, error } = await supabase
+    .from('notes')
+    .select('id, title, intro, body, author, sport, tags, image, created_at, last_edited_at')
+    .eq('status', 'publicada')
+    .eq('archived', false)
+    .order('created_at', { ascending: false })
+    .limit(RSS_FEED_LIMIT);
+  if (error) throw error;
+  rssItemsCache = data || [];
+  rssItemsCacheAt = now;
+  return rssItemsCache;
+}
+
+app.get('/rss.xml', async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  let notes = [];
+  try {
+    notes = await loadRssItems();
+  } catch {
+    // Un feed vacío publicable sería peor que un error: el agregador guardaría
+    // un canal sin notas y dejaría de reintentar. Se devuelve 503 para que
+    // espere y vuelva a preguntar.
+    return res.status(503).type('text/plain').send('Feed no disponible temporalmente.');
+  }
+
+  const buildDate = (iso) => {
+    const t = Date.parse(iso || '');
+    return Number.isFinite(t) ? new Date(t).toUTCString() : new Date().toUTCString();
+  };
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n`;
+  xml += `  <channel>\n`;
+  xml += `    <title>Tribuna</title>\n`;
+  xml += `    <link>${rssText(baseUrl)}/</link>\n`;
+  xml += `    <description>Periodismo deportivo independiente sin ruido.</description>\n`;
+  xml += `    <language>es-cr</language>\n`;
+  xml += `    <lastBuildDate>${buildDate(notes[0] && notes[0].created_at)}</lastBuildDate>\n`;
+  xml += `    <atom:link href="${rssText(baseUrl)}/rss.xml" rel="self" type="application/rss+xml" />\n`;
+
+  notes.forEach((note) => {
+    const url = `${baseUrl}/#note-${note.id}`;
+    xml += `    <item>\n`;
+    xml += `      <title>${rssText(note.title)}</title>\n`;
+    xml += `      <link>${rssText(url)}</link>\n`;
+    // El guid debe ser estable: los lectores lo usan para decidir qué es nuevo.
+    xml += `      <guid isPermaLink="false">tribuna-note-${note.id}</guid>\n`;
+    xml += `      <pubDate>${buildDate(note.created_at)}</pubDate>\n`;
+    if (note.author) xml += `      <author>${rssText(note.author)}</author>\n`;
+    if (note.sport) xml += `      <category>${rssText(note.sport)}</category>\n`;
+    if (note.image) xml += `      <enclosure url="${rssText(note.image)}" type="image/jpeg" length="0" />\n`;
+    const description = note.intro || note.body || '';
+    xml += `      <description>${rssText(description)}</description>\n`;
+    xml += `    </item>\n`;
+  });
+
+  xml += `  </channel>\n</rss>`;
+  res.type('application/rss+xml');
+  res.send(xml);
+});
+
+// Alias con extensión .xml en la raíz y ruta sin extensión, para que funcionen
+// tanto /rss.xml como /feed en clientes y validadores que esperan uno u otro.
+app.get('/feed', (req, res) => res.redirect(301, '/rss.xml'));
+
 // SEO
 app.get('/robots.txt', (req, res) => {
   const host = req.get('host');
@@ -1759,6 +1959,14 @@ app.get('/sitemap.xml', async (req, res) => {
 
     xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
     xml += `  <url>\n    <loc>${baseUrl}/curiosidades</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${baseUrl}/mercado</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${baseUrl}/videos</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
+    // /etiquetas es el índice de temas y enlaza a cada /tag/:slug. Las páginas de
+    // tema sueltas no se listan aquí porque sus slugs se derivan del texto libre
+    // del campo `tags` (que escribe la redacción sin formato fijo) y no de una
+    // tabla: replicar esa normalización en el servidor acabaría generando URLs
+    // que el cliente no reconoce, y el índice ya las enlaza todas.
+    xml += `  <url>\n    <loc>${baseUrl}/etiquetas</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
 
     if (notes && notes.length > 0) {
       notes.forEach((note) => {
@@ -2488,6 +2696,7 @@ module.exports.decoratePlayersWithTeams = decoratePlayersWithTeams;
 module.exports.decorateRumors = decorateRumors;
 module.exports.validateRumor = validateRumor;
 module.exports.rumorStaleness = rumorStaleness;
+module.exports.rssText = rssText;
 module.exports.validateReaderPhoto = validateReaderPhoto;
 module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;

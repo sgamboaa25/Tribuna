@@ -14,16 +14,25 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Tribuna" />
-  <link rel="alternate" type="application/rss+xml" title="TRIBUNA - Feed RSS" href="https://jmsjbbubhyszrbgqrfio.supabase.co/functions/v1/feed-rss" />
+  <link rel="alternate" type="application/rss+xml" title="TRIBUNA - Feed RSS" href="/rss.xml" />
   <meta name="description" content="TRIBUNA - Periodismo deportivo independiente sin ruido." id="metaDesc" />
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content="website" id="ogType" />
   <meta property="og:title" content="Tribuna | Periodismo deportivo" id="ogTitle" />
   <meta property="og:description" content="El deporte, sin ruido." id="ogDesc" />
   <meta property="og:image" content="https://tribuna-heos.onrender.com/public/tribuna-logo-wordmark.jpg" id="ogImage" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:image:alt" content="Tribuna — periodismo deportivo" id="ogImageAlt" />
+  <meta name="twitter:card" content="summary_large_image" id="twitterCard" />
+  <meta name="twitter:title" content="Tribuna | Periodismo deportivo" id="twitterTitle" />
+  <meta name="twitter:description" content="El deporte, sin ruido." id="twitterDesc" />
+  <meta name="twitter:image" content="https://tribuna-heos.onrender.com/public/tribuna-logo-wordmark.jpg" id="twitterImage" />
+  <meta name="twitter:image:alt" content="Tribuna — periodismo deportivo" id="twitterImageAlt" />
+  <meta property="article:published_time" id="articlePublished" />
+  <meta property="article:modified_time" id="articleModified" />
+  <meta property="article:section" id="articleSection" />
     <meta property="og:site_name" content="Tribuna" />
     <meta property="og:locale" content="es_CR" />
-    <meta property="og:url" content="https://tribuna-heos.onrender.com/" />
+    <meta property="og:url" content="https://tribuna-heos.onrender.com/" id="ogUrl" />
+  <link rel="canonical" href="https://tribuna-heos.onrender.com/" id="canonicalUrl" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -708,6 +717,58 @@
       .player-hub-photo { width:72px; height:72px; }
     }
 
+    /* ===== NUBE DE TEMAS · #tagCloud ===== */
+    /* Sin `display:none` aquí a propósito: la sección arranca oculta con el
+       style="display:none" del markup y el JS la muestra con
+       style.display = ''. Una regla de CSS con display:none ganaría a ese
+       estilo vacío (al borrarlo, manda el CSS) y la nube no se vería nunca. */
+    .tag-cloud { display:flex; flex-wrap:wrap; gap:8px; }
+    .tag-cloud-link { display:inline-flex; align-items:baseline; gap:6px; border:1px solid var(--line); background:var(--card-bg); color:var(--muted); padding:8px 14px; border-radius:20px; font-size:.85rem; font-weight:600; text-decoration:none; font-family:'Inter', sans-serif; min-height:44px; align-items:center; transition:all .2s; }
+    .tag-cloud-link span { font:700 .72rem 'Fraunces', serif; color:var(--accent-strong); }
+    .tag-cloud-link:hover { color:var(--accent-strong); border-color:var(--accent-strong); background:var(--hover-bg); }
+
+    /* ===== MERCADO · /mercado (rastreador de fichajes) ===== */
+    #mercadoHub { display:none; padding:0 0 72px; }
+    .mercado-header { margin:var(--space-lg) 0 var(--space-xl); padding-bottom:var(--space-lg); border-bottom:1px solid var(--line); }
+    .mercado-header h1 { font:700 clamp(1.8rem,5vw,2.8rem)/1.1 'Fraunces', serif; margin:0 0 8px; letter-spacing:-.02em; }
+    .mercado-header p { color:var(--muted); margin:0; max-width:560px; }
+    /* Los filtros son botones y no <a>: cambian el listado en el sitio sin
+       navegar. aria-pressed comunica el estado a lectores de pantalla. */
+    .mercado-filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:var(--space-lg); }
+    .mercado-filter { border:1px solid var(--line); background:var(--card-bg); color:var(--muted); padding:8px 16px; border-radius:20px; font:600 .85rem 'Inter', sans-serif; cursor:pointer; transition:all .2s; min-height:44px; }
+    .mercado-filter:hover { color:var(--accent-strong); border-color:var(--accent-strong); }
+    .mercado-filter[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); color:var(--paper); }
+    .mercado-list { display:grid; gap:0; border-top:1px solid var(--line); }
+    .mercado-row { display:grid; grid-template-columns:1fr auto; gap:var(--space-md); align-items:center; padding:18px 0; border-bottom:1px solid var(--line); }
+    .mercado-main { display:flex; align-items:center; gap:14px; min-width:0; }
+    .mercado-crest { width:34px; height:34px; object-fit:contain; flex:0 0 auto; }
+    .mercado-crest.is-empty { display:flex; align-items:center; justify-content:center; border:1px dashed var(--line); border-radius:var(--radius-sm); color:var(--muted); font-size:.7rem; }
+    .mercado-info { min-width:0; }
+    .mercado-player { font:700 1.05rem/1.25 'Fraunces', serif; color:var(--ink); text-decoration:none; display:inline-block; }
+    .mercado-player:hover { color:var(--accent-strong); }
+    .mercado-move { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:.85rem; color:var(--muted); flex-wrap:wrap; }
+    .mercado-move .club { display:inline-flex; align-items:center; gap:6px; }
+    .mercado-move .club img { width:20px; height:20px; object-fit:contain; }
+    .mercado-move .arrow { color:var(--muted); }
+    .mercado-detail { font-size:.9rem; color:var(--muted); margin:6px 0 0; }
+    .mercado-side { display:flex; align-items:center; gap:var(--space-md); flex-wrap:wrap; justify-content:flex-end; }
+    /* La veracidad se lee como una barra, no como un número suelto: comparar
+       "65%" con "80%" a ojo es peor que comparar dos barras del mismo ancho. */
+    .mercado-veracity { display:flex; align-items:center; gap:8px; }
+    .mercado-veracity-track { width:88px; height:6px; border-radius:999px; background:var(--line); overflow:hidden; }
+    .mercado-veracity-fill { display:block; height:100%; background:var(--accent-strong); }
+    .mercado-veracity-value { font:700 .8rem/1 'Fraunces', serif; color:var(--muted); min-width:34px; text-align:right; }
+    .mercado-source { font-size:.75rem; color:var(--muted); }
+    .mercado-age { font-size:.75rem; font-weight:600; color:var(--badge-revision-fg); }
+    .mercado-age-critical { color:var(--accent); }
+    .mercado-empty { padding:48px 0; text-align:center; }
+    .mercado-empty h3 { font:700 1.4rem/1.2 'Fraunces', serif; margin:0 0 var(--space-sm); }
+    .mercado-empty p { color:var(--muted); max-width:440px; margin:0 auto; }
+    @media (max-width:640px) {
+      .mercado-row { grid-template-columns:1fr; }
+      .mercado-side { justify-content:flex-start; }
+    }
+
     /* ===== QUIÉNES SOMOS / EL CREADOR ===== */
     #quienesSomos { padding-bottom:var(--space-xl); }
     #quienesSomos .category-header { margin-bottom:var(--space-xl); }
@@ -872,7 +933,7 @@
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, #goleadores, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, #mvpJornada, #curiosidadesSection, #fotosLectores, #playerHub, dialog, .to-top,
+      .theme-toggle, .category-header, #mvpJornada, #curiosidadesSection, #fotosLectores, #playerHub, #mercadoHub, dialog, .to-top,
       .ad-slot { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
@@ -916,6 +977,8 @@
         <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
         <a href="/videos" onclick="navigateTo(event, '/videos')">Videos</a>
         <a href="/curiosidades" onclick="navigateTo(event, '/curiosidades')">Curiosidades</a>
+        <a href="/mercado" onclick="navigateTo(event, '/mercado')">Mercado</a>
+        <a href="/etiquetas" onclick="navigateTo(event, '/etiquetas')">Temas</a>
       </div>
     </nav>
   </header>
@@ -931,6 +994,12 @@
     <section id="playerHub" aria-labelledby="playerHubTitle" style="display:none"></section>
 
     <section id="authorHub" aria-labelledby="authorHubTitle" style="display:none"></section>
+
+    <!-- ===== MERCADO (rastreador de fichajes) =====
+         Vista pública de transfer_rumors. Los datos ya venían servidos por
+         GET /api/rumors (público, con escudo de los clubes y slug del jugador);
+         lo que faltaba era la página que los pintara. -->
+    <section id="mercadoHub" aria-labelledby="mercadoHubTitle" style="display:none"></section>
 
     <!-- ===== QUIÉNES SOMOS · EL CREADOR ===== -->
     <section id="quienesSomos" aria-labelledby="quienesSomosTitle" style="display:none">
@@ -1211,6 +1280,17 @@
       <div id="curiosidadesList" class="grid"></div>
     </section>
 
+    <!-- ===== TEMAS /tag/:slug (nube de etiquetas) ===== -->
+    <section class="standings-section" id="tagsSection" style="display:none">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Temas</div>
+          <h2 class="section-title">Explora por tema</h2>
+        </div>
+      </div>
+      <div class="tag-cloud" id="tagCloud"></div>
+    </section>
+
     <!-- ===== FOTOS DE LECTORES (galería moderada) ===== -->
     <!-- Los lectores envían su foto desde aquí; la redacción la modera en el
          panel antes de que aparezca en esta galería. -->
@@ -1307,9 +1387,14 @@
           <div class="stat-card"><span class="stat-number" id="statNotasPub">—</span><span class="stat-label">Notas publicadas</span></div>
           <div class="stat-card"><span class="stat-number" id="statSuscriptores">—</span><span class="stat-label">Suscriptores del boletín</span></div>
           <div class="stat-card"><span class="stat-number" id="statReacciones">—</span><span class="stat-label">Reacciones (publicadas)</span></div>
+          <div class="stat-card"><span class="stat-number" id="statLecturas">—</span><span class="stat-label">Lecturas (publicadas)</span></div>
         </div>
         <p class="stats-sub">Notas con más reacciones</p>
         <div class="stats-top" id="statsTopList">
+          <div class="draft-item"><div><small>Cargando estadísticas…</small></div></div>
+        </div>
+        <p class="stats-sub">Notas más leídas</p>
+        <div class="stats-top" id="statsReadsList">
           <div class="draft-item"><div><small>Cargando estadísticas…</small></div></div>
         </div>
       </div>
@@ -1893,6 +1978,29 @@
     function normalizeStr(str) {
       if (!str) return '';
       return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    }
+
+    // Etiquetas de una nota: el campo `tags` es texto libre separado por comas
+    // (a veces también por punto y coma o saltos de línea, según quién lo
+    // escribió). Se normaliza a slugs comparables para /tag/:slug.
+    function noteTagList(note) {
+      return String((note && note.tags) || '')
+        .split(/[,;\n]+/)
+        .map(t => t.trim())
+        .filter(Boolean);
+    }
+
+    function tagSlug(tag) {
+      return normalizeStr(tag).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    // Las etiquetas de la redacción (curiosidades, mvp, breaking) son palabras
+    // clave internas, no temas de navegación. Excluirlas evita que /tag/mvp
+    // aparezca como una página de notas sin sentido para el lector.
+    const INTERNAL_TAGS = new Set(['curiosidades', 'mvp', 'breaking', 'ultima-hora']);
+
+    function noteHasTag(note, slug) {
+      return noteTagList(note).some(t => tagSlug(t) === slug);
     }
 
     function matchesSportCategory(sport, categoryLabel) {
@@ -2615,6 +2723,111 @@
       };
     }
 
+    // ===== SECCIÓN · SEO: Open Graph, Twitter Cards y datos estructurados =====
+    // Los <meta> de la cabecera son los mismos para toda la SPA, así que cada
+    // vista (portada, hubs, artículo) reescribe su contenido con setPageMeta.
+    // Sin esto, un enlace a una nota en X se comparte siempre con el título y la
+    // imagen de la portada.
+    const DEFAULT_SEO_IMAGE = 'https://tribuna-heos.onrender.com/public/tribuna-logo-wordmark.jpg';
+
+    function setMetaContent(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('content', value);
+    }
+
+    // description: las tarjetas de X recortan pasado ~200 caracteres, y un
+    // texto más largo ahí se corta a media palabra. Se limita a 200 sin
+    // partir por espacios ni cortar palabras por la mitad.
+    function seoDescription(text) {
+      const clean = String(text || '').replace(/\s+/g, ' ').trim();
+      if (clean.length <= 200) return clean;
+      const cut = clean.slice(0, 200);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 120 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '') + '…';
+    }
+
+    function setPageMeta(opts) {
+      const o = opts || {};
+      const title = o.title || 'Tribuna | Periodismo deportivo';
+      const description = o.description || 'TRIBUNA — Periodismo deportivo independiente sin ruido.';
+      const image = o.image || DEFAULT_SEO_IMAGE;
+      const url = o.url || window.location.origin + window.location.pathname;
+
+      document.title = title;
+      setMetaContent('metaDesc', seoDescription(description));
+      setMetaContent('ogType', o.type || 'website');
+      setMetaContent('ogTitle', title);
+      setMetaContent('ogDesc', seoDescription(description));
+      setMetaContent('ogImage', image);
+      setMetaContent('ogImageAlt', o.imageAlt || title);
+      setMetaContent('ogUrl', url);
+      setMetaContent('twitterCard', o.card || 'summary_large_image');
+      setMetaContent('twitterTitle', title);
+      setMetaContent('twitterDesc', seoDescription(description));
+      setMetaContent('twitterImage', image);
+      setMetaContent('twitterImageAlt', o.imageAlt || title);
+      const canonical = document.getElementById('canonicalUrl');
+      if (canonical) canonical.setAttribute('href', url);
+
+      // article:* solo aplican a notas. En cualquier otra vista se vacían para
+      // que un rastreador no herede la fecha de la nota abierta antes.
+      setMetaContent('articlePublished', o.published || '');
+      setMetaContent('articleModified', o.modified || '');
+      setMetaContent('articleSection', o.section || '');
+
+      setStructuredData(o.schema || null);
+    }
+
+    // El JSON-LD se inyecta como textContent: nunca por innerHTML, para no
+    // interpretar como HTML el texto que viene de la base de datos.
+    function setStructuredData(data) {
+      const el = document.getElementById('schemaScript');
+      if (!el) return;
+      el.textContent = data ? JSON.stringify(data) : '{}';
+    }
+
+    function articleSchema(note) {
+      if (!note) return null;
+      const url = `${window.location.origin}/#note-${note.id}`;
+      const image = note.image || DEFAULT_SEO_IMAGE;
+      const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: seoDescription(note.title),
+        description: seoDescription(note.intro || note.body),
+        image: [image],
+        datePublished: note.created_at || undefined,
+        dateModified: note.last_edited_at || note.created_at || undefined,
+        inLanguage: 'es-CR',
+        url,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+        author: { '@type': note.author ? 'Person' : 'Organization', name: note.author || 'Redacción Tribuna' },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Tribuna',
+          logo: { '@type': 'ImageObject', url: DEFAULT_SEO_IMAGE }
+        }
+      };
+      if (note.sport) schema.articleSection = note.sport;
+      if (note.tags) schema.keywords = String(note.tags).split(/[,;\n]+/).map(t => t.trim()).filter(Boolean).join(', ');
+      return schema;
+    }
+
+    // Registra una lectura. Se dispara al abrir la nota, no al pintar la
+    // tarjeta: el endpoint deduplica por IP y por nota, así que recargar no
+    // suma. Es best-effort: un fallo de red no debe interrumpir la lectura.
+    function registerNoteView(id) {
+      if (!id) return;
+      try {
+        navigator.sendBeacon && navigator.sendBeacon(`/api/notes/${id}/view`);
+        if (!navigator.sendBeacon) {
+          fetch(`/api/notes/${id}/view`, { method: 'POST', keepalive: true }).catch(() => {});
+        }
+      } catch (err) {
+        /* el contador nunca bloquea la lectura */
+      }
+    }
+
     const noteDate = (iso) => iso
       ? `<time datetime="${iso}" title="${formatFullDate(iso)}">${timeAgo(iso)}</time>`
       : '';
@@ -2776,6 +2989,24 @@
           detailTeams.innerHTML = noteTeams.map(teamChipHTML).join('');
           detailTeams.style.display = noteTeams.length ? 'flex' : 'none';
         }
+
+        // Cada nota tiene su propia URL canónica con el ancla #note-<id>. Se
+        // construye siempre desde la raíz y no desde location.pathname: una
+        // nota abierta dentro de /categoria/futbol comparten esa ruta y Google
+        // la indexaría como duplicado de la canónica de la portada.
+        setPageMeta({
+          title: `${title} · Tribuna`,
+          description: intro || seoDescription(body),
+          image: image || DEFAULT_SEO_IMAGE,
+          imageAlt: title,
+          url: `${window.location.origin}/#note-${note.id}`,
+          type: 'article',
+          published: note.created_at || '',
+          modified: note.last_edited_at || '',
+          section: sport,
+          schema: articleSchema(note)
+        });
+        registerNoteView(note.id);
 
         document.querySelector('#detailBody').innerHTML = injectArticleAd(DOMPurify.sanitize(body));
 
@@ -3163,6 +3394,41 @@
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0] || null;
     }
 
+    // Nube de etiquetas de la portada. Se cuenta cuántas notas publicadas
+    // llevan cada tema y se enlaza a /tag/:slug, que el servidor no necesita
+    // consultar: el listado se filtra en el cliente sobre allPublicNotes, que ya
+    // está en memoria.
+    function renderTagCloud() {
+      const section = document.getElementById('tagsSection');
+      const listEl = document.getElementById('tagCloud');
+      if (!section || !listEl) return;
+      if (window.location.pathname.startsWith('/tag/')) {
+        section.style.display = 'none';
+        return;
+      }
+      const counts = new Map();
+      (allPublicNotes || []).forEach(n => {
+        const seen = new Set();
+        noteTagList(n).forEach(tag => {
+          const slug = tagSlug(tag);
+          if (!slug || INTERNAL_TAGS.has(slug) || seen.has(slug)) return;
+          seen.add(slug);
+          counts.set(slug, { slug, label: tag.trim(), total: (counts.get(slug)?.total || 0) + 1 });
+        });
+      });
+      const tags = [...counts.values()].sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
+      if (!tags.length) {
+        section.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+      }
+      section.style.display = '';
+      listEl.innerHTML = tags
+        .slice(0, 24)
+        .map(t => `<a class="tag-cloud-link" href="/tag/${t.slug}" onclick="navigateTo(event, '/tag/${t.slug}')">${escapeHtml(t.label)} <span aria-hidden="true">${t.total}</span></a>`)
+        .join('');
+    }
+
     function renderMvpSection() {
       const section = document.getElementById('mvpJornada');
       const listEl = document.getElementById('mvpList');
@@ -3470,11 +3736,19 @@
         </div>`;
       }
 
+      // "Más leídas" se ordena por el contador `views` que lleva el backend
+      // (POST /api/notes/:id/view, deduplicado por IP). Antes era simplemente
+      // el orden de publicación, que no decía nada sobre qué se lee.
       const mostReadSection = document.getElementById('mostReadSection');
+      const mostRead = allPublicNotes
+        .slice()
+        .sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0))
+        .slice(0, 3);
       mostReadSection.style.display = allPublicNotes.length ? '' : 'none';
       ranking.innerHTML = '';
-      allPublicNotes.slice(0, 3).forEach((n, id) => {
-        ranking.innerHTML += `<article class="rank-item reveal" style="transition-delay:${Math.min(id, 5) * 40}ms"><div class="rank-number">0${id + 1}</div><div><a class="open-ranking" href="#lectura" data-id="${n.id}">${n.title}</a><span class="reads">Tendencia</span></div></article>`;
+      mostRead.forEach((n, id) => {
+        const views = Number(n.views) || 0;
+        ranking.innerHTML += `<article class="rank-item reveal" style="transition-delay:${Math.min(id, 5) * 40}ms"><div class="rank-number">0${id + 1}</div><div><a class="open-ranking" href="#lectura" data-id="${n.id}">${n.title}</a><span class="reads">${views ? views + ' lectura' + (views === 1 ? '' : 's') : 'Sin lecturas aún'}</span></div></article>`;
       });
 
       renderTrending();
@@ -3493,6 +3767,8 @@
       renderMvpSection();
 
       renderCuriosidades();
+
+      renderTagCloud();
 
       updateBookmarkUI();
       revealOnScroll();
@@ -3620,6 +3896,7 @@
     const teamHubSection = document.getElementById('teamHub');
     const playerHubSection = document.getElementById('playerHub');
     const authorHubSection = document.getElementById('authorHub');
+    const mercadoHubSection = document.getElementById('mercadoHub');
 
     function normalizeTeamWord(s) {
       return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -3726,7 +4003,7 @@
     }
 
     function setTeamVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3736,7 +4013,7 @@
     }
 
     function setPlayerVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3802,9 +4079,19 @@
       detail.style.display = 'none';
       set404Visible(false);
       setTeamVisible(true);
-      document.title = `${team.nombre} · Tribuna`;
-      const metaDesc = document.getElementById('metaDesc');
-      if (metaDesc) metaDesc.setAttribute('content', `Noticias de ${team.nombre}, Liga Promérica.`);
+      setPageMeta({
+        title: `${team.nombre} · Tribuna`,
+        description: `Noticias de ${team.nombre}, Liga Promérica.`,
+        image: team.escudo || DEFAULT_SEO_IMAGE,
+        imageAlt: `Escudo de ${team.nombre}`,
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: `${team.nombre} · Tribuna`,
+          description: `Noticias de ${team.nombre}, Liga Promérica.`,
+          url: `${window.location.origin}/equipo/${team.slug}`
+        }
+      });
 
       teamHubSection.querySelectorAll('.open-article').forEach(link => {
         link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
@@ -3890,9 +4177,25 @@
       detail.style.display = 'none';
       set404Visible(false);
       setPlayerVisible(true);
-      document.title = `${player.nombre} · Tribuna`;
-      const metaDesc = document.getElementById('metaDesc');
-      if (metaDesc) metaDesc.setAttribute('content', `Ficha de ${player.nombre}${team ? ', ' + team.nombre : ''}, Liga Promérica.`);
+      setPageMeta({
+        title: `${player.nombre} · Tribuna`,
+        description: `Ficha de ${player.nombre}${team ? ', ' + team.nombre : ''}, Liga Promérica.`,
+        image: player.foto || (team ? team.escudo : '') || DEFAULT_SEO_IMAGE,
+        imageAlt: player.foto ? player.nombre : `Escudo de ${team ? team.nombre : 'Liga Promérica'}`,
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'ProfilePage',
+          name: `${player.nombre} · Tribuna`,
+          description: `Ficha de ${player.nombre}${team ? ', ' + team.nombre : ''}, Liga Promérica.`,
+          url: `${window.location.origin}/jugador/${player.slug}`,
+          mainEntity: {
+            '@type': 'Person',
+            name: player.nombre,
+            ...(player.posicion ? { jobTitle: player.posicion } : {}),
+            ...(player.foto ? { image: player.foto } : {})
+          }
+        }
+      });
 
       playerHubSection.querySelectorAll('.open-article').forEach(link => {
         link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
@@ -3955,9 +4258,327 @@
     const notFoundSection = document.getElementById('notFound404');
     const KNOWN_CATEGORIES = ['futbol', 'baloncesto', 'atletismo', 'otros deportes'];
 
+    // ===== SECCIÓN · MERCADO /mercado (vista pública de los rumores) =====
+    // Etiquetas de los estados de rumor, en el mismo orden que RUMOR_STATES en
+    // el servidor. Va declarada aquí y no junto al panel porque el mercado
+    // público también la usa, y las constantes de un mismo script se evalúan
+    // de arriba abajo: si la dejara más abajo, MERCADO_FILTERS la encontraría
+    // sin inicializar y reventaría la carga con ReferenceError.
+    const RUMOR_STATE_LABEL = {
+      rumor: 'Rumor',
+      avanzado: 'Negociación avanzada',
+      confirmado: 'Confirmado',
+      descartado: 'Descartado'
+    };
+
+    // Los datos salen de GET /api/rumors, que el servidor ya servía público
+    // (solo los rumores activos, con escudo de los clubes y el slug del jugador
+    // resuelto para enlazar a /jugador/:slug). El % de veracidad lo pone la
+    // redacción, no es una probabilidad calculada: se muestra como "lo que
+    // dice la redacción", no como un dato.
+    const MERCADO_FILTERS = [
+      { key: 'todos', label: 'Todos' },
+      { key: 'rumor', label: RUMOR_STATE_LABEL.rumor },
+      { key: 'avanzado', label: RUMOR_STATE_LABEL.avanzado },
+      { key: 'confirmado', label: RUMOR_STATE_LABEL.confirmado },
+      { key: 'descartado', label: RUMOR_STATE_LABEL.descartado }
+    ];
+    let mercadoRumors = null;
+    let mercadoFilter = 'todos';
+
+    async function loadMercadoRumors() {
+      if (mercadoRumors) return mercadoRumors;
+      const response = await fetch('/api/rumors');
+      if (!response.ok) throw new Error('No se pudo cargar el mercado.');
+      mercadoRumors = await response.json();
+      return mercadoRumors;
+    }
+
+    function mercadoClubHTML(club, fallback) {
+      const nombre = club && club.nombre ? club.nombre : fallback;
+      const escudo = club && club.escudo ? club.escudo : '';
+      const slug = club && club.slug ? club.slug : '';
+      const img = escudo
+        ? `<img src="${escapeHtml(escudo)}" alt="" loading="lazy" onerror="this.style.display='none'" />`
+        : '';
+      const label = escapeHtml(nombre || '¿?');
+      // Sin escudo ni slug no hay nada que enlazar, así que el nombre va como
+      // texto plano en vez de como un <a> que no lleva a ninguna parte.
+      return slug
+        ? `<a class="club" href="/equipo/${encodeURIComponent(slug)}" onclick="navigateTo(event, '/equipo/${encodeURIComponent(slug)}')">${img}<span>${label}</span></a>`
+        : `<span class="club">${img}<span>${label}</span></span>`;
+    }
+
+    function mercadoRowHTML(rumor) {
+      const nombre = escapeHtml(rumor.jugador || 'Sin nombre');
+      const veracidad = Math.max(0, Math.min(100, Number(rumor.veracidad) || 0));
+      // El estado se usa en un atributo class, así que se recorta a las cuatro
+      // claves conocidas en vez de interpolar lo que venga: un estado raro con
+      // comillas rompería el class y dejaría HTML suelto en la página.
+      const estado = RUMOR_STATE_LABEL[rumor.estado] ? rumor.estado : 'rumor';
+      const nivel = rumor.desactualizado || 0;
+      const playerHref = rumor.jugador_slug ? `/jugador/${encodeURIComponent(rumor.jugador_slug)}` : '';
+
+      // El aviso de antigüedad solo aparece en los estados abiertos, por el
+      // mismo motivo que en el panel: un rumor ya confirmado o descartado no
+      // gana nada con que le recordemos cuánto lleva publicado.
+      const ageHtml = nivel > 0 && rumor.updated_at
+        ? `<span class="mercado-age${nivel === 2 ? ' mercado-age-critical' : ''}">Sin revisar ${escapeHtml(timeAgo(rumor.updated_at))}</span>`
+        : '';
+
+      return `<div class="mercado-row reveal">
+        <div class="mercado-main">
+          ${mercadoCrestHTML(rumor)}
+          <div class="mercado-info">
+            ${playerHref
+              ? `<a class="mercado-player" href="${playerHref}" onclick="navigateTo(event, '${playerHref}')">${nombre}</a>`
+              : `<span class="mercado-player">${nombre}</span>`}
+            <div class="mercado-move">
+              ${mercadoClubHTML(rumor.origen, '¿?')}
+              <span class="arrow" aria-hidden="true">→</span>
+              ${mercadoClubHTML(rumor.destino, 'Destino desconocido')}
+            </div>
+            ${rumor.detalle ? `<p class="mercado-detail">${escapeHtml(rumor.detalle)}</p>` : ''}
+          </div>
+        </div>
+        <div class="mercado-side">
+          <span class="status-badge status-${estado}">${escapeHtml(RUMOR_STATE_LABEL[estado])}</span>
+          <span class="mercado-veracity" title="Veracidad estimada por la redacción">
+            <span class="mercado-veracity-track" aria-hidden="true"><i class="mercado-veracity-fill" style="width:${veracidad}%"></i></span>
+            <span class="mercado-veracity-value">${veracidad}%</span>
+          </span>
+          ${rumor.fuente ? `<span class="mercado-source">Fuente: ${escapeHtml(rumor.fuente)}</span>` : ''}
+          ${ageHtml}
+        </div>
+      </div>`;
+    }
+
+    // Escudo del club de origen, o un hueco marcado si el catálogo no lo tiene.
+    function mercadoCrestHTML(rumor) {
+      const escudo = rumor.origen && rumor.origen.escudo ? rumor.origen.escudo : '';
+      return escudo
+        ? `<img class="mercado-crest" src="${escapeHtml(escudo)}" alt="" loading="lazy" onerror="this.style.display='none'" />`
+        : '<span class="mercado-crest is-empty" aria-hidden="true">—</span>';
+    }
+
+    function renderMercadoList() {
+      const listEl = document.getElementById('mercadoList');
+      if (!listEl) return;
+      const rumors = (mercadoRumors || []).filter(r => mercadoFilter === 'todos' || (r.estado || 'rumor') === mercadoFilter);
+      if (!rumors.length) {
+        listEl.innerHTML = `<div class="mercado-empty">
+          <h3>${mercadoFilter === 'todos' ? 'Sin rumores activos' : 'Nada en este estado'}</h3>
+          <p>${mercadoFilter === 'todos'
+            ? 'La redacción todavía no ha publicado movimientos en el rastreador.'
+            : 'No hay rumores en este estado ahora mismo.'}</p>
+        </div>`;
+        return;
+      }
+      listEl.innerHTML = rumors.map(mercadoRowHTML).join('');
+      revealOnScroll();
+    }
+
+    async function renderMercadoPage() {
+      if (!mercadoHubSection) {
+        detail.style.display = 'none';
+        set404Visible(true);
+        return;
+      }
+      detail.style.display = 'none';
+      set404Visible(false);
+      setMercadoVisible(true);
+      document.title = 'Mercado · Tribuna';
+
+      mercadoHubSection.innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">Mercado</span>
+        </nav>
+        <header class="mercado-header">
+          <span class="tag">Liga Promérica</span>
+          <h1 id="mercadoHubTitle">Mercado</h1>
+          <p>El rastreador de fichajes que mantiene la redacción. Cada rumor lleva su estado y el porcentaje de veracidad que le asigna la redacción: no es una probabilidad calculada, es un criterio editorial.</p>
+        </header>
+        <div class="mercado-filters" role="group" aria-label="Filtrar rumores por estado">
+          ${MERCADO_FILTERS.map(f => `<button type="button" class="mercado-filter" data-filter="${f.key}" aria-pressed="${String(f.key === mercadoFilter)}">${escapeHtml(f.label)}</button>`).join('')}
+        </div>
+        <div class="mercado-list" id="mercadoList"></div>`;
+
+      mercadoHubSection.querySelectorAll('.mercado-filter').forEach(btn => {
+        btn.onclick = () => {
+          mercadoFilter = btn.dataset.filter;
+          mercadoHubSection.querySelectorAll('.mercado-filter').forEach(other => {
+            other.setAttribute('aria-pressed', String(other.dataset.filter === mercadoFilter));
+          });
+          renderMercadoList();
+        };
+      });
+
+      setPageMeta({
+        title: 'Mercado · Tribuna',
+        description: 'Rastreador de fichajes de la Liga Promérica: rumores, su estado y la veracidad que les asigna la redacción.',
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Mercado · Tribuna',
+          description: 'Rastreador de fichajes de la Liga Promérica.',
+          url: `${window.location.origin}/mercado`
+        }
+      });
+
+      try {
+        await loadMercadoRumors();
+      } catch (err) {
+        console.error('Error al cargar el mercado:', err);
+        mercadoRumors = [];
+      }
+      renderMercadoList();
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    // Índice completo de temas. La nube de la portada se queda con los 24 más
+    // frecuentes; esta página los lista todos, para que ninguna etiqueta quede
+    // inalcanzable por ser la trigésima en el ranking.
+    function renderTagIndexPage() {
+      const counts = new Map();
+      (allPublicNotes || []).forEach(n => {
+        const seen = new Set();
+        noteTagList(n).forEach(tag => {
+          const slug = tagSlug(tag);
+          if (!slug || INTERNAL_TAGS.has(slug) || seen.has(slug)) return;
+          seen.add(slug);
+          counts.set(slug, { slug, label: tag.trim(), total: (counts.get(slug)?.total || 0) + 1 });
+        });
+      });
+      const tags = [...counts.values()].sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
+
+      currentDisplayNotes = [];
+      currentActiveCategory = '';
+      detail.style.display = 'none';
+      set404Visible(false);
+      setTeamVisible(false);
+
+      document.getElementById('categoryHeaderContainer').innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">Temas</span>
+        </nav>
+        <div class="category-header">
+          <div class="tag">Temas</div>
+          <h1>Todos los temas</h1>
+          <p>${tags.length} tema${tags.length === 1 ? '' : 's'} cubierto${tags.length === 1 ? '' : 's'} por la redacción.</p>
+        </div>`;
+
+      setPageMeta({
+        title: 'Temas · Tribuna',
+        description: 'Todos los temas que cubre Tribuna, del fútbol centroamericano al mercado de fichajes.',
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Temas · Tribuna',
+          url: `${window.location.origin}/etiquetas`
+        }
+      });
+
+      renderPublicCards();
+      if (tags.length) {
+        document.getElementById('loadMoreContainer').style.display = 'none';
+        const section = document.getElementById('tagsSection');
+        const cloud = document.getElementById('tagCloud');
+        if (section && cloud) {
+          section.style.display = '';
+          cloud.innerHTML = tags
+            .map(t => `<a class="tag-cloud-link" href="/tag/${t.slug}" onclick="navigateTo(event, '/tag/${t.slug}')">${escapeHtml(t.label)} <span aria-hidden="true">${t.total}</span></a>`)
+            .join('');
+        }
+      }
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    // ===== SECCIÓN · /tag/:slug (listado por tema) =====
+    // El backend expone GET /api/notes/tag/:tag, pero el cliente ya tiene
+    // todas las notas publicadas en memoria (allPublicNotes), así que filtrar
+    // aquí evita un fetch extra y un round-trip en cada clic de la nube.
+    // La comparación es por slug exacto, no por substring: "includes" haría que
+    // /tag/muni apareciera con las notas de Municipal y con las de cualquier
+    // otra etiqueta que empiece por esas cuatro letras.
+    function renderTagPage(slug) {
+      const notes = (allPublicNotes || [])
+        .filter(n => noteHasTag(n, slug))
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+
+      if (!notes.length) {
+        detail.style.display = 'none';
+        set404Visible(true);
+        return;
+      }
+
+      // La etiqueta se muestra como la escribió la redacción, no como el slug
+      // de la URL: "Municipal" se lee mejor que "municipal" y "Puntarenas FC"
+      // que "puntarenas-fc".
+      const label = (notes[0] ? noteTagList(notes[0]).find(t => tagSlug(t) === slug) : null) || slug;
+
+      const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
+        <a class="article-link open-article" href="#lectura" data-id="${idx}">
+          ${mediaBlockHTML(n)}
+          <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
+          <h2>${escapeHtml(n.title)}</h2>
+          <p>${escapeHtml(n.intro || '')}</p>
+          <span class="meta-date">${noteDate(n.created_at)}</span>
+          ${teamChipsRowHTML(noteTeamSlugs(n))}
+        </a>
+        ${bookmarkBtn(n)}
+      </article>`;
+
+      currentDisplayNotes = notes;
+      currentActiveCategory = '';
+      detail.style.display = 'none';
+      set404Visible(false);
+      setTeamVisible(false);
+
+      document.getElementById('categoryHeaderContainer').innerHTML = `
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">${escapeHtml(label)}</span>
+        </nav>
+        <div class="category-header">
+          <div class="tag">Tema</div>
+          <h1>${escapeHtml(label)}</h1>
+          <p>${notes.length} nota${notes.length === 1 ? '' : 's'} publicada${notes.length === 1 ? '' : 's'} con esta etiqueta.</p>
+        </div>`;
+
+      setPageMeta({
+        title: `${label} · Tribuna`,
+        description: `Notas de Tribuna sobre ${label}: lo último de este tema en el fútbol centroamericano.`,
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: `${label} · Tribuna`,
+          url: `${window.location.origin}/tag/${slug}`,
+          mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: notes.length,
+            itemListElement: notes.slice(0, 20).map((n, i) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              url: `${window.location.origin}/#note-${n.id}`,
+              name: n.title || 'Sin titular'
+            }))
+          }
+        }
+      });
+
+      renderPublicCards();
+      document.getElementById('loadMoreContainer').style.display = 'none';
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3998,10 +4619,17 @@
       setQuienesSomos(false);
       updateCreatorInitials();
 
+      // Reset de metadatos al empezar cada ruta. Los <meta> de la cabecera son
+      // únicos para toda la SPA, así que sin esto, al navegar desde una nota a
+      // la portada (o al 404) se quedarían el título, la imagen y el JSON-LD de
+      // la nota anterior. Las vistas con datos propios sobrescriben esto después.
+      setPageMeta({ title: 'Tribuna | Periodismo deportivo' });
+
       let isNotFound;
       let teamSlug = null;
       let playerSlug = null;
       let authorSlug = null;
+      let tagSlugParam = null;
       if (path === '/' || path === '/index.html') {
         isNotFound = false;
         document.title = 'Tribuna | Periodismo deportivo';
@@ -4025,6 +4653,14 @@
         isNotFound = false;
       } else if (path === '/videos') {
         isNotFound = false;
+      } else if (path === '/mercado') {
+        isNotFound = false;
+      } else if (path === '/etiquetas') {
+        isNotFound = false;
+      } else if (path.startsWith('/tag/')) {
+        const tagMatch = path.match(/^\/tag\/([a-z0-9-]+)\/?$/i);
+        isNotFound = !tagMatch;
+        if (tagMatch) tagSlugParam = tagMatch[1];
       } else if (path === '/quienes-somos') {
         isNotFound = false;
       } else {
@@ -4035,6 +4671,13 @@
         detail.style.display = 'none';
         setTeamVisible(false);
         set404Visible(true);
+        setPageMeta({
+          title: 'Página no encontrada · Tribuna',
+          description: 'La página que buscas no existe o cambió de dirección.',
+          // Un 404 con el título de la nota anterior hace que al volver atrás
+          // desde un enlace compartido se anuncie como si fuera esa nota.
+          schema: null
+        });
         return;
       }
 
@@ -4056,14 +4699,37 @@
         return;
       }
 
+      if (path === '/mercado') {
+        await renderMercadoPage();
+        return;
+      }
+
+      if (tagSlugParam) {
+        renderTagPage(tagSlugParam);
+        return;
+      }
+
+      if (path === '/etiquetas') {
+        renderTagIndexPage();
+        return;
+      }
+
       if (path === '/quienes-somos') {
         detail.style.display = 'none';
         set404Visible(true);
         notFoundSection.style.display = 'none';
         setQuienesSomos(true);
-        document.title = 'Quiénes somos · Tribuna';
-        const metaDesc = document.getElementById('metaDesc');
-        if (metaDesc) metaDesc.setAttribute('content', 'Quiénes somos — la gente detrás de Tribuna, periodismo deportivo independiente.');
+        setPageMeta({
+          title: 'Quiénes somos · Tribuna',
+          description: 'Quiénes somos — la gente detrás de Tribuna, periodismo deportivo independiente.',
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'AboutPage',
+            name: 'Quiénes somos · Tribuna',
+            description: 'La gente detrás de Tribuna, periodismo deportivo independiente.',
+            url: `${window.location.origin}/quienes-somos`
+          }
+        });
         if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
         return;
       }
@@ -4098,6 +4764,17 @@
           <div class="category-header"><h1>${targetCategory}</h1></div>`;
         
         currentActiveCategory = targetCategory;
+        setPageMeta({
+          title: `${targetCategory} · Tribuna`,
+          description: `Las últimas noticias de ${targetCategory.toLowerCase()} en Tribuna, periodismo deportivo independiente.`,
+          url: `${window.location.origin}/categoria/${encodeURIComponent(sportParam)}`,
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: `${targetCategory} · Tribuna`,
+            url: `${window.location.origin}/categoria/${encodeURIComponent(sportParam)}`
+          }
+        });
         currentDisplayNotes = await fetchNotesPage(true, targetCategory);
       } else if (path === '/curiosidades') {
         categoryHeader.innerHTML = `
@@ -4110,6 +4787,17 @@
             <p>Memorias y torneos del pasado: historias que no caducan, contadas sin ruido.</p>
           </div>`;
         currentActiveCategory = 'Curiosidades';
+        setPageMeta({
+          title: 'Curiosidades · Tribuna',
+          description: 'Memorias, torneos del pasado e historias de fútbol que no caducan.',
+          url: `${window.location.origin}/curiosidades`,
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: 'Curiosidades · Tribuna',
+            url: `${window.location.origin}/curiosidades`
+          }
+        });
         currentDisplayNotes = getCuriosityNotes();
       } else if (path === '/videos') {
         videosMode = true;
@@ -4121,6 +4809,17 @@
           </nav>
           <div class="category-header"><h1>Videos</h1></div>`;
         currentActiveCategory = 'Videos';
+        setPageMeta({
+          title: 'Videos · Tribuna',
+          description: 'Los videos de Tribuna: jugadas, interviews y reportajes del fútbol centroamericano.',
+          url: `${window.location.origin}/videos`,
+          schema: {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: 'Videos · Tribuna',
+            url: `${window.location.origin}/videos`
+          }
+        });
         currentDisplayNotes = (allPublicNotes || []).filter(n => !!n.video_url);
       } else {
         currentActiveCategory = '';
@@ -4302,15 +5001,6 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     const rumorMessageEl = document.getElementById('rumorMessage');
     const rumorVeracityInput = document.getElementById('rumorVeracity');
     const rumorVeracityLabel = document.getElementById('rumorVeracityLabel');
-    // Etiquetas de los estados de rumor, en el mismo orden que RUMOR_STATES en
-    // el servidor. Antes se usaba esta constante sin haberla definido, y eso
-    // reventaba renderRumorManager con ReferenceError en el primer rumor.
-    const RUMOR_STATE_LABEL = {
-      rumor: 'Rumor',
-      avanzado: 'Negociación avanzada',
-      confirmado: 'Confirmado',
-      descartado: 'Descartado'
-    };
 
     function setRumorForm(rumor) {
       editingRumorId = rumor ? rumor.id : null;
@@ -4976,12 +5666,21 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     }
 
     function setAuthorVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
       document.getElementById('breakingContainer').style.display = show ? 'none' : '';
       if (authorHubSection) authorHubSection.style.display = show ? 'block' : 'none';
+    }
+
+    function setMercadoVisible(show) {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'none' : '';
+      });
+      document.getElementById('breakingContainer').style.display = show ? 'none' : '';
+      if (mercadoHubSection) mercadoHubSection.style.display = show ? 'block' : 'none';
     }
 
     function renderAuthorPage(slug) {
@@ -5036,9 +5735,24 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
       detail.style.display = 'none';
       set404Visible(false);
       setAuthorVisible(true);
-      document.title = `${name} · Tribuna`;
-      const metaDesc = document.getElementById('metaDesc');
-      if (metaDesc) metaDesc.setAttribute('content', `Notas de ${name} en TRIBUNA, periodismo deportivo independiente.`);
+      setPageMeta({
+        title: `${name} · Tribuna`,
+        description: `Notas de ${name} en TRIBUNA, periodismo deportivo independiente.`,
+        image: (profile && profile.avatar_url) || DEFAULT_SEO_IMAGE,
+        imageAlt: name,
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'ProfilePage',
+          name: `${name} · Tribuna`,
+          url: `${window.location.origin}/autor/${slug}`,
+          mainEntity: {
+            '@type': 'Person',
+            name,
+            ...(profile && profile.bio ? { description: profile.bio } : {}),
+            ...(profile && profile.avatar_url ? { image: profile.avatar_url } : {})
+          }
+        }
+      });
 
       authorHubSection.querySelectorAll('.open-article').forEach(link => {
         link.onclick = e => { e.preventDefault(); openArticle(Number(link.dataset.id)); };
@@ -5142,6 +5856,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     async function loadStatsForPanel(){ 
       if (!writerToken) return;
       const topEl = document.querySelector('#statsTopList');
+      const readsEl = document.querySelector('#statsReadsList');
       try { 
         const response = await fetch('/api/stats', {
           headers: { 'Authorization': `Bearer ${writerToken}` }
@@ -5158,14 +5873,24 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         document.querySelector('#statNotasPub').textContent = s.notas_publicadas;
         document.querySelector('#statSuscriptores').textContent = s.suscriptores;
         document.querySelector('#statReacciones').textContent = s.reacciones_totales;
+        const lecturasEl = document.querySelector('#statLecturas');
+        if (lecturasEl) lecturasEl.textContent = s.lecturas_totales;
         topEl.innerHTML = s.top_reacciones.length
           ? s.top_reacciones.map((n, i) =>
               `<div class="stat-row"><span class="rank">0${i + 1}</span><div class="t"><b>${escapeHtml(n.titulo)}</b><small>${n.clap} 👏 · ${n.wow} 😮 · ${n.angry} 😡</small></div><span class="reactions">${n.total}</span></div>`
             ).join('')
           : '<div class="draft-item"><div><small>Sin reacciones todavía.</small></div></div>';
+        // El servidor ya filtró las notas sin lecturas: mostrarlas con un 0
+        // solo ocuparía cinco filas del panel para no informar nada.
+        readsEl.innerHTML = s.top_lecturas && s.top_lecturas.length && s.top_lecturas[0].vistas
+          ? s.top_lecturas.map((n, i) =>
+              `<div class="stat-row"><span class="rank">0${i + 1}</span><div class="t"><b>${escapeHtml(n.titulo)}</b><small>Lecturas registradas</small></div><span class="reactions">${n.vistas}</span></div>`
+            ).join('')
+          : '<div class="draft-item"><div><small>Todavía no hay lecturas registradas.</small></div></div>';
       } catch (err) {
         console.error("Error al cargar estadísticas del panel:", err);
         topEl.innerHTML = '<div class="draft-item"><div><small>No se pudieron cargar las estadísticas.</small></div></div>';
+        if (readsEl) readsEl.innerHTML = '<div class="draft-item"><div><small>No se pudieron cargar las estadísticas.</small></div></div>';
       } 
     }
 
