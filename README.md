@@ -1,143 +1,79 @@
 # Tribuna
-Las noticias más relevantes del deporte.
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tribuna | Periodismo deportivo</title>
-  <style>
-    :root { --ink:#111318; --muted:#646a73; --paper:#fbfbfc; --accent:#A8321A; --line:#eef0f3; --card-bg:#ffffff; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 'Inter', sans-serif; }
-    .topline { height:4px; background:var(--accent); }
-    header { max-width:1180px; margin:auto; padding:22px 24px 0; }
-    .utility { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:12px; color:var(--muted); font-size:.78rem; letter-spacing:.07em; text-transform:uppercase; }
-    .brand-row { display:flex; align-items:center; justify-content:space-between; padding:18px 0; }
-    .brand { font-family:'Fraunces', serif; font-size:2.7rem; font-weight:bold; letter-spacing:-.08em; }
-    .brand span { color:var(--accent); }
-    nav { display:flex; gap:24px; border-top:1px solid var(--line); padding:13px 0; font-weight:bold; font-size:.82rem; letter-spacing:.02em; }
-    nav a { color:inherit; text-decoration:none; } nav a:hover { color:var(--accent); }
-    .access { border:0; background:var(--ink); color:#fff; padding:10px 15px; font-weight:bold; cursor:pointer; border-radius:6px; }
-    main { max-width:1180px; margin:auto; padding:24px; }
-    .search-bar { display:grid; grid-template-columns:1fr 190px auto; gap:10px; background:#fff; border:1px solid var(--line); border-radius:10px; margin-bottom:34px; padding:10px; } .search-bar input { margin:0; background:#fff; border-color:transparent; } .search-bar > button { border:0; border-radius:6px; background:var(--ink); color:#fff; padding:0 20px; cursor:pointer; font-weight:bold; } .search-status { min-height:1.4em; margin:8px 0 0; color:var(--muted); font-size:.84rem; }
-    .sport-picker { position:relative; } .sport-toggle { display:flex; width:100%; height:100%; min-height:42px; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); padding:0 12px; font:inherit; cursor:pointer; } .sport-toggle::after { content:'⌄'; color:var(--muted); font-size:1.1rem; transform:translateY(-2px); } .sport-menu { display:none; position:absolute; z-index:5; top:calc(100% + 7px); right:0; left:0; overflow:hidden; padding:5px; border:1px solid var(--line); border-radius:8px; background:#fff; box-shadow:0 14px 35px #1d26311c; } .sport-picker.is-open .sport-menu { display:block; } .sport-picker.is-open .sport-toggle { border-color:var(--accent); } .sport-option { display:block; width:100%; border:0; border-radius:5px; background:transparent; color:var(--ink); padding:9px 10px; text-align:left; font:inherit; font-size:.9rem; cursor:pointer; } .sport-option:hover,.sport-option.is-selected { background:#edf3ff; color:var(--accent); }
-    .tag { color:var(--accent); font-size:.75rem; font-weight:bold; text-transform:uppercase; letter-spacing:.1em; }
-    .hero { display:grid; grid-template-columns:1.55fr 1fr; gap:44px; padding-bottom:42px; border-bottom:1px solid var(--line); }
-    .hero-image { min-height:410px; border-radius:12px; background:linear-gradient(145deg,rgba(12,23,41,.08),rgba(230,51,49,.19)), url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80') center/cover; }
-    h1,h2,h3,p { margin-top:0; } h1 { font: bold clamp(2.3rem,5vw,4.7rem)/.98 'Fraunces', serif; letter-spacing:-.055em; margin:.3rem 0 1.25rem; }
-    .hero-copy { display:flex; flex-direction:column; justify-content:center; } .lead { font:1.13rem/1.55 'Fraunces', serif; color:#3f4855; }
-    .byline { font-size:.82rem; font-weight:bold; margin-top:20px; }
-    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; padding:40px 0; }
-    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 12px 18px; transition:transform .2s,box-shadow .2s; } .card:hover { transform:translateY(-3px); box-shadow:0 10px 25px #1d26310d; } .card img { width:100%; height:185px; object-fit:cover; border-radius:6px; margin-bottom:14px; filter:saturate(.82); }
-    h2 { font: bold 1.65rem/1.08 'Fraunces', serif; letter-spacing:-.03em; } .card p { color:var(--muted); font-size:.92rem; }
-    .share { border:0; background:transparent; color:var(--accent); padding:0; font-size:.78rem; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:.04em; } .is-hidden { display:none !important; }
-    .article-link { color:inherit; text-decoration:none; } .article-link:hover h1,.article-link:hover h2 { color:var(--accent); } #articleDetail { display:none; background:#fff; border-top:5px solid var(--accent); padding:30px; margin:0 0 34px; } #articleDetail h1 { max-width:900px; } .detail-content { max-width:36em; font:1.08rem/1.7 'Fraunces', serif; } .back { border:0; background:transparent; color:var(--accent); padding:0 0 18px; font-weight:bold; cursor:pointer; }
-    .newsletter { background:var(--ink); color:#fff; border-radius:12px; padding:34px; display:flex; justify-content:space-between; align-items:center; gap:30px; margin:8px 0 40px; }
-    .newsletter h2 { font-size:2rem; margin:0; } .newsletter p { margin:.4rem 0 0; opacity:.85; }
-    .newsletter button { background:#fff; color:var(--accent); border:0; padding:12px 17px; font-weight:bold; white-space:nowrap; cursor:pointer; }
-    .most-read { border-top:1px solid var(--line); margin:6px 0 40px; padding-top:25px; } .most-read h2 { font-size:2.1rem; margin-bottom:5px; } .most-read > p { color:var(--muted); margin-bottom:20px; }
-    .ranking { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line); } .rank-item { display:flex; gap:15px; padding:20px 18px 20px 0; border-bottom:1px solid var(--line); } .rank-item:not(:first-child) { padding-left:18px; border-left:1px solid var(--line); } .rank-number { color:var(--accent); font:bold 2.5rem/1 'Fraunces', serif; } .rank-item a { color:var(--ink); text-decoration:none; font:bold 1.15rem/1.15 'Fraunces', serif; } .rank-item a:hover { color:var(--accent); } .reads { display:block; color:var(--muted); font-size:.75rem; margin-top:8px; text-transform:uppercase; letter-spacing:.05em; }
-    footer { background:var(--ink); color:#dce0e5; padding:30px 24px; } footer div { max-width:1132px; margin:auto; font-size:.85rem; }
-    dialog { width:min(560px,calc(100% - 28px)); border:0; padding:0; box-shadow:0 18px 60px #0008; } dialog::backdrop { background:#10131bb3; }
-    .modal-head { padding:25px 28px; background:var(--ink); color:#fff; } .modal-head h2 { margin:0; } .modal-body { padding:28px; }
-    label { display:block; font-weight:bold; font-size:.9rem; margin-bottom:6px; } input,textarea { width:100%; border:1px solid #b9b4aa; padding:11px; font:inherit; margin-bottom:17px; }
-    textarea { min-height:130px; resize:vertical; } .submit { border:0; background:var(--accent); color:#fff; padding:12px 16px; font-weight:bold; cursor:pointer; }
-    .close { float:right; background:transparent; border:0; color:#fff; font-size:1.4rem; cursor:pointer; } .message { color:var(--accent); font-size:.85rem; min-height:1.3em; }
-    #writerPanel { display:none; border:1px solid var(--line); border-radius:16px; background:#fff; padding:34px; margin:30px 0; box-shadow:0 12px 30px #1d263108; } #writerPanel h2 { color:var(--ink); margin-bottom:7px; }
-    #writerPanel > p { color:var(--muted); font-size:.93rem; } #writerPanel > div > strong { display:block; margin-top:30px; font-size:.82rem; color:var(--muted); letter-spacing:.07em; text-transform:uppercase; }
-    .draft-list { border-top:1px solid var(--line); margin:12px 0 32px; } .draft-item { display:flex; justify-content:space-between; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:15px 0; } .draft-item strong { display:block; font-family:'Fraunces', serif; font-size:1.03rem; } .draft-item small { color:var(--muted); } .edit-note { border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); padding:8px 12px; font-size:.82rem; font-weight:bold; cursor:pointer; white-space:nowrap; } .edit-note:hover { border-color:var(--accent); color:var(--accent); }
-    .editor-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; padding:23px; border:1px solid var(--line); border-radius:10px; background:#fcfcfd; } .editor-grid .wide { grid-column:1/-1; } #writerPanel label { color:#4f5661; font-size:.78rem; letter-spacing:.035em; text-transform:uppercase; } #writerPanel input,#writerPanel textarea,#writerPanel select { border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:none; transition:border-color .2s,box-shadow .2s; } #writerPanel input:focus,#writerPanel textarea:focus,#writerPanel select:focus { outline:0; border-color:var(--accent); box-shadow:0 0 0 3px #2463c51a; } #writerPanel input[type="file"] { padding:9px; font-size:.82rem; color:var(--muted); } #writerPanel input[type="file"]::file-selector-button { border:0; border-radius:4px; background:#edf3ff; color:var(--accent); padding:6px 9px; margin-right:9px; font-weight:bold; cursor:pointer; }
-    .check { display:flex; align-items:center; gap:8px; margin:3px 0 0; font-size:.85rem; text-transform:none !important; letter-spacing:0 !important; } .check input { width:auto !important; margin:0; accent-color:var(--accent); } #articleForm > .submit { margin-top:16px; border-radius:6px; background:var(--accent); } #articleForm > .access { margin-top:16px; background:#eef0f3; color:var(--ink); } #preview { display:none; background:#f7f9fc; border:1px solid #e4ebf5; border-left:3px solid var(--accent); border-radius:8px; margin-top:28px; padding:24px; } #preview h1 { font-size:2rem; } #preview .preview-meta { color:var(--muted); font-size:.82rem; font-weight:bold; text-transform:uppercase; }
-    @media (max-width:720px) { .brand { font-size:2.45rem; } .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } .hero-image { min-height:260px; } nav { gap:12px; overflow:auto; } .search-bar { grid-template-columns:1fr; } .search-bar button { min-height:42px; } #writerPanel { padding:22px 16px; } .editor-grid { padding:16px; } .newsletter { align-items:flex-start; flex-direction:column; } .utility span:last-child { display:none; } .rank-item:not(:first-child) { padding-left:0; border-left:0; } }
-  </style>
-</head>
-<body>
-  <div class="topline"></div>
-  <header>
-    <div class="utility"><span id="liveDate" aria-live="polite"></span><span>Periodismo deportivo independiente</span></div>
-    <div class="brand-row"><div class="brand">TRIB<span>U</span>NA</div><button class="access" id="accessButton">Acceso redacción</button></div>
-    <nav><a href="#portada">Portada</a><a href="#futbol">Fútbol</a><a href="#otros">Otros deportes</a><a href="#opinion">Opinión</a><a href="#podcast">Podcast</a></nav>
-  </header>
-  <main id="portada">
-    <section aria-label="Buscar noticias">
-      <form class="search-bar" id="searchForm"><input id="searchInput" type="search" placeholder="Busca por tema, atleta o equipo" aria-label="Buscar noticias" /><div class="sport-picker" id="publicSport" data-value=""><button type="button" class="sport-toggle" id="publicSportToggle" aria-expanded="false">Todos los deportes</button><div class="sport-menu" role="menu"><button class="sport-option is-selected" type="button" data-value="">Todos los deportes</button><button class="sport-option" type="button" data-value="fútbol">Fútbol</button><button class="sport-option" type="button" data-value="baloncesto">Baloncesto</button><button class="sport-option" type="button" data-value="atletismo">Atletismo</button></div></div><button>Buscar</button></form>
-      <p class="search-status" id="searchStatus" aria-live="polite"></p>
-    </section>
-    <section class="hero">
-      <div class="hero-image" role="img" aria-label="Balón en un estadio"></div>
-      <article class="hero-copy searchable" data-sport="fútbol" data-search="análisis fútbol juego mirada profunda resultados"><a class="article-link open-article" href="#lectura" data-id="0"><div class="tag">Análisis · Fútbol</div><h1>Cuando el juego pide una mirada más profunda</h1><p class="lead">Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.</p><p class="byline">POR MARTA VILLALOBOS · 6 MIN DE LECTURA</p></a></article>
-    </section>
-    <article id="articleDetail" aria-live="polite"><button class="back" id="backToCover">← Volver a portada</button><div class="tag" id="detailTag"></div><h1 id="detailTitle"></h1><p class="lead" id="detailIntro"></p><p class="byline" id="detailByline"></p><p class="detail-content" id="detailBody"></p><button class="share" id="detailShare">Compartir esta nota</button></article>
-    <section class="grid" id="futbol">
-      <article class="card searchable" data-sport="fútbol" data-search="crónica fútbol grada partido estadio afición"><a class="article-link open-article" href="#lectura" data-id="1"><img src="https://images.unsplash.com/photo-1553778263-73a83bab9b0c?auto=format&fit=crop&w=700&q=80" alt="Estadio lleno" /><div class="tag">Crónica · Fútbol</div><h2>La grada también juega el partido</h2><p>Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.</p></a><button class="share" data-share="La grada también juega el partido">Compartir nota</button></article>
-      <article class="card searchable" id="otros" data-sport="baloncesto" data-search="baloncesto talento joven liga figuras"><a class="article-link open-article" href="#lectura" data-id="2"><img src="https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=700&q=80" alt="Cancha de baloncesto" /><div class="tag">Baloncesto</div><h2>El talento joven ya no espera turno</h2><p>Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.</p></a><button class="share" data-share="El talento joven ya no espera turno">Compartir nota</button></article>
-      <article class="card searchable" id="opinion" data-sport="atletismo" data-search="opinión atleta victoria deporte perseverancia"><a class="article-link open-article" href="#lectura" data-id="3"><img src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=700&q=80" alt="Atleta corriendo" /><div class="tag">Opinión · Atletismo</div><h2>La victoria tiene más de una medida</h2><p>Repensar el deporte desde el cuidado, la comunidad y la perseverancia.</p></a><button class="share" data-share="La victoria tiene más de una medida">Compartir nota</button></article>
-    </section>
-    <section class="most-read" aria-labelledby="mostReadTitle">
-      <div class="tag">Lo más consultado</div><h2 id="mostReadTitle">Las notas más leídas</h2><p>Las historias que están marcando la conversación deportiva hoy.</p>
-      <div class="ranking">
-        <article class="rank-item"><div class="rank-number">01</div><div><a class="open-article" href="#lectura" data-id="0">Cuando el juego pide una mirada más profunda</a><span class="reads">12.4 mil lecturas</span></div></article>
-        <article class="rank-item"><div class="rank-number">02</div><div><a class="open-article" href="#lectura" data-id="2">El talento joven ya no espera turno</a><span class="reads">9.8 mil lecturas</span></div></article>
-        <article class="rank-item"><div class="rank-number">03</div><div><a class="open-article" href="#lectura" data-id="3">La victoria tiene más de una medida</a><span class="reads">7.1 mil lecturas</span></div></article>
-      </div>
-    </section>
-    <section class="newsletter" id="podcast"><div><h2>El deporte, sin ruido.</h2><p>Recibe cada domingo nuestra selección de historias esenciales.</p></div><button onclick="alert('Gracias. En la versión final aquí iría el formulario de suscripción.')">Suscribirme</button></section>
-    <section id="writerPanel">
-      <div class="tag">Área privada</div><h2>Redactar una nueva nota</h2><p>Bienvenido al espacio de redacción. Este contenido solo se publica tras revisión editorial.</p>
-      <div><strong>Notas publicadas</strong><div class="draft-list" id="draftList"></div></div>
-      <form id="articleForm">
-        <div class="editor-grid">
-          <div class="wide"><label for="title">Titular</label><input id="title" required placeholder="Escribe un titular claro" /></div>
-          <div><label for="sport">Deporte</label><select id="sport" required><option value="">Elige un deporte</option><option>Fútbol</option><option>Baloncesto</option><option>Atletismo</option><option>Ciclismo</option><option>Tenis</option><option>Motor</option><option>Natación</option><option>Otros deportes</option></select></div>
-          <div><label for="tags">Etiquetas</label><input id="tags" placeholder="Liga, equipo, atleta…" /></div>
-          <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla."></textarea></div>
-          <div class="wide"><label for="body">Cuerpo de la nota</label><textarea id="body" required placeholder="Cuenta la historia…"></textarea></div>
-          <div><label for="authorName">Nombre del autor</label><input id="authorName" required autocomplete="name" placeholder="Tu nombre y apellidos" /></div>
-          <div><label for="authorEmail">Correo electrónico</label><input id="authorEmail" type="email" required autocomplete="email" placeholder="nombre@ejemplo.com" /></div>
-          <div><label for="photos">Fotografías</label><input id="photos" type="file" accept="image/*" multiple /></div>
-          <div><label for="videos">Videos</label><input id="videos" type="file" accept="video/*" multiple /></div>
-          <div class="wide"><label class="check"><input id="urgent" type="checkbox" /> Marcar como noticia de última hora</label></div>
-        </div>
-        <button class="submit">Guardar como borrador</button> <button class="access" type="button" id="previewButton">Vista previa</button><p class="message" id="saveMessage"></p>
-      </form>
-      <article id="preview" aria-live="polite"></article>
-    </section>
-  </main>
-  <footer><div><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</div></footer>
-  <dialog id="loginDialog"><div class="modal-head"><button class="close" aria-label="Cerrar">×</button><h2>Acceso de redacción</h2></div><form class="modal-body" id="loginForm"><p>Ingresa tu clave de redactor para abrir el espacio de trabajo.</p><label for="password">Contraseña especial</label><input id="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /><button class="submit">Entrar a redacción</button><p class="message" id="loginMessage"></p><small>Demo local: la validación segura debe hacerse en el servidor antes de publicar el sitio.</small></form></dialog>
-  <script>
-    const dialog=document.querySelector('#loginDialog'), access=document.querySelector('#accessButton'), panel=document.querySelector('#writerPanel'); let writerToken='';
-    const liveDate=document.querySelector('#liveDate');
-    function updateDate(){ liveDate.textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date()); }
-    updateDate(); setInterval(updateDate, 30000);
-    access.onclick=()=>dialog.showModal(); document.querySelector('.close').onclick=()=>dialog.close();
-    document.querySelector('#loginForm').onsubmit=async e=>{e.preventDefault(); const pw=document.querySelector('#password').value; try { const response=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})}); if(!response.ok) throw new Error(); writerToken=(await response.json()).token; dialog.close(); panel.style.display='block'; access.textContent='Redacción activa'; panel.scrollIntoView({behavior:'smooth'}); } catch { document.querySelector('#loginMessage').textContent='No se pudo validar la contraseña. Abre la web desde el servidor.'; }};
-    document.querySelector('#articleForm').onsubmit=e=>{e.preventDefault(); const photos=document.querySelector('#photos').files.length, videos=document.querySelector('#videos').files.length; const media=[]; if(photos) media.push(`${photos} fotografía${photos>1?'s':''}`); if(videos) media.push(`${videos} video${videos>1?'s':''}`); document.querySelector('#saveMessage').textContent=`Borrador guardado localmente (demo)${media.length ? `, con ${media.join(' y ')}` : ''}.`; e.target.reset();};
-    document.querySelector('#previewButton').onclick=()=>{ const title=document.querySelector('#title').value||'Tu titular aparecerá aquí'; const intro=document.querySelector('#intro').value||'La entradilla aparecerá aquí.'; const sport=document.querySelector('#sport').value||'Deporte'; const author=document.querySelector('#authorName').value||'Redacción Tribuna'; const urgent=document.querySelector('#urgent').checked?'Última hora · ':''; const minutes=Math.max(1,Math.ceil(document.querySelector('#body').value.trim().split(/\s+/).filter(Boolean).length/200)); const preview=document.querySelector('#preview'); preview.innerHTML=`<div class="tag">${urgent}${sport}</div><h1>${title}</h1><p class="lead">${intro}</p><p class="preview-meta">Por ${author} · ${minutes} min de lectura</p>`; preview.style.display='block'; preview.scrollIntoView({behavior:'smooth',block:'nearest'}); };
-    const publicSport=document.querySelector('#publicSport'), publicSportToggle=document.querySelector('#publicSportToggle');
-    publicSportToggle.onclick=()=>{const isOpen=publicSport.classList.toggle('is-open'); publicSportToggle.setAttribute('aria-expanded',isOpen);};
-    document.querySelectorAll('.sport-option').forEach(option=>option.onclick=()=>{publicSport.dataset.value=option.dataset.value; publicSportToggle.textContent=option.textContent; publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded','false'); document.querySelectorAll('.sport-option').forEach(item=>item.classList.toggle('is-selected',item===option));});
-    document.addEventListener('click',e=>{if(!publicSport.contains(e.target)){publicSport.classList.remove('is-open'); publicSportToggle.setAttribute('aria-expanded','false');}});
-    document.querySelector('#searchForm').onsubmit=e=>{ e.preventDefault(); const term=document.querySelector('#searchInput').value.trim().toLowerCase(); const sport=publicSport.dataset.value; const items=[...document.querySelectorAll('.searchable')]; const shown=items.filter(item=>{ const words=item.dataset.search; const matchesTerm=!term||words.includes(term); const matchesSport=!sport||item.dataset.sport===sport; item.classList.toggle('is-hidden',!(matchesTerm&&matchesSport)); return matchesTerm&&matchesSport; }).length; document.querySelector('#searchStatus').textContent=shown ? `${shown} nota${shown===1?'':'s'} encontrada${shown===1?'':'s'}.` : 'No encontramos notas con esos criterios.'; };
-    document.querySelectorAll('.share').forEach(button=>button.onclick=async()=>{ const text=`${button.dataset.share} — TRIBUNA`; try { if(navigator.share) await navigator.share({title:button.dataset.share,text,url:location.href}); else { await navigator.clipboard.writeText(`${text} ${location.href}`); button.textContent='Enlace copiado'; setTimeout(()=>button.textContent='Compartir nota',1800); } } catch(error) {} });
-    let notes=[
-      {sport:'Fútbol',title:'Cuando el juego pide una mirada más profunda',intro:'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'análisis, fútbol',body:'Detrás de cada resultado hay una historia que merece ser contada. Mirar el juego con atención también significa comprender a quienes lo hacen posible: los equipos, las aficiones y las comunidades que encuentran en el deporte un lenguaje común.'},
-      {sport:'Fútbol',title:'La grada también juega el partido',intro:'Una noche de fútbol vista desde el pulso de quienes nunca abandonan su lugar.',author:'Marta Villalobos',email:'marta@tribuna.test',tags:'crónica, afición',body:'Desde mucho antes del pitazo inicial, la grada construye su propio partido. Cada cántico y cada silencio forman parte de una experiencia colectiva que acompaña al equipo hasta el último minuto.'},
-      {sport:'Baloncesto',title:'El talento joven ya no espera turno',intro:'Las nuevas figuras transforman la conversación y elevan el ritmo de la liga.',author:'Diego Morales',email:'diego@tribuna.test',tags:'baloncesto, liga',body:'La nueva generación juega sin pedir permiso. Su energía modifica los partidos y abre una conversación necesaria sobre oportunidades, formación y futuro dentro de la cancha.'},
-      {sport:'Atletismo',title:'La victoria tiene más de una medida',intro:'Repensar el deporte desde el cuidado, la comunidad y la perseverancia.',author:'Sofía Campos',email:'sofia@tribuna.test',tags:'opinión, atletismo',body:'No todos los triunfos caben en una medalla. En cada proceso deportivo hay constancia, dudas y una red de personas que sostienen a quienes compiten.'}
-    ];
-    let editingId=null;
-    const detail=document.querySelector('#articleDetail');
-    function openArticle(id){ const note=notes[id]; if(!note) return; document.querySelector('#detailTag').textContent=note.sport; document.querySelector('#detailTitle').textContent=note.title; document.querySelector('#detailIntro').textContent=note.intro; document.querySelector('#detailByline').textContent=`POR ${note.author.toUpperCase()} · ${Math.max(1,Math.ceil(note.body.split(/\s+/).length/200))} MIN DE LECTURA`; document.querySelector('#detailBody').textContent=note.body; document.querySelector('#detailShare').dataset.share=note.title; detail.style.display='block'; detail.scrollIntoView({behavior:'smooth',block:'start'}); }
-    document.querySelectorAll('.open-article').forEach(link=>link.onclick=e=>{e.preventDefault(); openArticle(Number(link.dataset.id));});
-    document.querySelector('#backToCover').onclick=()=>{detail.style.display='none'; document.querySelector('#portada').scrollIntoView({behavior:'smooth'});};
-    document.querySelector('#detailShare').onclick=()=>navigator.clipboard?.writeText(`${document.querySelector('#detailTitle').textContent} — ${location.href}`);
-    function renderDrafts(){ const list=document.querySelector('#draftList'); list.replaceChildren(); notes.forEach((note,id)=>{ const item=document.createElement('div'); item.className='draft-item'; const text=document.createElement('div'); const name=document.createElement('strong'); name.textContent=note.title; const meta=document.createElement('small'); meta.textContent=`${note.sport} · ${note.author}`; text.append(name,meta); const button=document.createElement('button'); button.className='edit-note'; button.type='button'; button.textContent='Editar'; button.onclick=()=>{editingId=id; document.querySelector('#title').value=note.title; document.querySelector('#sport').value=note.sport; document.querySelector('#tags').value=note.tags; document.querySelector('#intro').value=note.intro; document.querySelector('#body').value=note.body; document.querySelector('#authorName').value=note.author; document.querySelector('#authorEmail').value=note.email; document.querySelector('#saveMessage').textContent=`Editando: ${note.title}`; document.querySelector('#title').scrollIntoView({behavior:'smooth',block:'center'});}; item.append(text,button); list.append(item); }); }
-    function renderPublicCards(){ const grid=document.querySelector('#futbol'); grid.querySelectorAll('.dynamic-card').forEach(card=>card.remove()); notes.slice(4).forEach((note,id)=>{ const card=document.createElement('article'); card.className='card searchable dynamic-card'; card.dataset.sport=note.sport.toLowerCase(); card.dataset.search=`${note.sport} ${note.title} ${note.tags}`.toLowerCase(); const link=document.createElement('a'); link.className='article-link open-article'; link.href='#lectura'; link.dataset.id=String(id+4); const tag=document.createElement('div'); tag.className='tag'; tag.textContent=note.sport; const title=document.createElement('h2'); title.textContent=note.title; const intro=document.createElement('p'); intro.textContent=note.intro; link.append(tag,title,intro); link.onclick=e=>{e.preventDefault(); openArticle(Number(link.dataset.id));}; card.append(link); grid.append(card); }); }
-    async function loadNotes(){ try { const response=await fetch('/api/notes'); if(!response.ok) throw new Error(); notes=await response.json(); renderDrafts(); renderPublicCards(); } catch { document.querySelector('#searchStatus').textContent='Conecta la web al servidor para ver las notas compartidas.'; } }
-    renderDrafts(); loadNotes();
-    document.querySelector('#articleForm').onsubmit=async e=>{ e.preventDefault(); const note={title:document.querySelector('#title').value,sport:document.querySelector('#sport').value,tags:document.querySelector('#tags').value,intro:document.querySelector('#intro').value,body:document.querySelector('#body').value,author:document.querySelector('#authorName').value,email:document.querySelector('#authorEmail').value}; const message=document.querySelector('#saveMessage'); try { const isNew=editingId===null; const endpoint=isNew?'/api/notes':`/api/notes/${notes[editingId].id}`; const response=await fetch(endpoint,{method:isNew?'POST':'PUT',headers:{'Content-Type':'application/json','Authorization':`Bearer ${writerToken}`},body:JSON.stringify(note)}); if(!response.ok) throw new Error(); const saved=await response.json(); if(isNew) notes.push(saved); else notes[editingId]=saved; message.textContent=isNew?'Nota guardada en el servidor.':'Cambios guardados en el servidor.'; editingId=null; renderDrafts(); renderPublicCards(); e.target.reset(); } catch { message.textContent='No se pudo guardar. Inicia sesión de redacción y verifica que el servidor esté en marcha.'; } };
-  </script>
-</body>
-</html>
+
+Periodismo deportivo independiente. Sitio de noticias en español, con SPA vanilla
+y backend en Supabase.
+
+## Stack
+
+- **Frontend:** HTML/CSS/JS vanilla en `index.html` (sin framework, sin build).
+  `@supabase/supabase-js` y DOMPurify por CDN.
+- **Backend:** Node.js + Express en `server.js`. Sirve la SPA, el feed RSS, el
+  sitemap y toda la API `/api/*`.
+- **Datos:** Supabase Postgres. Esquema idempotente en `supabase-schema.sql`.
+- **Service worker:** `public/sw.js` (offline + shell cache).
+
+## Puesta en marcha
+
+```bash
+npm install
+cp .env.example .env   # y rellena SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y WRITER_PASSWORD
+npm start              # aplica la migración (si hay DATABASE_URL) y arranca en :3000
+```
+
+Si no defines `DATABASE_URL`, `npm start` arranca igual pero **no** aplica la
+migración: ejecuta `supabase-schema.sql` a mano en el SQL Editor de Supabase.
+
+## Variables de entorno
+
+Todas están documentadas en `.env.example`. Las que importan:
+
+| Variable | Secreto | Para qué |
+| --- | --- | --- |
+| `SUPABASE_URL` | no | URL del proyecto Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | **sí** | Lectura/escritura desde el backend |
+| `DATABASE_URL` | **sí** | Solo para `npm run db:migrate` |
+| `WRITER_PASSWORD` | **sí** | Acceso de redacción (`POST /api/auth`) |
+| `API_FOOTBALL_KEY` | **sí** | Fixtures de la Liga Promérica |
+| `FOOTBALL_DATA_API_KEY` | **sí** | Tablas de posiciones |
+| `X_*` | **sí** | Autopublicación en X (apagada por defecto) |
+
+**Nunca** pongas una clave secreta en `index.html` ni en nada que se sirva al
+navegador. Lo único que puede vivir en el cliente es la `anon`/`publishable` key
+de Supabase y la URL pública del proyecto.
+
+## Scripts
+
+| Comando | Qué hace |
+| --- | --- |
+| `npm start` | Migra (si puede) y arranca el servidor |
+| `npm run db:migrate` | Aplica `supabase-schema.sql` |
+| `npm run lint` | ESLint sobre `server.js` |
+| `npm run lint:client` | Parsea el JS inline de `index.html` |
+| `npm test` | Unitarios + regresión HTTP |
+| `npm run test:unit` | Tests de lógica, sin red |
+| `npm run test:regression` | Levanta el servidor y pega con HTTP de verdad |
+
+## Rutas
+
+SPA (todas devuelven `index.html`): `/`, `/categoria/:deporte`, `/curiosidades`,
+`/videos`, `/mercado`, `/etiquetas`, `/tag/:slug`, `/autor/:slug`, `/equipo/:slug`,
+`/jugador/:slug`, `/quienes-somos`.
+
+Servidor: `/rss.xml` (y `/feed`, que redirige), `/sitemap.xml`, `/robots.txt`,
+`/ads.txt`, `/sw.js`, `/widget/posiciones` y `/api/*`.
+
+## Notas de mantenimiento
+
+- El contador de lecturas (`notes.views`) lo incrementa **solo** el backend, en
+  `POST /api/notes/:id/view`, con dedupe por IP + nota. No se otorga permiso de
+  escritura al rol `anon` sobre esa columna a propósito: si lo tuviera, bastaría
+  llamar al endpoint en bucle para inflar "Las notas más leídas".
+- `index.html` no lo cubre ESLint ni ningún bundler. Si tocas su JS, pásalo por
+  `npm run lint:client` antes de dar nada por terminado.
+- `AGENTS.md` tiene las convenciones de diseño y la regla de seguridad al detalle.
+
+## Deploy
+
+`render.yaml` declara el web service y las variables de entorno. La migración de
+la base de datos no se automatiza en el arranque: aplícala desde el SQL Editor
+antes de desplegar cambios de esquema.

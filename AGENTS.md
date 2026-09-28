@@ -9,7 +9,7 @@ Guía de contexto para agentes que trabajan en este repositorio. Léela antes de
 ## Stack
 
 - **Frontend:** HTML/CSS/JS vanilla en `index.html` (sin framework, sin build). `@supabase/supabase-js` vía CDN.
-- **Backend:** Node.js + Express en `server.js` (también expone el feed RSS). El cliente del backend usa `@supabase/supabase-js` con credenciales de entorno.
+- **Backend:** Node.js + Express en `server.js` (también expone `/rss.xml` y el sitemap). El cliente del backend usa `@supabase/supabase-js` con credenciales de entorno.
 - **Base de datos:** Supabase Postgres (schema idempotente en `supabase-schema.sql`, semilla en `seed-notes.json`). Si la variable `DATABASE_URL` está configurada, `npm start` lo aplica automáticamente antes de arrancar (`npm run db:migrate`); si no, hay que ejecutarlo a mano en el SQL Editor. El schema es totalmente re-ejecutable (IF NOT EXISTS / WHERE NOT EXISTS).
 - **Serverless (cuando aplique):** Supabase Edge Functions (`functions/*`).
 
@@ -32,8 +32,10 @@ Notas de aplicación:
 ## Datos del proyecto
 
 - URL pública de Supabase: `https://jmsjbbubhyszrbgqrfio.supabase.co`
-- Feed RSS: `/functions/v1/feed-rss`
-- Tablas principales: `notes` (noticias, campo `status` con valores como `publicada`/borrador).
+- Feed RSS: `/rss.xml` (lo sirve `server.js`; `/feed` redirige ahí). Existe además una
+  Edge Function antigua en `/functions/v1/feed-rss`: si alguna vez difieren, la que
+  manda es `/rss.xml` porque es la que declara el `<link rel="alternate">`.
+- Tablas principales: `notes` (noticias, campo `status` con valores como `publicada`/borrador, `views` como contador de lecturas).
 
 ## Variables de entorno del backend (ver `.env.example`)
 
@@ -41,7 +43,24 @@ Notas de aplicación:
 - `SUPABASE_SERVICE_ROLE_KEY` — service role key (SECRETA; la usa el backend para escribir).
 - `DATABASE_URL` — connection string de Postgres de Supabase (SECRETA); la usa `npm run db:migrate` para aplicar `supabase-schema.sql` automáticamente antes de `npm start`. Si falta, la migración se omite (no rompe el arranque).
 - `FOOTBALL_DATA_API_KEY` — API key externa de standings (SECRETA).
+- `API_FOOTBALL_KEY` — API key de API-Football (SECRETA) para los fixtures de la Liga Promérica; sin ella, `/api/fixtures/promerica` responde 500.
 - `WRITER_PASSWORD` — contraseña compartida de la redacción (SECRETA).
 - `PORT` — puerto de Express (opcional).
 - `X_AUTOPOST_ENABLED` — activa la autopublicación en X de notas urgentes (`true`/`false`, por defecto desactivada).
 - `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` — credenciales de la X API (OAuth 1.0a, SECRETAS; solo viven en el backend).
+
+## Rutas del sitio (SPA, todas devuelven `index.html`)
+
+`/`, `/categoria/:deporte`, `/curiosidades`, `/videos`, `/mercado`, `/etiquetas`,
+`/tag/:slug`, `/autor/:slug`, `/equipo/:slug`, `/jugador/:slug`, `/quienes-somos`.
+Rutas de servidor aparte: `/rss.xml`, `/feed`, `/sitemap.xml`, `/robots.txt`, `/sw.js`,
+`/ads.txt`, `/widget/posiciones` y todo `/api/*`.
+
+## Verificación antes de dar algo por terminado
+
+- `npm run lint` (ESLint sobre `server.js`) y `node --check public/sw.js`.
+- `npm run test:unit` (puro, sin red) y `npm run test:regression` (levanta el servidor
+  en un puerto libre y pega con HTTP de verdad).
+- `index.html` no lo cubre ESLint: si tocas JS del cliente, el parseo se comprueba
+  con `node --check` sobre el script inline extraído, o indirectamente con los tests
+  de `test/mercado-tags.test.js`, que lo aíslan en un `vm`.

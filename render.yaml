@@ -12,6 +12,13 @@ services:
     startCommand: node server.js
     healthCheckPath: /robots.txt
     autoDeployTrigger: commit
+    # OJO: DATABASE_URL no se declara a propósito. El startCommand es
+    # `node server.js` a secas, sin `db:migrate`: la migración solo debe correr
+    # cuando alguien la lanza a mano desde el SQL Editor. Si se declarara
+    # DATABASE_URL aquí esperando que el arranque la aplicara, no pasaría nada.
+    # Para las variables de la API de X, `sync: false` solo aparece si están
+    # marcadas como secretas en el dashboard de Render; si ya existen allí, no
+    # hace falta redeclararlas.
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -21,5 +28,22 @@ services:
         sync: false
       - key: FOOTBALL_DATA_API_KEY
         sync: false
+      # Fixtures de la Liga Promérica (API-Football). Sin ella,
+      # /api/fixtures/promerica responde 500 y el bloque de próximos partidos
+      # de la Liga Promérica se queda vacío.
+      - key: API_FOOTBALL_KEY
+        sync: false
       - key: WRITER_PASSWORD
+        sync: false
+      # Autopublicación en X. Con "false" no se publica nada aunque haya notas
+      # urgentes: cambiarlo a "true" en el dashboard habilita el envío.
+      - key: X_AUTOPOST_ENABLED
+        value: "false"
+      - key: X_CONSUMER_KEY
+        sync: false
+      - key: X_CONSUMER_SECRET
+        sync: false
+      - key: X_ACCESS_TOKEN
+        sync: false
+      - key: X_ACCESS_SECRET
         sync: false
