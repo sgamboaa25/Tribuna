@@ -285,6 +285,8 @@
     .standings-header h2 { margin-bottom:0; }
     .standings-controls { display:flex; align-items:center; gap:var(--space-md); }
     .status-indicator { font-size:.8rem; font-weight:600; color:var(--muted); }
+    a.status-indicator { color:var(--accent); text-decoration:none; font-weight:600; }
+    a.status-indicator:hover { text-decoration:underline; }
     
     /* Punto 12 · Cabecera sticky en la tabla de posiciones */
     .table-responsive { width:100%; overflow-x:auto; overflow-y:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:var(--radius-lg); background:var(--card-bg); max-height:560px; }
@@ -870,7 +872,7 @@
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, #goleadores, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, #mvpJornada, #fotosLectores, #playerHub, dialog, .to-top,
+      .theme-toggle, .category-header, #mvpJornada, #curiosidadesSection, #fotosLectores, #playerHub, dialog, .to-top,
       .ad-slot { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
@@ -913,6 +915,7 @@
         <a href="/categoria/atletismo" onclick="navigateTo(event, '/categoria/atletismo')">Atletismo</a>
         <a href="/categoria/otros-deportes" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
         <a href="/videos" onclick="navigateTo(event, '/videos')">Videos</a>
+        <a href="/curiosidades" onclick="navigateTo(event, '/curiosidades')">Curiosidades</a>
       </div>
     </nav>
   </header>
@@ -1194,6 +1197,20 @@
       <div id="mvpList"></div>
     </section>
 
+    <!-- ===== CURIOSIDADES (memorias y torneos del pasado) ===== -->
+    <!-- La redacción etiqueta una nota con "curiosidades"; esta sección muestra
+         las más recientes y el enlace lleva a la página completa /curiosidades. -->
+    <section class="standings-section" id="curiosidadesSection" style="display:none">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Memoria</div>
+          <h2 class="section-title">Curiosidades</h2>
+        </div>
+        <a class="status-indicator" href="/curiosidades" onclick="navigateTo(event, '/curiosidades')">Ver todas →</a>
+      </div>
+      <div id="curiosidadesList" class="grid"></div>
+    </section>
+
     <!-- ===== FOTOS DE LECTORES (galería moderada) ===== -->
     <!-- Los lectores envían su foto desde aquí; la redacción la modera en el
          panel antes de que aparezca en esta galería. -->
@@ -1246,6 +1263,7 @@
           <a href="/categoria/baloncesto" class="chip" onclick="navigateTo(event, '/categoria/baloncesto')">🏀 Baloncesto</a>
           <a href="/categoria/atletismo" class="chip" onclick="navigateTo(event, '/categoria/atletismo')">🏃 Atletismo</a>
           <a href="/categoria/otros-deportes" class="chip" onclick="navigateTo(event, '/categoria/otros-deportes')">Otros deportes</a>
+          <a href="/curiosidades" class="chip" onclick="navigateTo(event, '/curiosidades')">Curiosidades</a>
         </div>
       </div>
     </section>
@@ -1332,6 +1350,10 @@
             <datalist id="teamSuggest"></datalist>
             <datalist id="playerSuggest"></datalist>
             <p class="tags-hint" id="teamTagsHint" aria-live="polite"></p>
+          </div>
+          <div class="wide check-field">
+            <label class="check"><input type="checkbox" id="curioInput" /> Es una curiosidad (sección "Curiosidades")</label>
+            <p class="field-hint">Para memorias y torneos del pasado: añade la etiqueta <b>curiosidades</b> a la nota automáticamente y la mostrará en esa sección además de su categoría normal.</p>
           </div>
           <div class="wide"><label for="intro">Entradilla</label><textarea id="intro" required placeholder="Resume la noticia en una o dos frases que inviten a leerla." class="field-textarea"></textarea></div>
           
@@ -2493,7 +2515,8 @@
 
     const fallbackNotes = [
       {id: 1, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Cuando el juego pide una mirada más profunda', intro: 'Resultados, contexto y las historias que explican por qué el deporte importa mucho más allá del marcador.', author: 'Marta Villalobos', email: 'marta@tribuna.test', tags: 'análisis, fútbol', body: 'Detrás de cada resultado hay una historia que merece ser contada...', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=1200&q=80', reactions: { clap: 0, wow: 0, angry: 0 }},
-      {id: 2, status: 'publicada', urgent: false, sport: 'Fútbol', title: '¿Quién fue el MVP de la jornada?', intro: 'Elegí al mejor del partido del fin de semana en la Liga Promérica.', author: 'Redacción Tribuna', email: 'redaccion@tribuna.test', tags: 'mvp, liga promerica, jornada', body: 'El voto de los lectores define al jugador destacado de cada jornada. Resultados en tiempo real al votar.', image: '', reactions: { clap: 0, wow: 0, angry: 0, poll: { question: '¿Quién fue el MVP de la jornada?', options: ['Joel Campbell', 'Alexander López', 'Alonso Martínez'] }, poll_votes: { 0: 24, 1: 11, 2: 9 } }}
+      {id: 2, status: 'publicada', urgent: false, sport: 'Fútbol', title: '¿Quién fue el MVP de la jornada?', intro: 'Elegí al mejor del partido del fin de semana en la Liga Promérica.', author: 'Redacción Tribuna', email: 'redaccion@tribuna.test', tags: 'mvp, liga promerica, jornada', body: 'El voto de los lectores define al jugador destacado de cada jornada. Resultados en tiempo real al votar.', image: '', reactions: { clap: 0, wow: 0, angry: 0, poll: { question: '¿Quién fue el MVP de la jornada?', options: ['Joel Campbell', 'Alexander López', 'Alonso Martínez'] }, poll_votes: { 0: 24, 1: 11, 2: 9 } }},
+      {id: 3, status: 'publicada', urgent: false, sport: 'Fútbol', title: 'Un título que se decidió en la última jornada, allá por los ochenta', intro: 'Memorias de un torneo que se definió por diferencia de gol cuando los estadios todavía se llenaban a las tres de la tarde.', author: 'Sebastián Gamboa', email: 'sebastian@tribuna.test', tags: 'curiosidades, memorias, torneos', body: 'Aquella campaña quedó para la historia larga de las anécdotas: tres equipos llegaron igualados en puntos a la última fecha y el campeón se conoció recién cuando el silbato final corrió por todo el país. Historias como esta son las que no caducan.', image: 'https://images.unsplash.com/photo-1523059623039-a9ed027e7fad?auto=format&fit=crop&w=1200&q=80', reactions: { clap: 0, wow: 0, angry: 0 }}
     ];
 
     let allPublicNotes = [];
@@ -3082,6 +3105,58 @@
       return String(note.tags || '').split(/[,;\n]+/).some(t => normalizeStr(t) === 'mvp');
     }
 
+    // ===== SECCIÓN ● 3f · Curiosidades (memorias y torneos del pasado) =====
+    // La redacción marca una nota como curiosidad (etiqueta "curiosidades"),
+    // ya sea desde el panel o etiquetándola a mano; esta sección y la página
+    // /curiosidades la muestran además de su categoría normal.
+    function noteHasCuriosityTag(note) {
+      return String(note.tags || '').split(/[,;\n]+/).some(t => normalizeStr(t) === 'curiosidades');
+    }
+
+    function getCuriosityNotes() {
+      return (allPublicNotes || [])
+        .filter(n => n.status === 'publicada' && noteHasCuriosityTag(n))
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+    }
+
+    function renderCuriosidades() {
+      const section = document.getElementById('curiosidadesSection');
+      const listEl = document.getElementById('curiosidadesList');
+      if (!section || !listEl) return;
+      if (window.location.pathname === '/curiosidades') {
+        section.style.display = 'none';
+        return;
+      }
+      const notes = getCuriosityNotes();
+      if (notes.length === 0) {
+        section.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+      }
+      section.style.display = '';
+      const card = (n, idx) => `<article class="card reveal" style="transition-delay:${Math.min(idx, 5) * 40}ms">
+        <a class="curio-link" href="#lectura" data-id="${n.id}">
+          ${mediaBlockHTML(n)}
+          <div><span class="tag" data-sport="${String(n.sport || '').toLowerCase()}">${escapeHtml(n.sport || '')}</span>${ultimaHoraBadge(n)}</div>
+          <h2>${escapeHtml(n.title)}</h2>
+          <p>${escapeHtml(n.intro || '')}</p>
+          <span class="meta-date">${noteDate(n.created_at)}</span>
+          ${teamChipsRowHTML(noteTeamSlugs(n))}
+        </a>
+        ${bookmarkBtn(n)}
+      </article>`;
+      listEl.innerHTML = notes.slice(0, 6).map(card).join('');
+      listEl.querySelectorAll('.curio-link').forEach(link => {
+        link.onclick = e => {
+          e.preventDefault();
+          if (!openNoteById(link.dataset.id)) {
+            alert('Esta nota ya no está disponible.');
+          }
+        };
+      });
+      revealOnScroll();
+    }
+
     function getMvpNote() {
       return (allPublicNotes || [])
         .filter(n => n.status === 'publicada' && noteHasMvpTag(n) && getPollDef(n))
@@ -3269,6 +3344,7 @@
           setCustomPickerValue('statusPicker', note.status || 'borrador'); 
           document.querySelector('#tags').value = note.tags || ''; 
           refreshTeamsHint(); 
+          syncCurioCheckboxFromTags(); 
           document.querySelector('#intro').value = note.intro; 
           document.querySelector('#bodyEditor').innerHTML = note.body; 
           document.querySelector('#authorName').value = note.author; 
@@ -3415,6 +3491,8 @@
       });
 
       renderMvpSection();
+
+      renderCuriosidades();
 
       updateBookmarkUI();
       revealOnScroll();
@@ -3648,7 +3726,7 @@
     }
 
     function setTeamVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3658,7 +3736,7 @@
     }
 
     function setPlayerVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3843,8 +3921,33 @@
       hint.innerHTML = names ? `Se vinculará con el hub: ${names}` : '';
     }
 
+    // ===== Curiosidades en el panel: checkbox <-> etiqueta =====
+    function curioTagsList() {
+      const input = document.getElementById('tags');
+      if (!input) return [];
+      return String(input.value || '').split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+    }
+
+    function syncCurioCheckboxFromTags() {
+      const cb = document.getElementById('curioInput');
+      if (!cb) return;
+      cb.checked = curioTagsList().some(t => normalizeStr(t) === 'curiosidades');
+    }
+
+    function syncCurioTagFromCheckbox() {
+      const cb = document.getElementById('curioInput');
+      const input = document.getElementById('tags');
+      if (!cb || !input) return;
+      const tags = curioTagsList().filter(t => normalizeStr(t) !== 'curiosidades');
+      if (cb.checked) tags.push('curiosidades');
+      input.value = tags.join(', ');
+    }
+
+    const curioInput = document.getElementById('curioInput');
+    if (curioInput) curioInput.addEventListener('change', () => { syncCurioTagFromCheckbox(); refreshTeamsHint(); });
+
     const tagsInputEditor = document.getElementById('tags');
-    if (tagsInputEditor) tagsInputEditor.addEventListener('input', refreshTeamsHint);
+    if (tagsInputEditor) tagsInputEditor.addEventListener('input', () => { refreshTeamsHint(); syncCurioCheckboxFromTags(); });
 
     // ==========================================
     // MANEJO DE LA PÁGINA 404 (rutas desconocidas)
@@ -3854,7 +3957,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -3918,6 +4021,8 @@
         const authorMatch = path.match(/^\/autor\/([a-z0-9-]+)\/?$/i);
         isNotFound = !authorMatch;
         if (authorMatch) authorSlug = authorMatch[1];
+      } else if (path === '/curiosidades') {
+        isNotFound = false;
       } else if (path === '/videos') {
         isNotFound = false;
       } else if (path === '/quienes-somos') {
@@ -3994,6 +4099,18 @@
         
         currentActiveCategory = targetCategory;
         currentDisplayNotes = await fetchNotesPage(true, targetCategory);
+      } else if (path === '/curiosidades') {
+        categoryHeader.innerHTML = `
+          <nav class="breadcrumb" aria-label="Ruta de navegación">
+            <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Curiosidades</span>
+          </nav>
+          <div class="category-header"><h1>Curiosidades</h1>
+            <p>Memorias y torneos del pasado: historias que no caducan, contadas sin ruido.</p>
+          </div>`;
+        currentActiveCategory = 'Curiosidades';
+        currentDisplayNotes = getCuriosityNotes();
       } else if (path === '/videos') {
         videosMode = true;
         categoryHeader.innerHTML = `
@@ -4013,7 +4130,7 @@
       renderPublicCards();
       
       let totalFiltered;
-      if (videosMode) {
+      if (videosMode || currentActiveCategory === 'Curiosidades') {
         totalFiltered = currentDisplayNotes;
       } else {
         const { data: allCatData } = await supabaseClient.from('notes').select('*');
@@ -4859,7 +4976,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
     }
 
     function setAuthorVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -5367,6 +5484,8 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
           else if (editingNote && existingReactions.poll_votes) reactions.poll_votes = existingReactions.poll_votes;
         }
 
+        syncCurioTagFromCheckbox();
+
         const note = {
           title: document.querySelector('#title').value,
           sport: document.getElementById('sportPicker').dataset.value,
@@ -5408,6 +5527,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('archi
         editingVideoUrl = '';
         e.target.reset();
         refreshTeamsHint();
+        syncCurioCheckboxFromTags();
         if (pollEnabledInput) pollEnabledInput.checked = false;
         if (pollFieldsBox) pollFieldsBox.classList.remove('is-visible');
         resetCustomPicker('sportPicker', 'Elige un deporte');
