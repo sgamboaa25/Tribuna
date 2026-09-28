@@ -9,6 +9,7 @@
     "test:unit": "node --test \"test/*.test.js\"",
     "test:regression": "node tests/regression.js",
     "lint": "eslint server.js",
+    "lint:client": "node scripts/check-inline.js index.html .tribuna-inline.js && node --check .tribuna-inline.js",
     "lint:fix": "eslint server.js --fix",
     "format": "prettier --write server.js"
   },

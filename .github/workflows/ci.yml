@@ -25,6 +25,12 @@ jobs:
       - name: Verificación de sintaxis
         run: node --check server.js && node --check public/sw.js
 
+      # index.html concentra todo el JS del cliente y no pasa por ESLint (ni por
+      # ningún build). Este paso lo extrae a un archivo temporal y lo parsea, que
+      # es lo único que detectaría un error de sintaxis en esa vista.
+      - name: Sintaxis del script inline de index.html
+        run: node scripts/check-inline.js index.html inline-check.js && node --check inline-check.js
+
       - name: Tests unitarios
         run: npm run test:unit
         env:
