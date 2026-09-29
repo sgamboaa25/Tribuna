@@ -67,6 +67,54 @@ async function main() {
   const smRes = await fetch(BASE + '/sitemap.xml');
   const sm = await smRes.text();
   report('sitemap sin DB real -> XML minimo valido 200', smRes.status === 200 && sm.includes('<urlset'), 'status=' + smRes.status);
+  report('sitemap sin anclas #note- (Google no las indexa)', !sm.includes('#note-'), 'tiene=#note-');
+
+  // --- SEO: iconos, metadatos por ruta y JSON-LD ---
+  // Antes /favicon.ico caia en el catch-all de la SPA y devolvia index.html,
+  // por eso el navegador (y el service worker) lo guardaban como una pagina.
+  const ico = await fetch(BASE + '/favicon.ico');
+  const icoType = ico.headers.get('content-type') || '';
+  const icoBody = Buffer.from(await ico.arrayBuffer());
+  report('favicon.ico -> imagen real, no el HTML de la SPA',
+    ico.status === 200 && /image\//.test(icoType) && icoBody.subarray(0, 4).toString('latin1') !== '<!DO',
+    'status=' + ico.status + ' ct=' + icoType);
+  report('favicon.ico declara tamano real (multiples entradas)',
+    icoBody.readUInt16LE(2) === 1 && icoBody.readUInt16LE(4) >= 3, 'entradas=' + icoBody.readUInt16LE(4));
+
+  for (const alias of ['/apple-touch-icon.png', '/icon-192.png', '/icon-512.png']) {
+    const a = await fetch(BASE + alias);
+    const at = a.headers.get('content-type') || '';
+    report('alias ' + alias + ' -> imagen 200', a.status === 200 && /image\//.test(at), 'status=' + a.status + ' ct=' + at);
+  }
+
+  const home = await fetch(BASE + '/');
+  const homeHtml = await home.text();
+  report('portada: HTML sin cache para que Google no lea una copia vieja',
+    /no-store/.test(home.headers.get('cache-control') || ''), 'cc=' + home.headers.get('cache-control'));
+  report('portada: <title> no vacio en la respuesta inicial',
+    /<title>\s*[^<\s][^<]*<\/title>/.test(homeHtml), 'sin title');
+
+  // El JSON-LD tiene que venir en el HTML inicial, no solo despues de que
+  // corra el script del cliente.
+  const ldMatch = homeHtml.match(/<script type="application\/ld\+json" id="schemaScript">([\s\S]*?)<\/script>/);
+  let ldTypes = '';
+  if (ldMatch) { try { ldTypes = JSON.parse(ldMatch[1]).map((x) => x['@type']).join('+'); } catch (e) { ldTypes = 'JSON invalido'; } }
+  report('portada: JSON-LD en el HTML inicial y parseable', ldTypes.includes('WebSite'), 'tipos=' + (ldTypes || 'ausente'));
+
+  // Cada ruta fija su propio canonical. Si todas apuntan a la raiz, Google
+  // descarta /categoria/futbol, /quienes-somos, etc. por duplicado.
+  for (const [ruta, esperado] of [['/categoria/futbol', 'Noticias de Fútbol'], ['/quienes-somos', 'Quiénes somos'], ['/etiquetas', 'Etiquetas']]) {
+    const p = await fetch(BASE + ruta);
+    const html = await p.text();
+    const canon = (html.match(/<link rel="canonical" href="([^"]*)"/) || [])[1] || '';
+    const title = (html.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
+    report('ruta ' + ruta + ': canonical propio + title propio',
+      canon.endsWith(ruta) && title.includes(esperado), 'canon=' + canon + ' title=' + title);
+  }
+
+  const nota = await fetch(BASE + '/nota/11111111-2222-3333-4444-555555555555');
+  report('ruta /nota/:id cae en la SPA (200 html)',
+    nota.status === 200 && /text\/html/.test(nota.headers.get('content-type') || ''), 'status=' + nota.status);
 
   let r = await post('/api/newsletter/subscribe', { email: 'bot@bot.com', website: 'http://spam.example' }, {});
   report('newsletter honeypot: 201 ok sin guardar', r.status === 201 && r.data.ok === true, 'status=' + r.status);

@@ -1,4 +1,4 @@
-const CACHE = 'tribuna-v2';
+const CACHE = 'tribuna-v3';
 const SHELL = [
   '/',
   '/public/manifest.json',
@@ -7,6 +7,12 @@ const SHELL = [
   '/public/icon-maskable-512.png',
   '/public/tribuna-logo-wordmark.jpg'
 ];
+
+// Alias que sirve el servidor en la raíz. Antes de que existieran, /favicon.ico
+// caía en la SPA y devolvía index.html; como aquí no es un "documento", el SW
+// lo guardó con cache-first y quien tenga la PWA instalada sigue viendo el icono
+// roto indefinidamente. Se dejan pasar siempre a la red.
+const ROOT_ASSETS = ['/favicon.ico', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png'];
 
 const isDocument = (req, url) =>
   req.mode === 'navigate' ||
@@ -42,6 +48,7 @@ self.addEventListener('fetch', (event) => {
   // copia vieja sin avisar, así que un suscriptor con la PWA instalada
   // simplemente dejaría de recibir noticias nuevas.
   if (url.pathname === '/rss.xml' || url.pathname === '/feed') return;
+  if (ROOT_ASSETS.includes(url.pathname)) return;
   // Lo mismo con las notas: llegan directo a la API de Supabase, que es de
   // otro origen, así que el chequeo de arriba ya las deja pasar sin cachear.
   // Los documentos de la SPA (este mismo archivo) van red primero y solo se

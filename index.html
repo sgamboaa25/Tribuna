@@ -7,9 +7,18 @@
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0c10" />
   <meta name="google-site-verification" content="-AN6shF9ETuqAU1Au6RKWg7XAhx7xLaJm25JOuIHHb8" />
   <title>Tribuna | Periodismo deportivo</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23e03a3e'/><path d='M16 20 h32 v8 h-12 v20 h-8 v-20 h-12 z' fill='%23ffffff'/></svg>" type="image/svg+xml">
+  <!-- Íconos: el .ico va primero para los clientes que solo lo entienden (y es
+       el que Google pide en la raíz). Todo se deriva de public/icon.svg, que
+       es la "T" blanca sobre rojo. /favicon.ico lo sirve server.js en la raíz. -->
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="/public/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="/public/favicon-48x48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="/public/favicon-96x96.png" sizes="96x96" type="image/png">
+  <link rel="icon" href="/public/favicon-192x192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+  <link rel="mask-icon" href="/public/icon.svg" color="#e03a3e">
   <link rel="manifest" href="/public/manifest.json" />
-  <link rel="apple-touch-icon" href="/public/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -2777,13 +2786,29 @@
     // description: las tarjetas de X recortan pasado ~200 caracteres, y un
     // texto más largo ahí se corta a media palabra. Se limita a 200 sin
     // partir por espacios ni cortar palabras por la mitad.
-    function seoDescription(text) {
+    function seoDescription(text, max = 200) {
       const clean = String(text || '').replace(/\s+/g, ' ').trim();
-      if (clean.length <= 200) return clean;
-      const cut = clean.slice(0, 200);
+      if (clean.length <= max) return clean;
+      const cut = clean.slice(0, max);
       const lastSpace = cut.lastIndexOf(' ');
-      return (lastSpace > 120 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '') + '…';
+      return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, '') + '…';
     }
+
+    // URL propia y rastreable de una nota. Antes era "/#note-<id>", un ancla:
+    // Google nunca ve ese cambio porque no dispara una petición, así que todas
+    // las notas colapsaban en la portada. Es la misma URL que pinta el servidor
+    // en el canonical, el sitemap y el JSON-LD.
+    const noteUrl = (note) => `${window.location.origin}/nota/${note && note.id}`;
+
+    const WEB_SITE_SCHEMA = () => ({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Tribuna',
+      url: `${window.location.origin}/`,
+      inLanguage: 'es-CR',
+      description: 'Periodismo deportivo independiente, sin ruido.',
+      publisher: { '@type': 'Organization', name: 'Tribuna', url: `${window.location.origin}/` }
+    });
 
     function setPageMeta(opts) {
       const o = opts || {};
@@ -2827,7 +2852,7 @@
 
     function articleSchema(note) {
       if (!note) return null;
-      const url = `${window.location.origin}/#note-${note.id}`;
+      const url = noteUrl(note);
       const image = note.image || DEFAULT_SEO_IMAGE;
       const schema = {
         '@context': 'https://schema.org',
@@ -3029,16 +3054,16 @@
           detailTeams.style.display = noteTeams.length ? 'flex' : 'none';
         }
 
-        // Cada nota tiene su propia URL canónica con el ancla #note-<id>. Se
-        // construye siempre desde la raíz y no desde location.pathname: una
-        // nota abierta dentro de /categoria/futbol comparten esa ruta y Google
-        // la indexaría como duplicado de la canónica de la portada.
+        // Cada nota tiene su propia URL canónica /nota/<id>. Se construye
+        // siempre desde la raíz y no desde location.pathname: una nota abierta
+        // dentro de /categoria/futbol comparte esa ruta y Google la indexaría
+        // como duplicado de la canónica de la portada.
         setPageMeta({
           title: `${title} · Tribuna`,
           description: intro || seoDescription(body),
           image: image || DEFAULT_SEO_IMAGE,
           imageAlt: title,
-          url: `${window.location.origin}/#note-${note.id}`,
+          url: noteUrl(note),
           type: 'article',
           published: note.created_at || '',
           modified: note.last_edited_at || '',
@@ -3076,10 +3101,19 @@
       return true;
     }
 
+    // Abre la nota a la que apunta la URL, venga por ruta o por ancla. La ruta
+    // /nota/<id> es la que el servidor pinta como canonical, la que va en el
+    // sitemap y por la que llega un visitante desde Google. El #note-<id> se
+    // sigue aceptando para los enlaces viejos y para el botón de compartir.
     function openNoteFromHash() {
-      if (location.hash && location.hash.startsWith('#note-')) {
-        openNoteById(location.hash.slice(6));
-      }
+      const pathMatch = window.location.pathname.match(/^\/nota\/([^/]+)\/?$/i);
+      const fromHash = location.hash && location.hash.startsWith('#note-') ? location.hash.slice(6) : '';
+      const id = pathMatch ? decodeURIComponent(pathMatch[1]) : fromHash;
+      if (!id) return;
+      if (openNoteById(id)) return;
+      // ID con formato inválido o nota que ya no está publicada: no se puede
+      // pintar nada, así que se vuelve a la portada en vez de dejar un 404 mudo.
+      if (pathMatch) navigateTo(null, '/');
     }
 
     window.addEventListener('hashchange', openNoteFromHash);
@@ -3779,6 +3813,30 @@
           <h3>${soloUna ? 'Esta es la única historia de hoy' : 'Sin historias todavía'}</h3>
           <p>${soloUna ? 'Vuelve pronto para más noticias.' : (currentActiveCategory ? 'Todavía no hay notas publicadas en esta categoría.' : 'No hay notas publicadas todavía. Vuelve pronto.')}</p>
         </div>`;
+      }
+
+      // La portada se describe con su nota principal: así es la que describe
+      // Google. El servidor ya dejó esto puesto en el <head> de la respuesta
+      // inicial; aquí se replica porque al volver de una nota a la portada
+      // (navegación interna, sin pasar por el servidor) el título, la
+      // descripción y el JSON-LD quedarían siendo los de la nota anterior.
+      const ruta = window.location.pathname;
+      if ((ruta === '/' || ruta === '/index.html') && currentDisplayNotes.length > 0) {
+        const lead = currentDisplayNotes[0];
+        setPageMeta({
+          title: `${lead.title} · Tribuna`,
+          // 155 caracteres es donde Google corta el snippet: mejor recortarlo
+          // acá que dejarlo a que lo parta a la mitad.
+          description: seoDescription(`${lead.title || ''}. ${lead.intro || ''}`, 155),
+          image: lead.image,
+          imageAlt: lead.title,
+          url: `${window.location.origin}/`,
+          type: 'website',
+          published: lead.created_at || '',
+          modified: lead.last_edited_at || '',
+          section: lead.sport,
+          schema: [WEB_SITE_SCHEMA(), articleSchema(lead)]
+        });
       }
 
       // "Más leídas" se ordena por el contador `views` que lleva el backend

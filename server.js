@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const helmet = require('helmet');
@@ -1662,6 +1663,8 @@ app.post('/api/notes', authenticateWriter, async (req, res) => {
 
   const { data, error } = await supabase.from('notes').insert([clean]).select();
   if (error) return res.status(500).json({ error: error.message });
+  if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+  invalidateSeoNotes();
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
@@ -1726,6 +1729,7 @@ app.put('/api/notes/:id', authenticateWriter, async (req, res) => {
     .select();
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+  invalidateSeoNotes();
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
@@ -1765,6 +1769,7 @@ app.delete('/api/notes/:id', authenticateWriter, async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+  invalidateSeoNotes();
   res.json(data[0]);
 });
 
@@ -1933,6 +1938,398 @@ app.get('/rss.xml', async (req, res) => {
 // tanto /rss.xml como /feed en clientes y validadores que esperan uno u otro.
 app.get('/feed', (req, res) => res.redirect(301, '/rss.xml'));
 
+// ===== SEO: el <head> se compone en el servidor =====
+//
+// Google descarga el HTML y lee el <head> tal cual. Antes todo eso lo escribía
+// setPageMeta() en el navegador (index.html), así que el bot recibía el mismo
+// <title>, la misma descripción y el mismo canonical "/" en todas las rutas: de
+// ahí el ícono genérico y el fragmento viejo en los resultados.
+//
+// Acá se resuelve cada ruta contra los datos reales y se inyecta en la
+// plantilla antes de enviarla. El <body> sigue siendo el mismo esqueleto que
+// arma el cliente; esto solo cambia lo que el rastreador ve primero.
+
+const SITE_NAME = 'Tribuna';
+const SITE_TAGLINE = 'Periodismo deportivo independiente, sin ruido.';
+const SEO_DESCRIPTION_MAX = 155;
+
+// Las notas se piden una vez y se guardan un minuto. Es lo que permite que la
+// portada describa la noticia principal sin pegarle a Supabase en cada
+// petición, y lo que hace que "se actualice al publicar" sin recargar nada:
+// cualquier escritura editorial tira la caché (ver invalidateSeoNotes).
+const SEO_CACHE_TTL_MS = 60 * 1000;
+const seoCache = { at: 0, notes: [] };
+
+async function getSeoNotes() {
+  if (Date.now() - seoCache.at < SEO_CACHE_TTL_MS) return seoCache.notes;
+  const { data, error } = await supabase
+    .from('notes')
+    .select(
+      // Sin `updated_at`: la columna está en supabase-schema.sql pero no existe
+      // en la base desplegada, y pedirla hace fallar la consulta entera (error
+      // 42703) y deja la portada sin metadatos. Para el "modificado" sirve
+      // `last_edited_at`, que solo se sella en notas ya publicadas.
+      'id, title, intro, image, sport, author, created_at, last_edited_at'
+    )
+    .eq('status', 'publicada')
+    .eq('archived', false)
+    .order('created_at', { ascending: false });
+  // Si Supabase falla se devuelve la última lista conocida: es preferible
+  // servir un titular de hace un minuto que dejar la portada sin metadatos.
+  if (error) {
+    console.error('[seo] no se pudieron leer las notas:', error.message);
+    return seoCache.notes;
+  }
+  seoCache.at = Date.now();
+  seoCache.notes = data || [];
+  return seoCache.notes;
+}
+
+function invalidateSeoNotes() {
+  seoCache.at = 0;
+}
+
+function escapeAttr(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Recorta a `max` caracteres sin partir una palabra. Los meta snippets se
+// cortan solos a ~155 caracteres: mejor recortarlos aquí que dejar que Google
+// los corte a media frase.
+function clipText(text, max) {
+  const clean = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  const trimmed = (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(
+    /[\s,.;:—–-]+$/,
+    ''
+  );
+  return `${trimmed}…`;
+}
+
+function slugToText(slug) {
+  const words = String(slug || '')
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1));
+  return words.join(' ');
+}
+
+// El slug de una categoría no lleva tildes ("futbol"), así que el título
+// acababa en "Noticias de Futbol". Se usan los nombres que ya expone el
+// cliente en KNOWN_CATEGORIES para escribirlos bien.
+const CATEGORY_NAMES = {
+  futbol: 'Fútbol',
+  baloncesto: 'Baloncesto',
+  atletismo: 'Atletismo',
+  'otros deportes': 'Otros deportes',
+  'otros-deportes': 'Otros deportes'
+};
+
+function categoryLabel(slug) {
+  const key = decodeURIComponent(String(slug || ''))
+    .toLowerCase()
+    .replace(/-/g, ' ')
+    .trim();
+  return CATEGORY_NAMES[key] || slugToText(key);
+}
+
+// Título y resumen de una nota concreta, que es lo que se pinta en su <head>.
+function seoFromNote(note, baseUrl) {
+  const title = clipText(note.title || 'Sin título', 90);
+  return {
+    title: `${title} · ${SITE_NAME}`,
+    description: clipText(`${note.title || ''}. ${note.intro || ''}`, SEO_DESCRIPTION_MAX),
+    url: `${baseUrl}/nota/${note.id}`,
+    image: note.image || `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
+    imageAlt: note.title || SITE_NAME,
+    type: 'article',
+    published: note.created_at || '',
+    modified: note.last_edited_at || note.created_at || '',
+    section: note.sport || '',
+  };
+}
+
+// Resuelve la ruta pedida contra los datos reales. Devuelve siempre un objeto
+// completo: una ruta desconocida cae en la portada, nunca en metadatos vacíos.
+function resolveSeo(pathname, notes, baseUrl) {
+  const lead = notes[0];
+  const path = pathname === '/index.html' ? '/' : pathname;
+
+  const withSite = (t) => `${t} · ${SITE_NAME}`;
+
+  if (path === '/') {
+    if (lead) {
+      const note = seoFromNote(lead, baseUrl);
+      return {
+        ...note,
+        title: `${clipText(lead.title || SITE_NAME, 70)} · ${SITE_NAME}`,
+        description: clipText(
+          `${lead.title || ''}. ${lead.intro || ''}`,
+          SEO_DESCRIPTION_MAX
+        ),
+        url: `${baseUrl}/`,
+        type: 'website'
+      };
+    }
+    return {
+      title: `${SITE_NAME} | Periodismo deportivo`,
+      description: SITE_TAGLINE,
+      url: `${baseUrl}/`,
+      image: `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
+      imageAlt: SITE_NAME,
+      type: 'website'
+    };
+  }
+
+  const noteMatch = path.match(/^\/nota\/([0-9a-f-]{36})\/?$/i);
+  if (noteMatch) {
+    const found = notes.find((n) => n.id === noteMatch[1]);
+    if (found) return seoFromNote(found, baseUrl);
+  }
+
+  const fixed = {
+    '/curiosidades': {
+      title: withSite('Curiosidades'),
+      description: 'Memorias, torneos del pasado e historias del fútbol que no caducan.'
+    },
+    '/videos': {
+      title: withSite('Videos'),
+      description: 'Jugadas, interviews y reportajes del fútbol centroamericano.'
+    },
+    '/mercado': {
+      title: withSite('Mercado'),
+      description: 'Últimas noticias del mercado de fichajes: altas, bajas y rumores.'
+    },
+    '/etiquetas': {
+      title: withSite('Etiquetas'),
+      description: 'Todas las etiquetas y temas que cubre Tribuna.'
+    },
+    '/quienes-somos': {
+      title: withSite('Quiénes somos'),
+      description: 'Quiénes somos: la gente detrás de Tribuna, periodismo deportivo independiente.'
+    }
+  };
+  if (fixed[path]) {
+    return {
+      ...fixed[path],
+      url: `${baseUrl}${path}`,
+      image: `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
+      imageAlt: SITE_NAME,
+      type: 'website'
+    };
+  }
+
+  const prefixes = [
+    [/^\/categoria\//, 'Noticias de'],
+    [/^\/tag\//, ''],
+    [/^\/autor\//, 'Notas de'],
+    [/^\/equipo\//, ''],
+    [/^\/jugador\//, '']
+  ];
+  for (const [re, prefix] of prefixes) {
+    const m = path.match(re);
+    if (!m) continue;
+    const raw = decodeURIComponent(path.slice(m[0].length));
+    const label = re.source.includes('categoria')
+      ? categoryLabel(raw)
+      : slugToText(raw.replace(/-/g, ' '));
+    if (!label) break;
+    return {
+      title: withSite(prefix ? `${prefix} ${label}` : label),
+      description: clipText(
+        `Las últimas noticias y notas de Tribuna sobre ${label}.`,
+        SEO_DESCRIPTION_MAX
+      ),
+      url: `${baseUrl}${path}`,
+      image: `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
+      imageAlt: label,
+      type: 'website'
+    };
+  }
+
+  return {
+    title: `${SITE_NAME} | Periodismo deportivo`,
+    description: SITE_TAGLINE,
+    url: `${baseUrl}/`,
+    image: `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
+    imageAlt: SITE_NAME,
+    type: 'website'
+  };
+}
+
+function webSiteSchema(baseUrl) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: `${baseUrl}/`,
+    inLanguage: 'es-CR',
+    description: SITE_TAGLINE,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: `${baseUrl}/`
+    }
+  };
+}
+
+function newsArticleSchema(note, baseUrl) {
+  if (!note) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: clipText(note.title || '', 110),
+    description: clipText(note.intro || '', SEO_DESCRIPTION_MAX),
+    image: [note.image || `${baseUrl}/public/tribuna-logo-wordmark.jpg`],
+    datePublished: note.created_at || undefined,
+    dateModified: note.last_edited_at || note.created_at || undefined,
+    inLanguage: 'es-CR',
+    articleSection: note.sport || undefined,
+    author: { '@type': 'Person', name: note.author || SITE_NAME },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: `${baseUrl}/`,
+      logo: { '@type': 'ImageObject', url: `${baseUrl}/public/icon-512.png` }
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${baseUrl}/nota/${note.id}` }
+  };
+}
+
+// Reemplaza una etiqueta del <head> identificándola por su id, que es lo que
+// ya usa setPageMeta() en el cliente. Así lo que manda el servidor y lo que
+// ajusta el navegador hablan el mismo idioma y no se pisan.
+function replaceTagById(html, id, tag) {
+  const re = new RegExp(`<(?:meta|link)\\b[^>]*\\bid="${id}"[^>]*>`, 'i');
+  return re.test(html) ? html.replace(re, tag) : html;
+}
+
+function jsonLdTag(schema) {
+  // El "<" se escapa a < para que un "</script>" dentro de un titular
+  // no cierre el bloque antes de tiempo.
+  const json = JSON.stringify(schema, null, 2).replace(/</g, '\\u003c');
+  return `<script type="application/ld+json" id="schemaScript">${json}</script>`;
+}
+
+let spaTemplate = { mtime: 0, html: '' };
+
+function loadSpaTemplate() {
+  const file = path.join(__dirname, 'index.html');
+  const { mtimeMs } = fs.statSync(file);
+  if (spaTemplate.html && spaTemplate.mtime === mtimeMs) return spaTemplate.html;
+  spaTemplate = { mtime: mtimeMs, html: fs.readFileSync(file, 'utf8') };
+  return spaTemplate.html;
+}
+
+async function renderSpaHtml(req) {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const notes = await getSeoNotes();
+  const seo = resolveSeo(req.path, notes, baseUrl);
+  const noteMatch = req.path.match(/^\/nota\/([0-9a-f-]{36})\/?$/i);
+  const leadNote = noteMatch ? notes.find((n) => n.id === noteMatch[1]) : null;
+
+  let html = loadSpaTemplate();
+  html = html.replace(
+    /<title>[\s\S]*?<\/title>/i,
+    `<title>${escapeAttr(seo.title)}</title>`
+  );
+  html = replaceTagById(
+    html,
+    'metaDesc',
+    `<meta name="description" content="${escapeAttr(seo.description)}" id="metaDesc" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogType',
+    `<meta property="og:type" content="${escapeAttr(seo.type)}" id="ogType" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogTitle',
+    `<meta property="og:title" content="${escapeAttr(seo.title)}" id="ogTitle" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogDesc',
+    `<meta property="og:description" content="${escapeAttr(seo.description)}" id="ogDesc" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogImage',
+    `<meta property="og:image" content="${escapeAttr(seo.image)}" id="ogImage" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogImageAlt',
+    `<meta property="og:image:alt" content="${escapeAttr(seo.imageAlt)}" id="ogImageAlt" />`
+  );
+  html = replaceTagById(
+    html,
+    'ogUrl',
+    `<meta property="og:url" content="${escapeAttr(seo.url)}" id="ogUrl" />`
+  );
+  html = replaceTagById(
+    html,
+    'twitterTitle',
+    `<meta name="twitter:title" content="${escapeAttr(seo.title)}" id="twitterTitle" />`
+  );
+  html = replaceTagById(
+    html,
+    'twitterDesc',
+    `<meta name="twitter:description" content="${escapeAttr(seo.description)}" id="twitterDesc" />`
+  );
+  html = replaceTagById(
+    html,
+    'twitterImage',
+    `<meta name="twitter:image" content="${escapeAttr(seo.image)}" id="twitterImage" />`
+  );
+  html = replaceTagById(
+    html,
+    'twitterImageAlt',
+    `<meta name="twitter:image:alt" content="${escapeAttr(seo.imageAlt)}" id="twitterImageAlt" />`
+  );
+  html = replaceTagById(
+    html,
+    'articlePublished',
+    `<meta property="article:published_time" content="${escapeAttr(seo.published)}" id="articlePublished" />`
+  );
+  html = replaceTagById(
+    html,
+    'articleModified',
+    `<meta property="article:modified_time" content="${escapeAttr(seo.modified)}" id="articleModified" />`
+  );
+  html = replaceTagById(
+    html,
+    'articleSection',
+    `<meta property="article:section" content="${escapeAttr(seo.section)}" id="articleSection" />`
+  );
+  html = replaceTagById(
+    html,
+    'canonicalUrl',
+    `<link rel="canonical" href="${escapeAttr(seo.url)}" id="canonicalUrl" />`
+  );
+  // El bloque lleva siempre el WebSite y, encima, la NewsArticle de la nota
+  // principal: en la portada es la más reciente y en /nota/:id es esa nota.
+  const schema = [webSiteSchema(baseUrl)];
+  const article = leadNote || (seo.url === `${baseUrl}/` ? notes[0] : null);
+  if (article) schema.push(newsArticleSchema(article, baseUrl));
+  html = html.replace(
+    /<script type="application\/ld\+json" id="schemaScript">[\s\S]*?<\/script>/i,
+    jsonLdTag(schema)
+  );
+
+  return html;
+}
+
 // SEO
 app.get('/robots.txt', (req, res) => {
   const host = req.get('host');
@@ -1950,36 +2347,61 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const { data: notes } = await supabase
       .from('notes')
-      .select('id, created_at, status')
+      .select('id, created_at, last_edited_at, status')
       .eq('status', 'publicada')
-      .eq('archived', false);
+      .eq('archived', false)
+      .order('created_at', { ascending: false });
+
+    const xmlEscape = (s) =>
+      String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    // La portada cambia cada vez que se publica algo, así que su lastmod real
+    // es la fecha de la nota más reciente, no la de hoy.
+    const newest = notes && notes.length ? notes[0] : null;
+    const lastmodOf = (note) =>
+      new Date(
+        (note && (note.last_edited_at || note.created_at)) || Date.now()
+      ).toISOString();
+
+    const url = (loc, opts) => {
+      const o = opts || {};
+      return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${o.lastmod || lastmodOf(newest)}</lastmod>\n    <changefreq>${o.changefreq || 'daily'}</changefreq>\n    <priority>${o.priority || '0.5'}</priority>\n  </url>\n`;
+    };
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-    xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
-    xml += `  <url>\n    <loc>${baseUrl}/curiosidades</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
-    xml += `  <url>\n    <loc>${baseUrl}/mercado</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
-    xml += `  <url>\n    <loc>${baseUrl}/videos</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
+    xml += url(`${baseUrl}/`, { changefreq: 'hourly', priority: '1.0' });
+    xml += url(`${baseUrl}/curiosidades`, { changefreq: 'weekly', priority: '0.6' });
+    xml += url(`${baseUrl}/mercado`, { changefreq: 'daily', priority: '0.6' });
+    xml += url(`${baseUrl}/videos`, { changefreq: 'weekly', priority: '0.5' });
     // /etiquetas es el índice de temas y enlaza a cada /tag/:slug. Las páginas de
     // tema sueltas no se listan aquí porque sus slugs se derivan del texto libre
     // del campo `tags` (que escribe la redacción sin formato fijo) y no de una
     // tabla: replicar esa normalización en el servidor acabaría generando URLs
     // que el cliente no reconoce, y el índice ya las enlaza todas.
-    xml += `  <url>\n    <loc>${baseUrl}/etiquetas</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.5</priority>\n  </url>\n`;
+    xml += url(`${baseUrl}/etiquetas`, { changefreq: 'weekly', priority: '0.5' });
+    xml += url(`${baseUrl}/quienes-somos`, { changefreq: 'monthly', priority: '0.3' });
 
+    // Cada nota con URL propia. Antes iban como "/#note-<id>": Google ignora los
+    // fragmentos, así que todas esas entradas se contadorizaban como la portada
+    // y no existía ni una URL de artículo rastreable.
     if (notes && notes.length > 0) {
       notes.forEach((note) => {
-        const date = note.created_at
-          ? new Date(note.created_at).toISOString()
-          : new Date().toISOString();
-        xml += `  <url>\n    <loc>${baseUrl}/#note-${note.id}</loc>\n    <lastmod>${date}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+        xml += url(`${baseUrl}/nota/${note.id}`, {
+          lastmod: lastmodOf(note),
+          changefreq: 'weekly',
+          priority: '0.8'
+        });
       });
     }
 
     const teams = await loadTeamsGraceful();
     teams.forEach((team) => {
-      xml += `  <url>\n    <loc>${baseUrl}/equipo/${team.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+      xml += url(`${baseUrl}/equipo/${team.slug}`, {
+        changefreq: 'weekly',
+        priority: '0.6'
+      });
     });
 
     xml += `</urlset>`;
@@ -2649,6 +3071,23 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Ruta de API no encontrada.' });
 });
 
+// Íconos en la raíz. /favicon.ico es la ruta que Google pide para el ícono de
+// los resultados: sin ella el catch-all le devolvía index.html y salía el globo
+// gris. Se sirven aparte de /public para que ese alias no dependa del
+// `immutable` de los estáticos (así un ícono mal generado se corrige solo).
+const ROOT_ICONS = {
+  '/favicon.ico': 'favicon.ico',
+  '/apple-touch-icon.png': 'apple-touch-icon.png',
+  '/icon-192.png': 'icon-192.png',
+  '/icon-512.png': 'icon-512.png'
+};
+Object.keys(ROOT_ICONS).forEach((route) => {
+  app.get(route, (req, res) => {
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.sendFile(path.join(__dirname, 'public', ROOT_ICONS[route]));
+  });
+});
+
 // Middleware SPA para soportar rutas dinámicas en el navegador
 app.get('*', (req, res) => {
   // La portada arma la nota principal en el cliente a partir de la consulta a
@@ -2656,7 +3095,14 @@ app.get('*', (req, res) => {
   // así se sirve no-store: si mañana se antepone un CDN (Render, Cloudflare) no
   // debe quedarse guardando el HTML viejo y tapar un despliegue.
   res.set('Cache-Control', 'no-store');
-  res.sendFile(path.join(__dirname, 'index.html'));
+  renderSpaHtml(req)
+    .then((html) => res.type('html').send(html))
+    .catch((err) => {
+      // El SEO nunca puede dejar el sitio caído: si algo falla al componer el
+      // <head> se manda index.html tal cual, que es como funcionaba antes.
+      console.error('[seo] no se pudo componer el head:', err.message);
+      res.sendFile(path.join(__dirname, 'index.html'));
+    });
 });
 
 // Manejador de errores centralizado de Express (4 argumentos, va siempre al final).
