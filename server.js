@@ -1749,6 +1749,9 @@ app.patch('/api/notes/:id/status', authenticateWriter, async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Nota no encontrada.' });
+  // Publicar o despublicar cambia qué notas existen para Google: sin esto, el
+  // titular y el sitemap se quedaban hasta 60 s con la versión anterior.
+  invalidateSeoNotes();
   await maybeAutopostNote(data[0], `${req.protocol}://${req.get('host')}`);
   res.json(data[0]);
 });
