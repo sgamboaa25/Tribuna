@@ -116,6 +116,18 @@ async function main() {
   report('ruta /nota/:id cae en la SPA (200 html)',
     nota.status === 200 && /text\/html/.test(nota.headers.get('content-type') || ''), 'status=' + nota.status);
 
+  // La ruta del plugin esta escrita a mano en index.html. Si se mueve el archivo
+  // y nadie actualiza la etiqueta, los botones de compartir quedan mudos y solo
+  // se nota en produccion.
+  const share = await fetch(BASE + '/public/plugins/share.js');
+  const shareBody = await share.text();
+  report('plugin share.js se sirve y el HTML lo carga',
+    share.status === 200 &&
+      /javascript/.test(share.headers.get('content-type') || '') &&
+      /register\('share'/.test(shareBody) &&
+      homeHtml.includes('/public/plugins/share.js'),
+    'status=' + share.status + ' ct=' + share.headers.get('content-type'));
+
   let r = await post('/api/newsletter/subscribe', { email: 'bot@bot.com', website: 'http://spam.example' }, {});
   report('newsletter honeypot: 201 ok sin guardar', r.status === 201 && r.data.ok === true, 'status=' + r.status);
 

@@ -953,6 +953,50 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <!-- Librería de Supabase para navegador -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!--
+    Plugins. Cada archivo de /public/plugins/*.js se registra solo con
+    TribunaPlugins.register(nombre, plugin) y queda disponible para el resto de
+    la app. Se sirven desde el propio dominio a proposito: un script de un CDN
+    externo podria leer el token de redaccion que vive en sessionStorage
+    (tribuna_writer_token) y llevarselo, asi que no se carga nada de terceros.
+    Para agregar uno: crear el archivo en /public/plugins/, sumar su etiqueta de
+    carga aqui abajo, y nada mas.
+  -->
+  <script>
+    // Registro de plugins. Va antes que los archivos de /public/plugins para que
+    // puedan autoinscribirse al cargar. Deliberadamente chico: no hay bundler ni
+    // build, asi que un plugin es un archivo mas y esta tabla.
+    window.TribunaPlugins = {
+      _plugins: Object.create(null),
+      _started: false,
+      register: function (name, plugin) {
+        if (!name || !plugin) return this;
+        this._plugins[name] = plugin;
+        return this;
+      },
+      get: function (name) {
+        return this._plugins[name] || null;
+      },
+      list: function () {
+        return Object.keys(this._plugins);
+      },
+      // Arranca todos los plugins con el contexto de la app. Un plugin que
+      // revienta no debe tumbar el sitio, asi que cada uno va por separado.
+      start: function (ctx) {
+        this._started = true;
+        var self = this;
+        this.list().forEach(function (name) {
+          try {
+            if (typeof self._plugins[name].start === 'function') self._plugins[name].start(ctx);
+          } catch (err) {
+            console.error('[plugin:' + name + ']', err);
+          }
+        });
+        return this;
+      }
+    };
+  </script>
+  <script src="/public/plugins/share.js"></script>
   <script type="application/ld+json" id="schemaScript">{}</script>
 </head>
 <body>
@@ -2732,43 +2776,23 @@
       return ['480','768','1200'].map(w => url.replace(/([?&])w=\d+/i, '$1w=' + w) + ' ' + w + 'w').join(', ');
     };
 
-    let currentShareUrl = window.location.href;
-    let currentShareTitle = 'Tribuna | Periodismo deportivo';
+    // Los botones de compartir viven en el marcado (asi existen aunque el JS
+    // falle) pero su comportamiento esta en el plugin /public/plugins/share.js.
+    // Esta es la unica costura entre los dos: la app arranca los plugins y les
+    // pasa estos helpers. La URL que se comparte sale de noteUrl(), la misma
+    // que usan el canonical, el sitemap y el JSON-LD.
+    const siteUrl = () => `${window.location.origin}/`;
 
-    const shareNative = document.querySelector('#shareNative');
-    const shareCopy = document.querySelector('#shareCopy');
-    const shareSocials = document.querySelectorAll('#shareWa, #shareX, #shareFb');
-
-    if (navigator.share && shareNative) {
-      shareSocials.forEach(btn => { btn.style.display = 'none'; });
-      shareNative.addEventListener('click', () => {
-        navigator.share({ title: currentShareTitle, url: currentShareUrl })
-          .catch(() => {});
-      });
-    } else if (shareNative) {
-      shareNative.style.display = 'none';
+    function startPlugins() {
+      if (!window.TribunaPlugins) return;
+      window.TribunaPlugins.start({ noteUrl, siteUrl, escapeHtml });
     }
 
-    function setupShare(title, url) {
-      if (navigator.share) return;
-      const enc = encodeURIComponent;
-      const shareWa = document.querySelector('#shareWa');
-      const shareX = document.querySelector('#shareX');
-      const shareFb = document.querySelector('#shareFb');
-      if (shareWa) shareWa.href = `https://wa.me/?text=${enc(title + ' — ' + url)}`;
-      if (shareX) shareX.href = `https://twitter.com/intent/tweet?text=${enc(title)}&url=${enc(url)}`;
-      if (shareFb) shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`;
-      if (shareCopy) shareCopy.onclick = () => {
-        if (!navigator.clipboard) return;
-        navigator.clipboard.writeText(url).then(() => {
-          shareCopy.classList.add('copied');
-          shareCopy.setAttribute('aria-label', 'Enlace copiado');
-          setTimeout(() => {
-            shareCopy.classList.remove('copied');
-            shareCopy.setAttribute('aria-label', 'Copiar enlace');
-          }, 2000);
-        }).catch(() => {});
-      };
+    // Si el plugin no cargo (CSP, 404, cache viejo) los botones se quedan como
+    // enlaces vacios, pero la vista de la nota no se rompe.
+    function shareNote(note) {
+      const share = window.TribunaPlugins && window.TribunaPlugins.get('share');
+      if (share) share.setNote(note, { noteUrl, siteUrl, escapeHtml });
     }
 
     // ===== SECCIÓN · SEO: Open Graph, Twitter Cards y datos estructurados =====
@@ -2975,9 +2999,9 @@
         if(!note) return; 
         currentNote = note;
         const title = note.title || 'Sin titular';
-        currentShareUrl = window.location.href;
-        currentShareTitle = title;
-        setupShare(title, currentShareUrl);
+        // Antes era location.href, que al abrir una nota desde la portada es
+        // la URL de la portada: se compartia el inicio en vez de la nota.
+        shareNote(note);
         const intro = note.intro || '';
         const sport = note.sport || 'General';
         const author = note.author || 'Redacción';
@@ -4722,9 +4746,9 @@
 
     async function handleRoute() {
       const path = window.location.pathname;
-      currentShareUrl = window.location.href;
-      currentShareTitle = 'Tribuna | Periodismo deportivo';
-      setupShare(currentShareTitle, currentShareUrl);
+      // Al cambiar de ruta se limpian los enlaces de compartir: si no, al volver
+      // de una nota a la portada quedaria compartida la nota anterior.
+      shareNote(null);
       const categoryHeader = document.getElementById('categoryHeaderContainer');
       categoryHeader.innerHTML = '';
       paginationPage = 0;
@@ -6202,6 +6226,10 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
         btn.disabled = false;
       }
     };
+
+    // Los plugins arrancan antes de la primera carga de notas para que sus
+    // enlaces queden listos antes de que se abra cualquier vista.
+    startPlugins();
 
     loadPublicNotes();
     if (writerToken) loadAllNotesForPanel();
