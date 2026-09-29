@@ -119,14 +119,16 @@ test('api pública: mapeo de nota a JSON limpio', () => {
     categoria: 'Fútbol',
     autor: 'Autor',
     fecha: '2026-01-02T03:04:05.000Z',
-    link: 'https://tribuna.example/#note-abc-123'
+    link: 'https://tribuna.example/nota/abc-123'
   });
 });
 
 test('api pública: mapeo tolerante ante campos ausentes', () => {
   const out = toPublicNote({ id: 'x' }, 'http://localhost:3000');
   assert.equal(out.titulo, '');
-  assert.equal(out.link, 'http://localhost:3000/#note-x');
+  // La URL tiene que ser la ruta de la nota, no "/#note-x": un ancla no la ve
+  // Google, así que el enlace plano llevaba a la portada.
+  assert.equal(out.link, 'http://localhost:3000/nota/x');
   assert.equal(toPublicNote(null, 'http://x').link, null);
 });
 

@@ -69,6 +69,37 @@ async function main() {
   report('sitemap sin DB real -> XML minimo valido 200', smRes.status === 200 && sm.includes('<urlset'), 'status=' + smRes.status);
   report('sitemap sin anclas #note- (Google no las indexa)', !sm.includes('#note-'), 'tiene=#note-');
 
+  // --- Google News ---
+  // El alta en Google News Publisher Center pide este archivo. Se comprueba la
+  // estructura aunque no haya notas: un XML vacio pero bien formado es el
+  // estado correcto con la base de datos caida, y no un 500.
+  const nsmRes = await fetch(BASE + '/news-sitemap.xml');
+  const nsm = await nsmRes.text();
+  report('news-sitemap.xml 200 + namespace de Google News',
+    nsmRes.status === 200 &&
+      nsm.includes('xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"') &&
+      nsm.includes('<urlset') &&
+      nsm.includes('</urlset>'),
+    'status=' + nsmRes.status);
+  // Un news sitemap con lastmod/changefreq/priority es un XML invalido para
+  // Google: esos campos solo existen en el sitemap normal.
+  report('news-sitemap.xml sin lastmod/changefreq/priority',
+    !nsm.includes('<lastmod>') && !nsm.includes('<changefreq>') && !nsm.includes('<priority>'),
+    'trae campos del sitemap normal');
+  report('news-sitemap.xml sin anclas #note-', !nsm.includes('#note-'), 'tiene=#note-');
+  report('robots.txt declara tambien el news sitemap', robots.includes('/news-sitemap.xml'), 'falta en robots.txt');
+
+  // El RSS y la API publica comparten el mismo dato que el sitemap: si uno se
+  // queda con "/#note-<id>", el enlace plano vuelve a apuntar a la portada.
+  const rss = await (await fetch(BASE + '/rss.xml')).text();
+  report('rss sin anclas #note-', !rss.includes('#note-'), 'tiene=#note-');
+  // Con la base de datos caida el feed puede no traer items, y eso es correcto:
+  // lo que no se puede es afirmar sobre URLs que no estan ahi.
+  const rssItems = (rss.match(/<item>/g) || []).length;
+  report('rss usa las URLs de nota (solo si trae items)',
+    rssItems === 0 || rss.includes('/nota/'),
+    'items=' + rssItems + ' con/nota/=' + rss.includes('/nota/'));
+
   // --- SEO: iconos, metadatos por ruta y JSON-LD ---
   // Antes /favicon.ico caia en el catch-all de la SPA y devolvia index.html,
   // por eso el navegador (y el service worker) lo guardaban como una pagina.

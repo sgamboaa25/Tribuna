@@ -347,7 +347,10 @@ function mapNoteToPublicApi(note, baseUrl) {
     categoria: (note && note.sport) || '',
     autor: (note && note.author) || '',
     fecha: note && note.created_at ? new Date(note.created_at).toISOString() : null,
-    link: id ? `${baseUrl}/#note-${id}` : null
+    // La URL propia de la nota. Antes salía "/#note-<id>": un ancla la descarta
+    // Google, así que el enlace plano (RSS, JSON-LD, "copiar enlace") llevaba a
+    // la portada en lugar de a la nota.
+    link: id ? `${baseUrl}${notePath(id)}` : null
   };
 }
 
@@ -1924,7 +1927,10 @@ app.get('/rss.xml', async (req, res) => {
   xml += `    <atom:link href="${rssText(baseUrl)}/rss.xml" rel="self" type="application/rss+xml" />\n`;
 
   notes.forEach((note) => {
-    const url = `${baseUrl}/#note-${note.id}`;
+    // URL propia de la nota, no "/#note-<id>". Google News toma el <link> del
+    // item como URL del artículo: con un ancla, todo lo que entre desde ahí se
+    // contabiliza como la portada y Google News descarta la nota entera.
+    const url = `${baseUrl}${notePath(note.id)}`;
     xml += `    <item>\n`;
     xml += `      <title>${rssText(note.title)}</title>\n`;
     xml += `      <link>${rssText(url)}</link>\n`;
@@ -2344,7 +2350,9 @@ async function renderSpaHtml(req) {
 app.get('/robots.txt', (req, res) => {
   const host = req.get('host');
   const protocol = req.protocol;
-  const content = `User-agent: *\nAllow: /\n\nSitemap: ${protocol}://${host}/sitemap.xml`;
+  // El news sitemap se declara aparte: Google News usa un discovery distinto
+  // del rastreo normal, y ambos necesitan su URL.
+  const content = `User-agent: *\nAllow: /\n\nSitemap: ${protocol}://${host}/sitemap.xml\nSitemap: ${protocol}://${host}/news-sitemap.xml`;
   res.type('text/plain');
   res.send(content);
 });
@@ -2420,6 +2428,78 @@ app.get('/sitemap.xml', async (req, res) => {
     res.send(xml);
   } catch {
     res.status(500).send('Error al generar el sitemap');
+  }
+});
+
+// ===== Google News: sitemap de noticias =====
+//
+// Va aparte del sitemap normal a propósito. Google News no usa el sitemap para
+// rastrear páginas: lo usa para decidir qué notas entran a su pestaña de
+// noticias, y ahí el contenido fresco es lo único que cuenta. Mezclarlo con las
+// páginas estáticas (inicio, /videos, /mercado) hace que esas páginas compitan
+// por el mismo presupuesto y que se pierdan.
+//
+// Nombre e idioma tienen que coincidir EXACTAMENTE con el perfil de Google News
+// Publisher Center. Si no coinciden, el alta se rechaza. Es el único valor que
+// hay que tocar al abrir la cuenta.
+const NEWS_PUBLICATION = { name: 'Tribuna', language: 'es' };
+
+// Google consulta el news sitemap una vez al día y solo se interesa por lo
+// reciente. Dos días es la ventana que recomienda, con un tope de 1000 URLs.
+const NEWS_SITEMAP_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
+const NEWS_SITEMAP_MAX_URLS = 1000;
+
+app.get('/news-sitemap.xml', async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const xmlEscape = (s) =>
+    String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+  try {
+    const since = new Date(Date.now() - NEWS_SITEMAP_WINDOW_MS).toISOString();
+    const { data: notes } = await supabase
+      .from('notes')
+      .select('id, title, created_at')
+      .eq('status', 'publicada')
+      .eq('archived', false)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(NEWS_SITEMAP_MAX_URLS);
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n`;
+
+    (notes || []).forEach((note) => {
+      // news:publication_date es la fecha de publicación original, no la última
+      // edición. Poner last_edited_at haría que una nota corregida pareciera
+      // recién publicada y compitiese contra las de hoy.
+      const published = new Date(note.created_at);
+      const date = Number.isFinite(published.getTime()) ? published.toISOString() : null;
+      if (!date) return;
+
+      xml += `  <url>\n`;
+      xml += `    <loc>${xmlEscape(`${baseUrl}${notePath(note.id)}`)}</loc>\n`;
+      xml += `    <news:news>\n`;
+      xml += `      <news:publication>\n`;
+      xml += `        <news:name>${xmlEscape(NEWS_PUBLICATION.name)}</news:name>\n`;
+      xml += `        <news:language>${xmlEscape(NEWS_PUBLICATION.language)}</news:language>\n`;
+      xml += `      </news:publication>\n`;
+      xml += `      <news:publication_date>${date}</news:publication_date>\n`;
+      xml += `      <news:title>${xmlEscape(note.title || 'Sin titular')}</news:title>\n`;
+      xml += `    </news:news>\n`;
+      xml += `  </url>\n`;
+    });
+
+    xml += `</urlset>`;
+
+    res.type('application/xml');
+    res.send(xml);
+  } catch {
+    res.status(500).send('Error al generar el news sitemap');
   }
 });
 
