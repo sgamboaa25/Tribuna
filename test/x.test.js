@@ -2,7 +2,14 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { app } = require('./setup');
 
-const { oauth1Signature, oauth1Authorization, maybeAutopostNote } = require('../server');
+const { oauth1Signature, oauth1Authorization, maybeAutopostNote, notePath } = require('../server');
+
+test('x: el enlace del post usa la URL de nota, no el ancla #note-', () => {
+  // Un "#note-<id>" es un fragmento: el post llega a la portada y no a la nota,
+  // y Google no lo indexa. La URL tiene que ser la misma del canonical.
+  assert.equal(notePath('abc-123'), '/nota/abc-123');
+  assert.ok(!notePath('abc-123').includes('#'));
+});
 
 test('x: firma OAuth 1.0a reproduce el vector canónico de RFC 5849', () => {
   const sig = oauth1Signature(

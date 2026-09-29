@@ -419,8 +419,15 @@ function truncateToBytes(str, max) {
   return out;
 }
 
+// URL pública de una nota. Tiene que ser la misma que usan el canonical, el
+// sitemap y el JSON-LD: un "/#note-<id>" es un ancla, y los enlaces de X se
+// comparten planos, así que quien lo abre llegaría a la portada y no a la nota.
+function notePath(id) {
+  return `/nota/${id}`;
+}
+
 async function publishToX({ title, id }, baseUrl) {
-  const link = `${baseUrl}/#note-${id}`;
+  const link = `${baseUrl}${notePath(id)}`;
   // X cuenta un enlace como 23 caracteres (t.co) y el límite son 280.
   const maxTitle = 280 - 1 - X_TCO_URL_LENGTH;
   const text = `${truncateToBytes(title, maxTitle)}\n${link}`;
@@ -2051,7 +2058,7 @@ function seoFromNote(note, baseUrl) {
   return {
     title: `${title} · ${SITE_NAME}`,
     description: clipText(`${note.title || ''}. ${note.intro || ''}`, SEO_DESCRIPTION_MAX),
-    url: `${baseUrl}/nota/${note.id}`,
+    url: `${baseUrl}${notePath(note.id)}`,
     image: note.image || `${baseUrl}/public/tribuna-logo-wordmark.jpg`,
     imageAlt: note.title || SITE_NAME,
     type: 'article',
@@ -2204,7 +2211,7 @@ function newsArticleSchema(note, baseUrl) {
       url: `${baseUrl}/`,
       logo: { '@type': 'ImageObject', url: `${baseUrl}/public/icon-512.png` }
     },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `${baseUrl}/nota/${note.id}` }
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${baseUrl}${notePath(note.id)}` }
   };
 }
 
@@ -2391,7 +2398,7 @@ app.get('/sitemap.xml', async (req, res) => {
     // y no existía ni una URL de artículo rastreable.
     if (notes && notes.length > 0) {
       notes.forEach((note) => {
-        xml += url(`${baseUrl}/nota/${note.id}`, {
+        xml += url(`${baseUrl}${notePath(note.id)}`, {
           lastmod: lastmodOf(note),
           changefreq: 'weekly',
           priority: '0.8'
@@ -3139,6 +3146,7 @@ module.exports.oauth1SignatureBase = oauth1SignatureBase;
 module.exports.oauth1Signature = oauth1Signature;
 module.exports.oauth1Authorization = oauth1Authorization;
 module.exports.maybeAutopostNote = maybeAutopostNote;
+module.exports.notePath = notePath;
 module.exports.resolveTeamSlugs = resolveTeamSlugs;
 module.exports.computeEditStamp = computeEditStamp;
 module.exports.validateNote = validateNote;
