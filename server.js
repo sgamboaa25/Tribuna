@@ -2651,6 +2651,11 @@ app.use('/api', (req, res) => {
 
 // Middleware SPA para soportar rutas dinámicas en el navegador
 app.get('*', (req, res) => {
+  // La portada arma la nota principal en el cliente a partir de la consulta a
+  // Supabase, así que el HTML no lleva noticias dentro y casi nunca cambia. Aun
+  // así se sirve no-store: si mañana se antepone un CDN (Render, Cloudflare) no
+  // debe quedarse guardando el HTML viejo y tapar un despliegue.
+  res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

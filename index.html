@@ -2089,14 +2089,14 @@
       const sportFilter = normalizeStr(document.getElementById('publicSport').dataset.value);
       searchStatus.textContent = 'Buscando…';
 
-      const { data, error } = await supabaseClient.from('notes').select('*');
+      const { data, error } = await supabaseClient.from('notes').select('*').eq('status', 'publicada').eq('archived', false);
       if (error) {
         console.error("Error al buscar notas:", error);
         searchStatus.textContent = 'Error al buscar en la base de datos.';
         return;
       }
 
-      let results = data || [];
+      let results = sortNotesByRecent(data || []);
       if (sportFilter) {
         results = results.filter(n => matchesSportCategory(n.sport, document.getElementById('publicSport').dataset.value));
       }
@@ -2149,12 +2149,17 @@
 
     let currentStandingsLeague = 'PL';
 
+    // Fechas absolutas siempre en hora de Costa Rica. Sin esto cada lector ve
+    // la suya (un lector en España ve el mismo partido con dos horas de
+    // diferencia), y la portada mezcla fechas de zonas distintas.
+    const SITE_TIMEZONE = 'America/Costa_Rica';
+
     function formatManualStamp(iso) {
       if (!iso) return '';
       const d = new Date(iso);
       if (Number.isNaN(d.getTime())) return '';
-      const fecha = d.toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric' });
-      const hora = d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+      const fecha = d.toLocaleDateString('es-CR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: SITE_TIMEZONE });
+      const hora = d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', timeZone: SITE_TIMEZONE });
       return `${fecha}, ${hora} h`;
     }
 
@@ -2668,8 +2673,42 @@
       if (!iso) return '';
       const d = new Date(iso);
       if (isNaN(d.getTime())) return '';
-      return d.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' });
+      return d.toLocaleString('es-CR', { dateStyle: 'full', timeStyle: 'short', timeZone: SITE_TIMEZONE });
     }
+
+    // ===== ORDEN DE PORTADA =====
+    // La nota principal de la portada es SIEMPRE la más reciente: no hay
+    // columna "destacada" a la que haya que subirla a mano. Estas tres
+    // funciones son todo el criterio.
+    //
+    // `created_at` es el campo de publicación ( timestamptz, ISO-8601 UTC). No
+    // existe `published_at`, y `updated_at` no sirve: se mueve con cada
+    // edición, así que una nota vieja retocada saltaría a la portada.
+    //
+    // Las fechas al futuro se ignoran: no hay estados "programada", así que
+    // una fecha un día por delante solo puede ser un reloj desfasado o una
+    // nota escrita a mano con el año equivocado. El margen es amplio a
+    // propósito para que un desfase de reloj no borre la portada.
+    const FUTURE_DATE_TOLERANCE_MS = 24 * 3600000;
+
+    // Una nota cuenta para la portada solo si está publicada y no archivada.
+    // La RLS de Supabase ya lo garantiza, pero se repite aquí para que el
+    // cliente no dependa de esa configuración ni pinte borradores.
+    const noteIsPublished = (n) => !!n && n.status === 'publicada' && !n.archived;
+
+    // Milisegundos de publicación. Una nota sin fecha válida vale 0 y queda al
+    // final, nunca en la cabecera.
+    const notePublishedAt = (n) => {
+      const t = n && n.created_at ? new Date(n.created_at).getTime() : NaN;
+      return Number.isFinite(t) ? t : 0;
+    };
+
+    const sortNotesByRecent = (list, now) => {
+      const ref = Number.isFinite(now) ? now : Date.now();
+      return (list || [])
+        .filter(n => noteIsPublished(n) && notePublishedAt(n) <= ref + FUTURE_DATE_TOLERANCE_MS)
+        .sort((a, b) => notePublishedAt(b) - notePublishedAt(a));
+    };
 
     const isMobileLayout = () => window.matchMedia('(max-width:768px)').matches;
     // Imagen válida y transparente (1x1). Aparca los <img> sin imagen: un <img> sin src
@@ -3702,6 +3741,9 @@
       renderBreakingBanner();
 
       if (currentDisplayNotes.length > 0) {
+        // La principal es la primera de la lista, y la lista ya viene
+        // ordenada por fecha de publicación descendente (ver sortNotesByRecent).
+        // El grid usa .slice(1), así que la principal no se repite abajo.
         const n = currentDisplayNotes[0];
         const heroMedia = mediaBlockHTML(n, { wrapper: 'hero-media', imgClass: 'hero-image', sizes: '(max-width:768px) 100vw, 690px', imgAttrs: 'fetchpriority="high" decoding="async"', extra: bookmarkBtn(n, 'hero-bookmark') });
         hero.innerHTML = `${heroMedia}<article class="hero-copy">${heroMedia ? '' : bookmarkBtn(n, 'hero-bookmark')}<a class="article-link open-article" href="#lectura" data-id="0"><span class="tag" data-sport="${String(n.sport).toLowerCase()}">${n.sport}</span>${ultimaHoraBadge(n)}<h1>${n.title}</h1><p class="lead">${n.intro}</p>${teamChipsRowHTML(noteTeamSlugs(n))}</a><p class="byline">${authorLinkHTML(n.author, n.email)}${noteDate(n.created_at) ? ' · ' + noteDate(n.created_at) : ''}</p></article>`;
@@ -3729,10 +3771,13 @@
             ${bookmarkBtn(n)}
           </article>`;
         });
-      } else if (currentDisplayNotes.length === 0) {
+      } else {
+        // Sin notas, o con una sola (que ya está arriba como principal): el
+        // grid no puede quedarse en blanco. Mismo marcado que ya existía.
+        const soloUna = currentDisplayNotes.length === 1;
         grid.innerHTML = `<div class="empty-results">
-          <h3>Sin historias todavía</h3>
-          <p>${currentActiveCategory ? 'Todavía no hay notas publicadas en esta categoría.' : 'No hay notas publicadas todavía. Vuelve pronto.'}</p>
+          <h3>${soloUna ? 'Esta es la única historia de hoy' : 'Sin historias todavía'}</h3>
+          <p>${soloUna ? 'Vuelve pronto para más noticias.' : (currentActiveCategory ? 'Todavía no hay notas publicadas en esta categoría.' : 'No hay notas publicadas todavía. Vuelve pronto.')}</p>
         </div>`;
       }
 
@@ -3831,13 +3876,22 @@
     }
 
     async function fetchNotesPage(isCategory = false, categoryName = '') {
-      const { data, error } = await supabaseClient.from('notes').select('*');
+      // El orden se pide a la base Y se reordena en el cliente: .order() hace el
+      // trabajo barato en Postgres, y sortNotesByRecent garantiza el criterio
+      // aunque la respuesta llegue desordenada. `nullsFirst: false` deja las
+      // notas sin fecha al final en vez de encabezar la portada.
+      const { data, error } = await supabaseClient
+        .from('notes')
+        .select('*')
+        .eq('status', 'publicada')
+        .eq('archived', false)
+        .order('created_at', { ascending: false, nullsFirst: false });
       if (error) {
         console.error("Error al obtener notas:", error);
         return [];
       }
       
-      let list = data || [];
+      let list = sortNotesByRecent(data || []);
       if (isCategory && categoryName) {
         list = list.filter(n => matchesSportCategory(n.sport, categoryName));
       }
@@ -3859,8 +3913,8 @@
         currentDisplayNotes = moreData;
         renderPublicCards();
         
-        const { data: allCatData } = await supabaseClient.from('notes').select('*');
-        let totalFiltered = allCatData || [];
+        const { data: allCatData } = await supabaseClient.from('notes').select('*').eq('status', 'publicada').eq('archived', false);
+        let totalFiltered = sortNotesByRecent(allCatData || []);
         if (currentActiveCategory) {
           totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
         }
@@ -4832,8 +4886,8 @@
       if (videosMode || currentActiveCategory === 'Curiosidades') {
         totalFiltered = currentDisplayNotes;
       } else {
-        const { data: allCatData } = await supabaseClient.from('notes').select('*');
-        totalFiltered = allCatData || [];
+        const { data: allCatData } = await supabaseClient.from('notes').select('*').eq('status', 'publicada').eq('archived', false);
+        totalFiltered = sortNotesByRecent(allCatData || []);
         if (currentActiveCategory) {
           totalFiltered = totalFiltered.filter(n => matchesSportCategory(n.sport, currentActiveCategory));
         }
@@ -4870,20 +4924,41 @@
 
     async function loadPublicNotes(){ 
       await loadAuthorProfiles();
+      lastNotesRefreshAt = Date.now();
       try { 
-const { data, error } = await supabaseClient.from('notes').select('*').eq('archived', false);
+const { data, error } = await supabaseClient.from('notes').select('*').eq('status', 'publicada').eq('archived', false).order('created_at', { ascending: false, nullsFirst: false });
         if (error) throw error;
-        allPublicNotes = (data && data.length > 0) ? data : fallbackNotes;
+        // La lista maestra también va de más reciente a más vieja: de ahí saca
+        // la principal la portada, y de ahí salen "más leídas", tendencias y
+        // cortes de última hora.
+        allPublicNotes = sortNotesByRecent(data && data.length > 0 ? data : fallbackNotes);
         await loadTeamsCatalog();
         refreshTeamsHint();
         handleRoute();
         openNoteFromHash();
       } catch (err) {
         console.error("Error al cargar notas de Supabase:", err);
-        allPublicNotes = fallbackNotes;
+        allPublicNotes = sortNotesByRecent(fallbackNotes);
         handleRoute();
       } 
     }
+
+    // Mientras la pestaña está en segundo plano pueden publicarse notas. Al
+    // volver a primer plano se recarga la portada para que la principal no
+    // quede vieja. Solo en la portada y sin artículo abierto: si el lector
+    // está leyendo, no se le cambia lo que tiene delante ni se le hace parpadear
+    // el esqueleto de carga.
+    let lastNotesRefreshAt = 0;
+    const NOTES_REFRESH_MIN_MS = 60000;
+    function refreshNotesOnFocus() {
+      if (document.visibilityState !== 'visible') return;
+      if (window.location.pathname !== '/' || window.location.hash) return;
+      if (Date.now() - lastNotesRefreshAt < NOTES_REFRESH_MIN_MS) return;
+      lastNotesRefreshAt = Date.now();
+      loadPublicNotes();
+    }
+    document.addEventListener('visibilitychange', refreshNotesOnFocus);
+    window.addEventListener('focus', refreshNotesOnFocus);
 
     async function loadAllNotesForPanel(){ 
       if (!writerToken) return;

@@ -42,6 +42,10 @@ self.addEventListener('fetch', (event) => {
   // copia vieja sin avisar, así que un suscriptor con la PWA instalada
   // simplemente dejaría de recibir noticias nuevas.
   if (url.pathname === '/rss.xml' || url.pathname === '/feed') return;
+  // Lo mismo con las notas: llegan directo a la API de Supabase, que es de
+  // otro origen, así que el chequeo de arriba ya las deja pasar sin cachear.
+  // Los documentos de la SPA (este mismo archivo) van red primero y solo se
+  // guardan como respaldo sin conexión.
 
   if (isDocument(req, url)) {
     event.respondWith(
