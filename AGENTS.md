@@ -36,6 +36,21 @@ Notas de aplicación:
   Edge Function antigua en `/functions/v1/feed-rss`: si alguna vez difieren, la que
   manda es `/rss.xml` porque es la que declara el `<link rel="alternate">`.
 - Tablas principales: `notes` (noticias, campo `status` con valores como `publicada`/borrador, `views` como contador de lecturas).
+- `social_posts` (sección "En redes"): solo guarda `url` + `red` deducida del dominio por `server.js`; el texto y la imagen los pone la red al montar su embed oficial. No lleva claves de API.
+
+## Sección "En redes" (X e Instagram)
+
+- Única sección que se pinta desde `paintSocialSection()`, y solo en la portada
+  (`socialSectionAllowed()`): si no, reaparecía al navegar a `/categoria/*`.
+- Los scripts de `platform.twitter.com/widgets.js` y `www.instagram.com/embed.js`
+  NO van en el `<head>`: se inyectan con `IntersectionObserver`
+  (`SOCIAL_EMBED_MARGIN`). Un embed que no aparece en
+  `SOCIAL_EMBED_TIMEOUT_MS` cae a una tarjeta con el enlace ("Ver en X" /
+  "Ver en Instagram") — nunca a un hueco vacío.
+- `red` se deduce en el servidor, nunca se acepta desde el cliente: es lo que
+  decide qué embed se monta. La CSP de helmet ya permite los dominios de X e
+  Instagram en `scriptSrc`, `connectSrc` y `frameSrc`; si se toca, revisa esas
+  tres listas.
 
 ## Variables de entorno del backend (ver `.env.example`)
 
@@ -48,6 +63,7 @@ Notas de aplicación:
 - `PORT` — puerto de Express (opcional).
 - `X_AUTOPOST_ENABLED` — activa la autopublicación en X de notas urgentes (`true`/`false`, por defecto desactivada).
 - `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` — credenciales de la X API (OAuth 1.0a, SECRETAS; solo viven en el backend).
+- `X_TIMELINE_ENABLED` / `X_TIMELINE_HANDLE` — timeline embebido de la cuenta de X en la sección "En redes" (`true`/`false` + `@usuario` sin arroba); desactivado por defecto. Ninguna de las dos es secreta: el handle va en el markup del embed.
 
 ## Rutas del sitio (SPA, todas devuelven `index.html`)
 

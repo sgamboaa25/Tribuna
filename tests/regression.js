@@ -250,6 +250,27 @@ async function main() {
   const settingsPut = await fetch(BASE + '/api/settings', { method: 'PUT', body: '{"next_transfer_window":"x"}' });
   report('/api/settings PUT sin token -> 401', settingsPut.status === 401, 'status=' + settingsPut.status);
 
+  const socialPublic = await fetch(BASE + '/api/social-posts');
+  report('/api/social-posts sin DB real -> 500 JSON', socialPublic.status === 500, 'status=' + socialPublic.status);
+
+  const socialManager = await fetch(BASE + '/api/social-posts/manager');
+  report('/api/social-posts/manager sin token -> 401', socialManager.status === 401, 'status=' + socialManager.status);
+
+  const socialPost = await post('/api/social-posts', { url: 'https://facebook.com/tribuna/posts/1' }, {});
+  report('POST /api/social-posts sin token -> 401', socialPost.status === 401, 'status=' + socialPost.status);
+
+  // La CSP tiene que dejar pasar los embeds de X e Instagram; si se toca la
+  // lista de helmet sin acordarse de esto, la sección "En redes" se queda en
+  // blanco sin que nada falle visiblemente.
+  const cspRes = await fetch(BASE + '/');
+  const csp = cspRes.headers.get('content-security-policy') || '';
+  report(
+    'CSP permite widgets.js de X y embed.js de Instagram',
+    /script-src[^;]*platform\.twitter\.com/i.test(csp) && /script-src[^;]*instagram\.com/i.test(csp) &&
+      /frame-src[^;]*(platform|syndication)\.twitter\.com/i.test(csp) && /frame-src[^;]*instagram\.com/i.test(csp),
+    'csp=' + csp.slice(0, 160)
+  );
+
   const promericaPub = await fetch(BASE + '/api/standings/promerica');
   report('/api/standings/promerica sin DB real -> 500 JSON', promericaPub.status === 500, 'status=' + promericaPub.status);
 

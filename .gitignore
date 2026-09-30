@@ -6,3 +6,5 @@ npm-debug.log*
 .DS_Store
 supabase/.temp/
 newsletter-cron.sql
+# Artefacto de `npm run lint:client`: el script inline de index.html extraido.
+.tribuna-inline.js

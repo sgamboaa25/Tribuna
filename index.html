@@ -517,6 +517,26 @@
     .poll-source { color:var(--accent-strong); font-weight:700; text-decoration:none; margin-left:auto; }
     .poll-source:hover { text-decoration:underline; }
     .foto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+
+    /* Punto 18 · "En redes": grilla de embeds de X e Instagram curados por la
+       redacción. Los embeds oficiales crecen con el contenido (una foto de
+       Instagram es mucho más alta que un post de texto), así que cada tarjeta
+       topa su propio alto: sin eso, una sola publicación larga estiraría la
+       fila y dejaría huecos debajo de las demás. */
+    .en-redes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:20px; align-items:start; }
+    .en-redes-card { min-width:0; background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.02), 0 1px 0 rgba(0,0,0,.03); }
+    .en-redes-card.is-featured { grid-column:span 2; }
+    .en-redes-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .en-redes-net { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font:600 .78rem 'Inter', sans-serif; }
+    .en-redes-net svg { width:15px; height:15px; fill:currentColor; flex:none; }
+    .en-redes-featured { color:var(--accent); font:700 .68rem 'Inter', sans-serif; text-transform:uppercase; letter-spacing:.08em; }
+    .en-redes-media { max-height:520px; overflow:auto; }
+    .en-redes-media > * { max-width:100%; margin-left:auto; margin-right:auto; }
+    .en-redes-media blockquote { border:0; padding:0; font:inherit; }
+    .en-redes-pending { min-height:160px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.85rem; }
+    .en-redes-fallback p { margin:0 0 12px; color:var(--muted); font-size:.9rem; }
+    .en-redes-fallback a { color:var(--accent); font:700 .9rem 'Inter', sans-serif; text-decoration:none; }
+    .en-redes-fallback a:hover { text-decoration:underline; }
     .foto-card { border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); display:flex; flex-direction:column; }
     .foto-card .foto-media { aspect-ratio:4/3; background:var(--input-bg); overflow:hidden; }
     .foto-card .foto-media img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
@@ -856,6 +876,10 @@
       .utility { flex-wrap:wrap; gap:var(--space-sm); }
       .brand { font-size:2.3rem; } 
       .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } 
+      /* En móvil la grilla de "En redes" es de una sola columna, así que una
+         fija deja de ocupar dos casillas: el ancho extra se perdería. */
+      .en-redes-grid { grid-template-columns:1fr; }
+      .en-redes-card.is-featured { grid-column:span 1; }
       .card-featured { grid-column:auto; } 
       .hero { gap:28px; }
       .grid { gap:var(--space-lg); }
@@ -963,7 +987,7 @@
       header, .utility, .breaking-banner, .hero, .search-bar, .grid,
       .load-more-container, #posiciones, #goleadores, #proximos, .most-read, .newsletter, footer,
       #writerPanel, #notFound404, .reactions-group, .share-group, .back,
-      .theme-toggle, .category-header, #mvpJornada, #curiosidadesSection, #fotosLectores, #playerHub, #mercadoHub, dialog, .to-top,
+      .theme-toggle, .category-header, #mvpJornada, #curiosidadesSection, #fotosLectores, #enRedes, #playerHub, #mercadoHub, dialog, .to-top,
       .ad-slot { display:none !important; }
       #articleDetail { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
       .detail-content { text-align:left; opacity:1; }
@@ -1218,6 +1242,22 @@
     <div class="load-more-container" id="loadMoreContainer" style="display:none;">
       <button class="load-more-btn" id="loadMoreBtn" type="button">Cargar más</button>
     </div>
+
+    <!-- ===== EN REDES (X e Instagram curados por la redacción) ===== -->
+    <!-- La redacción pega la URL de una publicación desde el panel; el backend
+         valida el dominio y devuelve las más recientes. Los embeds oficiales se
+         montan recién cuando la sección está por entrar en pantalla. Sin
+         publicaciones, la sección se oculta entera. -->
+    <section class="standings-section" id="enRedes" style="display:none">
+      <div class="standings-header">
+        <div>
+          <div class="tag">Redes</div>
+          <h2 class="section-title">En redes</h2>
+        </div>
+        <span id="enRedesStatus" class="status-indicator">En vivo</span>
+      </div>
+      <div class="en-redes-grid" id="enRedesGrid"></div>
+    </section>
 
     <section class="standings-section" id="posiciones">
       <div class="standings-header">
@@ -1659,6 +1699,25 @@
         <div class="draft-list" id="fotoManagerList"></div>
       </div>
 
+      <div class="foto-panel-block">
+        <strong>En redes</strong>
+        <p class="tags-hint">Pega el enlace de una publicación de X o Instagram y aparecerá en la sección "En redes" de la portada. Se muestran las 6 más recientes; "destacada" la fija arriba de la grilla.</p>
+        <p class="message" id="socialMsg" aria-live="polite"></p>
+        <div class="draft-list" id="socialManagerList"></div>
+        <form id="socialForm">
+          <div class="editor-grid">
+            <div class="wide">
+              <label for="socialUrl">Enlace de la publicación</label>
+              <input id="socialUrl" type="url" required placeholder="https://x.com/tribunadepts/status/…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" />
+            </div>
+            <div class="wide check-field">
+              <label class="check"><input id="socialDestacada" type="checkbox" /> Destacada (se fija arriba de la grilla)</label>
+            </div>
+          </div>
+          <button class="submit" type="submit">Agregar publicación</button>
+        </form>
+      </div>
+
       <div class="writer-profile-block" id="writerProfileBlock">
         <strong>Mi perfil</strong>
         <p class="tags-hint">Tu foto sustituye el círculo de iniciales en portada y en tu página de autor. Edita bio y foto y guárdalos con el botón de abajo.</p>
@@ -2056,6 +2115,7 @@
         loadStandingsForPanel();
         loadScorersForPanel();
         loadMyProfile();
+        loadSocialPostsForPanel();
         panel.scrollIntoView({ behavior: scrollBehavior }); 
       } catch (err) {
         writerToken = '';
@@ -2661,6 +2721,235 @@
       }
     }
     loadReaderPhotos();
+
+    // ===== En redes: embeds de X e Instagram =====
+    // La redacción pega las URLs desde el panel (ver /api/social-posts). El
+    // backend ya validó el dominio y detectó la red, así que acá no hay nada
+    // que decidir editorialmente: solo montar el embed oficial y vigilar que
+    // haya cargado.
+    //
+    // Los scripts de las redes pesan bastante y no hacen falta hasta que la
+    // sección entra en pantalla, así que no se piden en el <head> como el resto
+    // de librerías: se inyectan desde el observer. Si el observer no existe o
+    // el navegador no soporta la API, se cae al peor caso de cargarlos ya.
+    const SOCIAL_SCRIPT_SRC = {
+      x: 'https://platform.twitter.com/widgets.js',
+      instagram: 'https://www.instagram.com/embed.js'
+    };
+    const SOCIAL_NET_NAME = { x: 'X', instagram: 'Instagram' };
+    const SOCIAL_NET_SVG = {
+      x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      instagram: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.4 5.6 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.6 18.4 4 16.4 4H7.6zm4.4 3.7a6.3 6.3 0 1 1 0 12.6 6.3 6.3 0 0 1 0-12.6zm0 2a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm5.3-1.7a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0z"/></svg>'
+    };
+    // Margen con el que se adelanta la carga antes de que la sección entre en
+    // pantalla, para que el embed ya esté puesto cuando el lector llega.
+    const SOCIAL_EMBED_MARGIN = '400px 0px';
+    // Una publicación borrada, protegida o caída deja el iframe sin aparecer.
+    // Con este techo la tarjeta pasa al enlace plano en vez de quedar en hueco.
+    const SOCIAL_EMBED_TIMEOUT_MS = 8000;
+    const enRedesSection = document.getElementById('enRedes');
+    const enRedesGrid = document.getElementById('enRedesGrid');
+    const enRedesStatus = document.getElementById('enRedesStatus');
+    const socialScriptPromise = {};
+    let socialPostsData = null;
+    let socialPostsRequested = false;
+
+    // Red deducida de la URL. El servidor ya manda `red` en cada publicación,
+    // pero el cliente no confía en ese dato a ciegas: si una fila viniera sin él
+    // o corrupta, el enlace de respaldo al menos debe llevar a la red correcta.
+    function socialNetFromUrl(url) {
+      const host = String(url || '')
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .split(/[/?#]/)[0]
+        .replace(/^www\./, '');
+      if (host === 'x.com' || host === 'twitter.com') return 'x';
+      if (host === 'instagram.com' || host === 'instagr.am') return 'instagram';
+      return null;
+    }
+
+    function socialNetOf(post) {
+      return socialNetFromUrl(post.url) || (post.red === 'instagram' ? 'instagram' : 'x');
+    }
+
+    function socialEmbedSrc(net) {
+      return SOCIAL_SCRIPT_SRC[net] || SOCIAL_SCRIPT_SRC.x;
+    }
+
+    // Markup del embed oficial. Es el que reconstruye X e Instagram: el
+    // blockquote es un placeholder que el script de la red reemplaza por un
+    // iframe cuando encuentra la publicación.
+    function socialEmbedMarkup(post, net) {
+      const url = escapeHtml(post.url);
+      if (net === 'instagram') {
+        return `<blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"></blockquote>`;
+      }
+      return `<blockquote class="twitter-tweet" data-dnt="true"><a href="${url}"></a></blockquote>`;
+    }
+
+    function socialTimelineMarkup(handle) {
+      const handleHtml = escapeHtml(handle);
+      return `<a class="twitter-timeline" data-dnt="true" data-tweet-limit="5" href="https://x.com/${handleHtml}">Publicaciones de @${handleHtml}</a>`;
+    }
+
+    function socialFallbackMarkup(post, net) {
+      const label = net === 'instagram' ? 'Ver en Instagram' : 'Ver en X';
+      return `<div class="en-redes-fallback"><p>Esta publicación no se pudo cargar aquí.</p><a href="${escapeHtml(post.url)}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
+    }
+
+    function socialCardHTML(post) {
+      const net = socialNetOf(post);
+      const url = escapeHtml(post.url);
+      return `<article class="en-redes-card${post.destacada ? ' is-featured' : ''}" data-net="${net}" data-url="${url}">
+          <div class="en-redes-head">
+            <span class="en-redes-net">${SOCIAL_NET_SVG[net]}<span>${SOCIAL_NET_NAME[net]}</span></span>
+            ${post.destacada ? '<span class="en-redes-featured">Destacada</span>' : ''}
+          </div>
+          <div class="en-redes-media"><p class="en-redes-pending">Cargando publicación…</p></div>
+        </article>`;
+    }
+
+    function socialTimelineCardHTML(handle) {
+      const url = escapeHtml('https://x.com/' + handle);
+      return `<article class="en-redes-card" data-net="x" data-url="${url}" data-timeline="${escapeHtml(handle)}">
+          <div class="en-redes-head">
+            <span class="en-redes-net">${SOCIAL_NET_SVG.x}<span>X · @${escapeHtml(handle)}</span></span>
+          </div>
+          <div class="en-redes-media"><p class="en-redes-pending">Cargando publicaciones…</p></div>
+        </article>`;
+    }
+
+    function loadExternalScript(src) {
+      if (socialScriptPromise[src]) return socialScriptPromise[src];
+      socialScriptPromise[src] = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('No se pudo cargar ' + src));
+        document.head.appendChild(script);
+      });
+      // Si el script falla una vez, se permite reintentarlo: el catch externo lo
+      // lleva a la tarjeta de respaldo, pero un posteo posterior ya merece una
+      // oportunidad nueva.
+      socialScriptPromise[src].catch(() => { delete socialScriptPromise[src]; });
+      return socialScriptPromise[src];
+    }
+
+    // El embed no avisa cuando un post ya no existe, simplemente no aparece el
+    // iframe. Se espera un rato a que aparezca y, si no, se asume el fallo.
+    function waitForSocialEmbed(holder, selector) {
+      return new Promise((resolve) => {
+        const deadline = Date.now() + SOCIAL_EMBED_TIMEOUT_MS;
+        const tick = () => {
+          if (holder.querySelector(selector)) return resolve(true);
+          if (Date.now() >= deadline) return resolve(false);
+          setTimeout(tick, 250);
+        };
+        tick();
+      });
+    }
+
+    async function hydrateSocialCard(card) {
+      const holder = card.querySelector('.en-redes-media');
+      if (!holder || card.dataset.hydrated) return;
+      card.dataset.hydrated = '1';
+      const net = card.dataset.net === 'instagram' ? 'instagram' : 'x';
+      const post = { url: card.dataset.url };
+      try {
+        holder.innerHTML = card.dataset.timeline
+          ? socialTimelineMarkup(card.dataset.timeline)
+          : socialEmbedMarkup(post, net);
+        await loadExternalScript(socialEmbedSrc(net));
+        if (net === 'instagram') {
+          if (window.instgrm && window.instgrm.Embeds && window.instgrm.Embeds.process) {
+            window.instgrm.Embeds.process();
+          }
+        } else if (window.twttr && window.twttr.widgets) {
+          // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
+          // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
+          try {
+            window.twttr.widgets.setTheme(
+              document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+            );
+          } catch (err) { /* sin soporte de tema */ }
+          if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
+        }
+        const selector =
+          net === 'instagram' ? 'iframe.instagram-media' : 'iframe.twitter-tweet, iframe.twitter-timeline';
+        const ok = await waitForSocialEmbed(holder, selector);
+        if (!ok) throw new Error('el embed no apareció');
+      } catch (err) {
+        console.warn('No se pudo cargar el embed de ' + net + ':', err);
+        holder.innerHTML = socialFallbackMarkup(post, net);
+      }
+    }
+
+    function hydrateSocialCards() {
+      if (!enRedesGrid) return;
+      enRedesGrid.querySelectorAll('.en-redes-card').forEach(hydrateSocialCard);
+    }
+
+    // La sección es solo de la portada. La carga del JSON no depende de la
+    // ruta (es una sola petición y pesa nada), pero el pintado sí: así, entrar
+    // directo a /categoria/futbol o a un 404 no la enciende por el camino.
+    function socialSectionAllowed() {
+      const path = window.location.pathname;
+      return path === '/' || path === '/index.html';
+    }
+
+    function paintSocialSection() {
+      if (!enRedesSection || !enRedesGrid) return;
+      if (!socialPostsData || !socialSectionAllowed()) {
+        if (enRedesSection) enRedesSection.style.display = 'none';
+        return;
+      }
+      const cards = socialPostsData.posts.filter((p) => p && p.url);
+      if (!cards.length) {
+        // Sin publicaciones la sección desaparece entera: un título "En redes"
+        // con una grilla vacía se lee como una carga fallida.
+        enRedesSection.style.display = 'none';
+        enRedesGrid.innerHTML = '';
+        return;
+      }
+      let html = cards.map(socialCardHTML).join('');
+      const timeline = socialPostsData.timeline;
+      if (timeline && timeline.enabled && timeline.handle) {
+        html = socialTimelineCardHTML(timeline.handle) + html;
+      }
+      enRedesGrid.innerHTML = html;
+      enRedesSection.style.display = '';
+      if (enRedesStatus) {
+        const total = cards.length + (timeline && timeline.enabled ? 1 : 0);
+        enRedesStatus.textContent = total + (total === 1 ? ' publicación' : ' publicaciones');
+      }
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer.disconnect();
+          hydrateSocialCards();
+        }, { rootMargin: SOCIAL_EMBED_MARGIN });
+        observer.observe(enRedesSection);
+      } else {
+        hydrateSocialCards();
+      }
+    }
+
+    async function loadSocialPosts() {
+      if (socialPostsRequested) return;
+      socialPostsRequested = true;
+      try {
+        const response = await fetch('/api/social-posts');
+        const json = await response.json().catch(() => null);
+        if (!response.ok || !json) throw new Error('Error al cargar las publicaciones');
+        socialPostsData = { posts: json.posts || [], timeline: json.timeline || null };
+      } catch (err) {
+        console.error('Error al cargar "En redes":', err);
+        socialPostsData = { posts: [], timeline: null };
+      }
+      paintSocialSection();
+    }
+    loadSocialPosts();
 
     const readerPhotoForm = document.getElementById('readerPhotoForm');
     if (readerPhotoForm) {
@@ -3932,6 +4221,8 @@
 
       renderCuriosidades();
 
+      paintSocialSection();
+
       renderTagCloud();
 
       updateBookmarkUI();
@@ -4176,7 +4467,7 @@
     }
 
     function setTeamVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'enRedes', 'mostReadSection', 'trendingSection', 'podcast', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -4186,7 +4477,7 @@
     }
 
     function setPlayerVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'authorHub', 'mercadoHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'enRedes', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -4751,7 +5042,7 @@
 
     // ===== SECCIÓN ● 4 · Router, 404 y navegación =====
     function set404Visible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'enRedes', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -5437,6 +5728,181 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
       showTransferWindowInPanel();
     }
 
+    // ===== En redes (panel) =====
+    // Agregar y quitar publicaciones de X e Instagram. El backend valida el
+    // dominio y deduce la red, así que acá no se elige plataforma: se pega el
+    // enlace y el servidor decide qué embed va.
+    const socialManagerListEl = document.getElementById('socialManagerList');
+    const socialFormEl = document.getElementById('socialForm');
+    const socialUrlInput = document.getElementById('socialUrl');
+    const socialDestacadaInput = document.getElementById('socialDestacada');
+    const socialMsgEl = document.getElementById('socialMsg');
+
+    function showSocialMessage(msg, isError) {
+      if (!socialMsgEl) return;
+      socialMsgEl.textContent = msg;
+      socialMsgEl.className = 'message' + (isError ? ' error' : '');
+    }
+
+    // El panel se cierra solo cuando el token caduca, igual que el resto de
+    // secciones: si no, el formulario seguiría aceptando publicaciones y
+    // fallaría con un 401 que la redacción no entendería.
+    function socialUnauthorized() {
+      writerToken = '';
+      sessionStorage.removeItem('tribuna_writer_token');
+      panel.style.display = 'none';
+      access.textContent = 'Acceso redacción';
+    }
+
+    function renderSocialManager(posts) {
+      if (!socialManagerListEl) return;
+      socialManagerListEl.replaceChildren();
+      if (!posts.length) {
+        const empty = document.createElement('div');
+        empty.className = 'draft-item';
+        empty.innerHTML = '<div><strong>Sin publicaciones todavía</strong><small>Pega arriba el enlace de una publicación de X o Instagram.</small></div>';
+        socialManagerListEl.append(empty);
+        return;
+      }
+      posts.forEach((post) => {
+        const item = document.createElement('div');
+        item.className = 'draft-item';
+        const text = document.createElement('div');
+        const name = document.createElement('strong');
+        name.textContent = SOCIAL_NET_NAME[socialNetOf(post)] || 'Publicación';
+        if (post.destacada) {
+          const badge = document.createElement('span');
+          badge.className = 'en-redes-featured';
+          badge.textContent = 'Destacada';
+          name.append(badge);
+        }
+        const meta = document.createElement('small');
+        meta.textContent = (noteDate(post.created_at) || 'Sin fecha') + ' · ' + post.url;
+        text.append(name, meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'draft-actions';
+        const pin = document.createElement('button');
+        pin.className = 'edit-note';
+        pin.type = 'button';
+        pin.textContent = post.destacada ? 'Quitar destacado' : 'Destacar';
+        pin.onclick = () => setSocialFeatured(post, !post.destacada);
+        const del = document.createElement('button');
+        del.className = 'trash-note';
+        del.type = 'button';
+        del.textContent = 'Eliminar';
+        del.onclick = () => deleteSocialPost(post);
+        actions.append(del, pin);
+        item.append(text, actions);
+        socialManagerListEl.append(item);
+      });
+    }
+
+    async function loadSocialPostsForPanel() {
+      if (!writerToken || !socialManagerListEl) return;
+      socialManagerListEl.innerHTML = '<div class="draft-item"><div><small>Cargando publicaciones…</small></div></div>';
+      try {
+        const response = await fetch('/api/social-posts/manager', {
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          socialUnauthorized();
+          return;
+        }
+        if (!response.ok) throw new Error('Error al cargar las publicaciones.');
+        renderSocialManager(await response.json());
+      } catch (err) {
+        console.error('Error al cargar las publicaciones del panel:', err);
+        showSocialMessage('No se pudieron cargar las publicaciones.', true);
+      }
+    }
+
+    async function setSocialFeatured(post, destacada) {
+      if (!writerToken) return;
+      showSocialMessage('Guardando…');
+      try {
+        const response = await fetch(`/api/social-posts/${post.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${writerToken}`
+          },
+          body: JSON.stringify({ destacada })
+        });
+        if (response.status === 401) {
+          socialUnauthorized();
+          return;
+        }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+        }
+        showSocialMessage(destacada ? 'Publicación fijada arriba.' : 'Ya no está fijada.');
+        await loadSocialPostsForPanel();
+      } catch (err) {
+        console.error('Error al destacar la publicación:', err);
+        showSocialMessage('No se pudo guardar: ' + err.message, true);
+      }
+    }
+
+    async function deleteSocialPost(post) {
+      if (!writerToken) return;
+      const ok = confirm('¿Quitar esta publicación de "En redes"? Se borra de la portada.');
+      if (!ok) return;
+      try {
+        const response = await fetch(`/api/social-posts/${post.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${writerToken}` }
+        });
+        if (response.status === 401) {
+          socialUnauthorized();
+          return;
+        }
+        if (!response.ok && response.status !== 204) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+        }
+        showSocialMessage('Publicación quitada.');
+        await loadSocialPostsForPanel();
+      } catch (err) {
+        console.error('Error al quitar la publicación:', err);
+        showSocialMessage('No se pudo quitar: ' + err.message, true);
+      }
+    }
+
+    if (socialFormEl) {
+      socialFormEl.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!writerToken) return;
+        showSocialMessage('Guardando…');
+        try {
+          const response = await fetch('/api/social-posts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${writerToken}`
+            },
+            body: JSON.stringify({
+              url: socialUrlInput.value.trim(),
+              destacada: Boolean(socialDestacadaInput && socialDestacadaInput.checked)
+            })
+          });
+          if (response.status === 401) {
+            socialUnauthorized();
+            return;
+          }
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error((data && data.error) || `Error HTTP ${response.status}`);
+          socialFormEl.reset();
+          showSocialMessage('¡Publicación agregada!');
+          await loadSocialPostsForPanel();
+        } catch (err) {
+          console.error('Error al agregar la publicación:', err);
+          showSocialMessage('No se pudo agregar: ' + err.message, true);
+        }
+      };
+    }
+
     // ===== Posiciones Liga Promérica (panel) =====
     const standingsAdminList = document.getElementById('standingsAdminList');
     const standingsPromMsg = document.getElementById('standingsPromMsg');
@@ -5900,7 +6366,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
     }
 
     function setAuthorVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'mercadoHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'enRedes', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'mercadoHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -5909,7 +6375,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
     }
 
     function setMercadoVisible(show) {
-      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
+      ['searchSection', 'heroContainer', 'futbol', 'loadMoreContainer', 'posiciones', 'goleadores', 'proximos', 'mvpJornada', 'curiosidadesSection', 'fotosLectores', 'enRedes', 'mostReadSection', 'trendingSection', 'podcast', 'teamHub', 'playerHub', 'authorHub'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = show ? 'none' : '';
       });
@@ -6312,8 +6778,9 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
     if (writerToken) loadAllNotesForPanel();
     if (writerToken) loadFotosForPanel();
     if (writerToken) loadStandingsForPanel();
-    if (writerToken) loadScorersForPanel();
-    if (writerToken) loadMyProfile();
+if (writerToken) loadScorersForPanel();
+if (writerToken) loadMyProfile();
+if (writerToken) loadSocialPostsForPanel();
     loadPlayersCatalog();
     
     async function compressImage(file, maxWidth = 1600, quality = 0.8) {

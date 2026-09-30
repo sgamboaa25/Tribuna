@@ -683,3 +683,38 @@ create policy "Lectura pública de goleadores manuales"
 
 revoke all on table public.goleadores_promerica from anon;
 grant select on table public.goleadores_promerica to anon;
+
+-- ============================================================
+-- EN REDES — PUBLICACIONES DE X E INSTAGRAM
+-- ============================================================
+-- La redacción pega en el panel la URL de una publicación ya salida en X o
+-- Instagram y la portada la muestra con los embeds oficiales. Solo se guarda
+-- la URL: el texto, la imagen y el formato los pone la red al montar el embed,
+-- así que esta tabla no duplica contenido ni depende de ninguna API de pago.
+-- `red` NO lo manda el cliente: server.js lo deduce del dominio al validar, por
+-- eso es not null. `destacada` fija la publicación arriba de la grilla.
+-- El cliente público lee vía GET /api/social-posts (service_role), pero la
+-- tabla también queda legible por RLS anon para que la lectura no dependa del
+-- backend si algún día se mueve al cliente.
+create table if not exists public.social_posts (
+  id uuid primary key default gen_random_uuid(),
+  url text not null,
+  red text not null check (red in ('x', 'instagram')),
+  destacada boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists social_posts_created_at_idx
+  on public.social_posts (created_at desc);
+
+alter table public.social_posts enable row level security;
+
+drop policy if exists "Lectura pública de publicaciones sociales" on public.social_posts;
+create policy "Lectura pública de publicaciones sociales"
+  on public.social_posts for select
+  to anon
+  using (true);
+
+revoke all on table public.social_posts from anon;
+grant select on table public.social_posts to anon;

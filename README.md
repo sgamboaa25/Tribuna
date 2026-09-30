@@ -36,6 +36,8 @@ Todas están documentadas en `.env.example`. Las que importan:
 | `API_FOOTBALL_KEY` | **sí** | Fixtures de la Liga Promérica |
 | `FOOTBALL_DATA_API_KEY` | **sí** | Tablas de posiciones |
 | `X_*` | **sí** | Autopublicación en X (apagada por defecto) |
+| `X_TIMELINE_ENABLED` | no | Timeline embebido de X en "En redes" (apagado por defecto) |
+| `X_TIMELINE_HANDLE` | no | Cuenta de X del timeline (`@usuario`, sin la arroba) |
 
 **Nunca** pongas una clave secreta en `index.html` ni en nada que se sirva al
 navegador. Lo único que puede vivir en el cliente es la `anon`/`publishable` key
@@ -61,6 +63,25 @@ SPA (todas devuelven `index.html`): `/`, `/categoria/:deporte`, `/curiosidades`,
 
 Servidor: `/rss.xml` (y `/feed`, que redirige), `/sitemap.xml`, `/robots.txt`,
 `/ads.txt`, `/sw.js`, `/widget/posiciones` y `/api/*`.
+
+## "En redes" (X e Instagram)
+
+La portada muestra una sección **En redes** con las publicaciones que la
+redacción pega en el panel. No usa claves de API ni servicios de pago: el texto
+y la imagen los pone la propia red al montar su embed oficial.
+
+- Panel de redacción → **En redes** → pega el enlace → *Agregar publicación*.
+- Solo se aceptan `x.com`, `twitter.com`, `instagram.com` e `instagr.am`. La red
+  la deduce el servidor del dominio; el cliente no puede elegirla.
+- Se muestran las 6 más recientes por fecha de agregado. Las marcadas como
+  *destacada* van fijadas arriba de la grilla.
+- Los scripts `widgets.js` (X) y `embed.js` (Instagram) se cargan por
+  `IntersectionObserver`, cuando la sección está por entrar en pantalla. Si un
+  embed no carga (publicación borrada, script caído, blocker), la tarjeta cae a
+  un enlace "Ver en X" / "Ver en Instagram" en vez de quedar en hueco.
+- Sin publicaciones cargadas, la sección se oculta entera.
+- El timeline de la cuenta de X (`X_TIMELINE_ENABLED=true` + `X_TIMELINE_HANDLE`)
+  es una alternativa opcional, apagada por defecto, con el mismo plan B.
 
 ## Notas de mantenimiento
 

@@ -21,6 +21,11 @@ app.use(
           'https://cdn.jsdelivr.net',
           'https://cdnjs.cloudflare.com',
           'https://pagead2.googlesyndication.com',
+          // Embeds oficiales de la sección "En redes": widgets.js de X y
+          // embed.js de Instagram. Los carga el cliente, solo cuando la sección
+          // está por entrar en pantalla.
+          'https://platform.twitter.com',
+          'https://www.instagram.com',
           "'unsafe-inline'"
         ],
         scriptSrcAttr: ["'unsafe-inline'"],
@@ -34,13 +39,21 @@ app.use(
           'https://pagead2.googlesyndication.com',
           'https://googleads.g.doubleclick.net',
           'https://*.googlesyndication.com',
-          'https://*.googleadservices.com'
+          'https://*.googleadservices.com',
+          'https://platform.twitter.com',
+          'https://syndication.twitter.com',
+          'https://cdn.syndication.twimg.com',
+          'https://www.instagram.com'
         ],
         frameSrc: [
           'https://googleads.g.doubleclick.net',
           'https://*.googleadservices.com',
           'https://*.googlesyndication.com',
-          'https://*.google.com'
+          'https://*.google.com',
+          // Los embeds de "En redes" se envuelven en un iframe de X o Instagram.
+          'https://platform.twitter.com',
+          'https://syndication.twitter.com',
+          'https://www.instagram.com'
         ],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
@@ -1238,6 +1251,189 @@ app.put('/api/settings', authenticateWriter, async (req, res) => {
     res.json({ ok: true, next_transfer_window: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ En redes: publicaciones de X e Instagram ============
+// La redacción pega la URL de una publicación ya publicada en X o Instagram y
+// la portada la monta con los embeds oficiales. No hace falta ninguna clave de
+// API ni servicio de pago: el texto y la imagen los pone la propia red.
+//
+// `red` nunca viene del cliente. Si la aceptáramos, alguien con el token de
+// redacción podría mandar "instagram" con una URL de x.com y el frontend
+// montaría el embed equivocado; acá se deduce del dominio, que es el dato que
+// de verdad decide cómo se renderiza.
+const SOCIAL_POSTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const SOCIAL_POSTS_PUBLIC_LIMIT = 6;
+// Se comparan sin "www." para que una URL pegada con o sin www entre igual, y
+// se listan los dominios exactos (nada comodines) para no abrir la puerta a
+// "x.com.atacante.com".
+const SOCIAL_HOSTS = {
+  'x.com': 'x',
+  'twitter.com': 'x',
+  // Compartir desde la app de X en el celular a veces sale con estos hosts.
+  'mobile.x.com': 'x',
+  'mobile.twitter.com': 'x',
+  'instagram.com': 'instagram',
+  'instagr.am': 'instagram'
+};
+const X_HANDLE_RE = /^[A-Za-z0-9_]{1,15}$/;
+
+let socialPostsCache = null;
+let socialPostsCacheAt = 0;
+
+// Devuelve { network, href } con la URL ya normalizada, o null si el dominio
+// no es de X o Instagram. La normalización no es cosmética: URL() percent-
+// escapa comillas y espacios, así que lo que sale de acá se puede attributear
+// sin tocar nada en el HTML del cliente.
+function socialNetworkForUrl(value) {
+  let url;
+  try {
+    url = new URL(String(value).trim());
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  const network = SOCIAL_HOSTS[host];
+  if (!network) return null;
+  return { network, href: url.href };
+}
+
+function validateSocialPost(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { error: 'Cuerpo de petición inválido.' };
+  }
+  const rawUrl = typeof body.url === 'string' ? body.url.trim() : '';
+  if (rawUrl === '') return { error: 'Campo requerido: url.' };
+  const parsed = socialNetworkForUrl(rawUrl);
+  if (!parsed) {
+    return { error: 'Solo se aceptan publicaciones de x.com, twitter.com o instagram.com.' };
+  }
+  const clean = { url: parsed.href, red: parsed.network };
+  if (body.destacada !== undefined) clean.destacada = Boolean(body.destacada);
+  return { data: clean };
+}
+
+// Las fijadas van primero y el resto se completa con lo más reciente, hasta el
+// tope. La lista llega ordenada por created_at desc desde la consulta, así que
+// aquí solo se separan los dos grupos y se concatena.
+function selectSocialPosts(posts, limit) {
+  const max = Number.isInteger(limit) && limit > 0 ? limit : SOCIAL_POSTS_PUBLIC_LIMIT;
+  const list = (posts || []).filter((p) => p && p.url);
+  const fijadas = list.filter((p) => p.destacada);
+  const resto = list.filter((p) => !p.destacada);
+  return fijadas.concat(resto).slice(0, max);
+}
+
+// Timeline embebido de la cuenta de X: alternativa opcional a las publicaciones
+// pegadas una por una. Apagada por defecto; el handle es público (va en el
+// markup del embed igual), así que puede salir del servidor sin más.
+function socialTimelineConfig() {
+  const enabled = String(process.env.X_TIMELINE_ENABLED || '').trim().toLowerCase() === 'true';
+  const handle = String(process.env.X_TIMELINE_HANDLE || '')
+    .trim()
+    .replace(/^@/, '');
+  const valido = X_HANDLE_RE.test(handle);
+  return { enabled: enabled && valido, handle: valido ? handle : '' };
+}
+
+async function loadSocialPostsPublic() {
+  const now = Date.now();
+  if (socialPostsCacheAt && now - socialPostsCacheAt < SOCIAL_POSTS_CACHE_TTL_MS) {
+    return socialPostsCache;
+  }
+  // Se piden más filas que las que se muestran por si varias vienen fijadas:
+  // el tope se aplica después de ordenar, no antes.
+  const { data, error } = await supabase
+    .from('social_posts')
+    .select('id, url, red, destacada, created_at')
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  socialPostsCache = selectSocialPosts(data || []);
+  socialPostsCacheAt = now;
+  return socialPostsCache;
+}
+
+// GET Público: publicaciones de "En redes" para la portada. Sin publicaciones,
+// el frontend oculta la sección, así que la respuesta va vacía sin inventar nada.
+app.get('/api/social-posts', async (req, res) => {
+  try {
+    const posts = await loadSocialPostsPublic();
+    const timeline = socialTimelineConfig();
+    res.json({
+      posts,
+      timeline: posts.length && timeline.enabled ? timeline : { enabled: false, handle: '' }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET del panel: todas las publicaciones, para editar y borrar.
+app.get('/api/social-posts/manager', authenticateWriter, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('social_posts')
+      .select('id, url, red, destacada, created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST: agregar una publicación (solo redacción).
+app.post('/api/social-posts', authenticateWriter, async (req, res) => {
+  const { data: clean, error: verr } = validateSocialPost(req.body);
+  if (verr) return res.status(400).json({ error: verr });
+  try {
+    clean.updated_at = new Date().toISOString();
+    const { data, error } = await supabase.from('social_posts').insert([clean]).select();
+    if (error) throw error;
+    socialPostsCacheAt = 0;
+    res.status(201).json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT: marcar o desmarcar como destacada (solo redacción). La URL no se cambia:
+// para corregirla se borra y se pega de nuevo, que es menos propenso a dejar una
+// publicación a medio editar.
+app.put('/api/social-posts/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  const body = req.body || {};
+  if (typeof body.destacada === 'undefined') {
+    return res.status(400).json({ error: 'Campo requerido: destacada.' });
+  }
+  try {
+    const { data, error } = await supabase
+      .from('social_posts')
+      .update({ destacada: Boolean(body.destacada), updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select();
+    if (error) throw error;
+    if (!data || !data.length) return res.status(404).json({ error: 'Publicación no encontrada.' });
+    socialPostsCacheAt = 0;
+    res.json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE: quitar una publicación (solo redacción).
+app.delete('/api/social-posts/:id', authenticateWriter, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID no válido.' });
+  try {
+    const { error } = await supabase.from('social_posts').delete().eq('id', req.params.id);
+    if (error) throw error;
+    socialPostsCacheAt = 0;
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -3247,6 +3443,11 @@ module.exports.rssText = rssText;
 module.exports.validateReaderPhoto = validateReaderPhoto;
 module.exports.validateTransferWindow = validateTransferWindow;
 module.exports.loadSettingsPublic = loadSettingsPublic;
+module.exports.socialNetworkForUrl = socialNetworkForUrl;
+module.exports.validateSocialPost = validateSocialPost;
+module.exports.selectSocialPosts = selectSocialPosts;
+module.exports.socialTimelineConfig = socialTimelineConfig;
+module.exports.loadSocialPostsPublic = loadSocialPostsPublic;
 module.exports.decoratePromericaStandings = decoratePromericaStandings;
 module.exports.validateStandingsRows = validateStandingsRows;
 module.exports.footballDataScorerToRow = footballDataScorerToRow;
