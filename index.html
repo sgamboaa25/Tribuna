@@ -43,6 +43,16 @@
     <meta property="og:url" content="https://tribuna-heos.onrender.com/" id="ogUrl" />
   <link rel="canonical" href="https://tribuna-heos.onrender.com/" id="canonicalUrl" />
   
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0Z6RBG1QL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-X0Z6RBG1QL');
+  </script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -4986,10 +4996,11 @@
       if (e) e.preventDefault();
       closeNav();
       window.history.pushState({}, '', path);
+      if (window.gtag) gtag('event', 'page_view', { page_path: path });
       runView(() => handleRoute());
     }
 
-    window.addEventListener('popstate', () => { closeNav(); runView(() => handleRoute()); });
+    window.addEventListener('popstate', () => { closeNav(); if (window.gtag) gtag('event', 'page_view', { page_path: window.location.pathname }); runView(() => handleRoute()); });
 
     async function loadAuthorProfiles() {
       try {
