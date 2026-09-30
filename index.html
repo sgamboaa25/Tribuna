@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#111318" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0c10" />
   <meta name="google-site-verification" content="-AN6shF9ETuqAU1Au6RKWg7XAhx7xLaJm25JOuIHHb8" />
+  <meta name="google-adsense-account" content="ca-pub-6012806554376582" />
   <title>Tribuna | Periodismo deportivo</title>
   <!-- Íconos: el .ico va primero para los clientes que solo lo entienden (y es
        el que Google pide en la raíz). Todo se deriva de public/icon.svg, que
@@ -791,6 +792,16 @@
     /* ===== QUIÉNES SOMOS / EL CREADOR ===== */
     #quienesSomos { padding-bottom:var(--space-xl); }
     #quienesSomos .category-header { margin-bottom:var(--space-xl); }
+    /* ===== PÁGINAS LEGALES ===== */
+    #legalPage { padding-bottom:var(--space-xl); }
+    #legalPage .category-header { margin-bottom:var(--space-xl); }
+    .legal-card {
+      max-width:var(--col-reading);
+      border-top:1px solid var(--line);
+      padding-top:var(--space-lg);
+      line-height:1.7;
+    }
+    .legal-card p { margin-bottom:var(--space-sm); }
     .creator-card {
       display:grid;
       grid-template-columns:auto 1fr;
@@ -1098,6 +1109,21 @@
           </div>
         </div>
       </article>
+    </section>
+
+    <!-- ===== PÁGINAS LEGALES (página propia, e.g. /privacidad) ===== -->
+    <section id="legalPage" aria-labelledby="legalPageTitle" style="display:none">
+      <nav class="breadcrumb" aria-label="Ruta de navegación">
+        <a href="/" onclick="navigateTo(event, '/')">Portada</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page" id="legalBreadcrumb">Información legal</span>
+      </nav>
+      <header class="category-header">
+        <h1 id="legalPageTitle">Información legal</h1>
+        <p>Documentos legales de Tribuna. La versión vigente es la publicada en esta página.</p>
+      </header>
+
+      <article class="legal-card legal-text" id="legalPageBody"></article>
     </section>
 
     <section aria-label="Buscar noticias" id="searchSection">
@@ -1434,7 +1460,7 @@
           <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <button type="submit">Suscribirme</button>
         </div>
-        <p class="consent-field"><input type="checkbox" id="newsletterConsent" required /><label for="newsletterConsent">Acepto recibir el boletín semanal y autorizo a Tribuna a guardar mi correo electrónico únicamente para ese fin, conforme a la <a href="#" onclick="event.preventDefault(); openLegalModal('privacy')">política de privacidad</a>.</label></p>
+        <p class="consent-field"><input type="checkbox" id="newsletterConsent" required /><label for="newsletterConsent">Acepto recibir el boletín semanal y autorizo a Tribuna a guardar mi correo electrónico únicamente para ese fin, conforme a la <a href="/privacidad" onclick="navigateTo(event, '/privacidad')">política de privacidad</a>.</label></p>
         <p class="newsletter-msg" id="newsletterMsg" aria-live="polite"></p>
       </form>
     </section>
@@ -1662,7 +1688,7 @@
         <span><strong>TRIBUNA</strong> · Periodismo deportivo con contexto. © 2026</span>
         <div class="footer-links">
           <button type="button" onclick="navigateTo(event, '/quienes-somos')">Quiénes somos</button>
-          <button type="button" onclick="openLegalModal('privacy')">Política de privacidad</button>
+          <button type="button" onclick="navigateTo(event, '/privacidad')">Política de privacidad</button>
           <button type="button" onclick="openLegalModal('cookies')">Política de cookies</button>
           <button type="button" onclick="openLegalModal('legal')">Aviso legal</button>
           <button type="button" onclick="openLegalModal('terms')">Términos de uso</button>
@@ -4737,6 +4763,39 @@
       if (about) about.style.display = show ? 'block' : 'none';
     }
 
+    function setLegalPageVisible(show) {
+      const page = document.getElementById('legalPage');
+      if (page) page.style.display = show ? 'block' : 'none';
+    }
+
+    function renderLegalPage(type) {
+      const title = LEGAL_TITLES[type] || 'Información legal';
+      detail.style.display = 'none';
+      set404Visible(true);
+      notFoundSection.style.display = 'none';
+      setQuienesSomos(false);
+      setLegalPageVisible(true);
+      const titleEl = document.getElementById('legalPageTitle');
+      const crumbEl = document.getElementById('legalBreadcrumb');
+      const body = document.getElementById('legalPageBody');
+      if (titleEl) titleEl.textContent = title;
+      if (crumbEl) crumbEl.textContent = title;
+      if (body) body.innerHTML = LEGAL_CONTENT[type] || '<p>Contenido no disponible.</p>';
+      setPageMeta({
+        title: title + ' · Tribuna',
+        description: title + ' de Tribuna — periodismo deportivo independiente.',
+        url: window.location.origin + window.location.pathname,
+        schema: {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: title,
+          description: 'Documentos legales de Tribuna, periodismo deportivo independiente.',
+          url: window.location.origin + window.location.pathname
+        }
+      });
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
     function updateCreatorInitials() {
       const initialsEl = document.getElementById('creatorInitials');
       const nameEl = document.getElementById('creatorName');
@@ -4763,6 +4822,7 @@
       categoryHeader.innerHTML = '';
       paginationPage = 0;
       setQuienesSomos(false);
+      setLegalPageVisible(false);
       updateCreatorInitials();
 
       // Reset de metadatos al empezar cada ruta. Los <meta> de la cabecera son
@@ -4808,6 +4868,8 @@
         isNotFound = !tagMatch;
         if (tagMatch) tagSlugParam = tagMatch[1];
       } else if (path === '/quienes-somos') {
+        isNotFound = false;
+      } else if (path === '/privacidad') {
         isNotFound = false;
       } else {
         isNotFound = true;
@@ -4880,7 +4942,10 @@
         return;
       }
 
-      set404Visible(false);
+      if (path === '/privacidad') {
+        renderLegalPage('privacy');
+        return;
+      }
       setTeamVisible(false);
 
       const sk = skeletonMarkup();

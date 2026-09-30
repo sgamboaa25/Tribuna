@@ -57,7 +57,7 @@ de Supabase y la URL pública del proyecto.
 
 SPA (todas devuelven `index.html`): `/`, `/categoria/:deporte`, `/curiosidades`,
 `/videos`, `/mercado`, `/etiquetas`, `/tag/:slug`, `/autor/:slug`, `/equipo/:slug`,
-`/jugador/:slug`, `/quienes-somos`.
+`/jugador/:slug`, `/quienes-somos`, `/privacidad`.
 
 Servidor: `/rss.xml` (y `/feed`, que redirige), `/sitemap.xml`, `/robots.txt`,
 `/ads.txt`, `/sw.js`, `/widget/posiciones` y `/api/*`.

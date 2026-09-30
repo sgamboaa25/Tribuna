@@ -52,7 +52,8 @@ Notas de aplicación:
 ## Rutas del sitio (SPA, todas devuelven `index.html`)
 
 `/`, `/categoria/:deporte`, `/curiosidades`, `/videos`, `/mercado`, `/etiquetas`,
-`/tag/:slug`, `/autor/:slug`, `/equipo/:slug`, `/jugador/:slug`, `/quienes-somos`.
+`/tag/:slug`, `/autor/:slug`, `/equipo/:slug`, `/jugador/:slug`, `/quienes-somos`,
+`/privacidad`.
 Rutas de servidor aparte: `/rss.xml`, `/feed`, `/sitemap.xml`, `/robots.txt`, `/sw.js`,
 `/ads.txt`, `/widget/posiciones` y todo `/api/*`.
 

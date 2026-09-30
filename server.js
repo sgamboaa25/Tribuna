@@ -2132,6 +2132,10 @@ function resolveSeo(pathname, notes, baseUrl) {
     '/quienes-somos': {
       title: withSite('Quiénes somos'),
       description: 'Quiénes somos: la gente detrás de Tribuna, periodismo deportivo independiente.'
+    },
+    '/privacidad': {
+      title: withSite('Política de privacidad'),
+      description: 'Política de privacidad de Tribuna: qué datos tratamos, cómo los protegemos y tus derechos.'
     }
   };
   if (fixed[path]) {
@@ -2400,6 +2404,7 @@ app.get('/sitemap.xml', async (req, res) => {
     // que el cliente no reconoce, y el índice ya las enlaza todas.
     xml += url(`${baseUrl}/etiquetas`, { changefreq: 'weekly', priority: '0.5' });
     xml += url(`${baseUrl}/quienes-somos`, { changefreq: 'monthly', priority: '0.3' });
+    xml += url(`${baseUrl}/privacidad`, { changefreq: 'monthly', priority: '0.2' });
 
     // Cada nota con URL propia. Antes iban como "/#note-<id>": Google ignora los
     // fragmentos, así que todas esas entradas se contadorizaban como la portada
