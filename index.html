@@ -2838,11 +2838,21 @@
 
     // El embed no avisa cuando un post ya no existe, simplemente no aparece el
     // iframe. Se espera un rato a que aparezca y, si no, se asume el fallo.
-    function waitForSocialEmbed(holder, selector) {
+    function waitForSocialEmbed(holder, net) {
       return new Promise((resolve) => {
         const deadline = Date.now() + SOCIAL_EMBED_TIMEOUT_MS;
         const tick = () => {
-          if (holder.querySelector(selector)) return resolve(true);
+          // widgets.js inserta su iframe como hermano justo antes del blockquote,
+          // con las clases "twitter-widget twitter-widget-rendered"; el nombre
+          // "twitter-tweet" es solo del blockquote original. Instagram, en
+          // cambio, sí usa "instagram-media". Como las clases son internas de
+          // cada red y cambian sin aviso, se mira que haya cualquier iframe.
+          if (holder.querySelector('iframe')) return resolve(true);
+          // X marca el fallo en el propio iframe (o en el blockquote) con
+          // "<clase>-error". Si aparece, no tiene sentido esperar al techo.
+          if (net === 'x' && holder.querySelector('.twitter-widget-error')) {
+            return resolve(false);
+          }
           if (Date.now() >= deadline) return resolve(false);
           setTimeout(tick, 250);
         };
@@ -2875,9 +2885,7 @@
           } catch (err) { /* sin soporte de tema */ }
           if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
         }
-        const selector =
-          net === 'instagram' ? 'iframe.instagram-media' : 'iframe.twitter-tweet, iframe.twitter-timeline';
-        const ok = await waitForSocialEmbed(holder, selector);
+        const ok = await waitForSocialEmbed(holder, net);
         if (!ok) throw new Error('el embed no apareció');
       } catch (err) {
         console.warn('No se pudo cargar el embed de ' + net + ':', err);
