@@ -9,6 +9,9 @@ const {
   validateSocialPost,
   selectSocialPosts,
   socialTimelineConfig,
+  socialPostsTtlMs,
+  socialPostsCutoff,
+  socialPostExpiry,
   loadSocialPostsPublic
 } = require('../server');
 
@@ -148,6 +151,53 @@ test('en redes: el timeline está apagado salvo que se pida con un handle válid
   }
 });
 
+test('en redes: una publicación vive 12 horas por defecto', () => {
+  const original = process.env.SOCIAL_POSTS_TTL_HOURS;
+  try {
+    delete process.env.SOCIAL_POSTS_TTL_HOURS;
+    assert.equal(socialPostsTtlMs(), 12 * 60 * 60 * 1000);
+
+    const now = Date.parse('2026-09-30T12:00:00.000Z');
+    assert.equal(socialPostsCutoff(now), '2026-09-30T00:00:00.000Z');
+
+    // La ventana se ajusta sin tocar código, y un valor raro no deja la sección
+    // sin caducidad en silencio: cae al default.
+    process.env.SOCIAL_POSTS_TTL_HOURS = '10';
+    assert.equal(socialPostsTtlMs(), 10 * 60 * 60 * 1000);
+    process.env.SOCIAL_POSTS_TTL_HOURS = 'tres';
+    assert.equal(socialPostsTtlMs(), 12 * 60 * 60 * 1000);
+
+    // Con la caducidad apagada no hay corte: se decide en la consulta.
+    process.env.SOCIAL_POSTS_TTL_HOURS = '0';
+    assert.equal(socialPostsTtlMs(), 0);
+    assert.equal(socialPostsCutoff(now), null);
+  } finally {
+    if (original === undefined) delete process.env.SOCIAL_POSTS_TTL_HOURS;
+    else process.env.SOCIAL_POSTS_TTL_HOURS = original;
+  }
+});
+
+test('en redes: el panel dice cuándo sale cada publicación, sin inventar fechas', () => {
+  const original = process.env.SOCIAL_POSTS_TTL_HOURS;
+  try {
+    delete process.env.SOCIAL_POSTS_TTL_HOURS;
+    assert.equal(
+      socialPostExpiry('2026-09-30T00:00:00.000Z', socialPostsTtlMs()),
+      '2026-09-30T12:00:00.000Z'
+    );
+    // Sin caducidad o con una fecha que no se puede leer: null, no una fecha
+    // rota que el panel imprimiría tal cual.
+    process.env.SOCIAL_POSTS_TTL_HOURS = '0';
+    assert.equal(socialPostExpiry('2026-09-30T00:00:00.000Z', 0), null);
+    delete process.env.SOCIAL_POSTS_TTL_HOURS;
+    assert.equal(socialPostExpiry('', socialPostsTtlMs()), null);
+    assert.equal(socialPostExpiry('no-es-fecha', socialPostsTtlMs()), null);
+  } finally {
+    if (original === undefined) delete process.env.SOCIAL_POSTS_TTL_HOURS;
+    else process.env.SOCIAL_POSTS_TTL_HOURS = original;
+  }
+});
+
 test('en redes: GET público sin DB responde 500 JSON elegante', async () => {
   const res = await request(app).get('/api/social-posts');
   assert.equal(res.status, 500);
@@ -234,14 +284,15 @@ const CLIENT_SOURCE = [
   'const SOCIAL_NET_NAME = { x: "X", instagram: "Instagram" };',
   extractFunction('socialNetFromUrl'),
   extractFunction('socialNetOf'),
-  extractFunction('socialFallbackMarkup')
+  extractFunction('socialFallbackMarkup'),
+  extractFunction('socialExpiryLabel')
 ].join('\n\n');
 
 function clientSandbox() {
   return vm.runInNewContext(
     '(function () {\n' +
       CLIENT_SOURCE +
-      '\nreturn { socialNetFromUrl, socialNetOf, socialFallbackMarkup };\n})()',
+      '\nreturn { socialNetFromUrl, socialNetOf, socialFallbackMarkup, socialExpiryLabel };\n})()',
     // socialFallbackMarkup arma HTML usando escapeHtml; acá se le pasa una
     // versión mínima equivalente, que es lo que importa para las aserciones.
     { escapeHtml: (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;') }
@@ -275,4 +326,27 @@ test('en redes (cliente): el respaldo nombra la red a la que llevar', () => {
   assert.match(x, /Ver en X/);
   assert.match(x, /href="https:\/\/x\.com\/a\/status\/1"/);
   assert.ok(!x.includes('Instagram'));
+});
+
+test('en redes (cliente): el panel avisa cuánto le queda de vida a cada publicación', () => {
+  const { socialExpiryLabel } = clientSandbox();
+  const enUnaHora = new Date(Date.now() + 36e5).toISOString();
+  const enDosHoras = new Date(Date.now() + 2 * 36e5).toISOString();
+  const haceMucho = new Date(Date.now() - 36e5).toISOString();
+
+  assert.match(socialExpiryLabel({ caduca: enUnaHora }), /Sale en 1 hora/);
+  assert.match(socialExpiryLabel({ caduca: enDosHoras }), /Sale en 2 horas/);
+  // Una vida de menos de una hora no puede quedar en "0 horas".
+  assert.match(
+    socialExpiryLabel({ caduca: new Date(Date.now() + 6e4).toISOString() }),
+    /Sale en 1 hora/
+  );
+  assert.match(socialExpiryLabel({ caduca: haceMucho }), /Ya no sale en portada/);
+
+  // Sin caducidad configurada o con una fecha inútil: no se inventa nada, que
+  // es mejor que un texto en blanco en medio de la fila.
+  assert.equal(socialExpiryLabel({}), '');
+  assert.equal(socialExpiryLabel({ caduca: null }), '');
+  assert.equal(socialExpiryLabel({ caduca: 'no-es-fecha' }), '');
+  assert.equal(socialExpiryLabel(null), '');
 });

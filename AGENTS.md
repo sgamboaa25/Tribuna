@@ -51,6 +51,16 @@ Notas de aplicación:
   decide qué embed se monta. La CSP de helmet ya permite los dominios de X e
   Instagram en `scriptSrc`, `connectSrc` y `frameSrc`; si se toca, revisa esas
   tres listas.
+- **Caducidad:** una publicación sale sola de la portada a las
+  `SOCIAL_POSTS_TTL_HOURS` (12 por defecto; `0` = nunca). El filtro va en la
+  consulta de `GET /api/social-posts`, nunca en el cliente: ese endpoint es la
+  única puerta pública de la sección. `GET /api/social-posts/manager` sí devuelve
+  las caducadas (con `caduca`) para que la redacción pueda borrarlas; filtrar
+  también el panel dejaría las viejas acumulándose sin forma de quitarlas.
+- El embed de X se reconoce por la presencia de **cualquier** `iframe` en el
+  hueco, no por la clase `twitter-tweet`: esa es del `blockquote`, y el iframe
+  real sale como hermano con `twitter-widget twitter-widget-rendered`. Las
+  clases de `widgets.js` son internas de X y cambian sin aviso.
 
 ## Variables de entorno del backend (ver `.env.example`)
 
@@ -64,6 +74,7 @@ Notas de aplicación:
 - `X_AUTOPOST_ENABLED` — activa la autopublicación en X de notas urgentes (`true`/`false`, por defecto desactivada).
 - `X_CONSUMER_KEY` / `X_CONSUMER_SECRET` / `X_ACCESS_TOKEN` / `X_ACCESS_SECRET` — credenciales de la X API (OAuth 1.0a, SECRETAS; solo viven en el backend).
 - `X_TIMELINE_ENABLED` / `X_TIMELINE_HANDLE` — timeline embebido de la cuenta de X en la sección "En redes" (`true`/`false` + `@usuario` sin arroba); desactivado por defecto. Ninguna de las dos es secreta: el handle va en el markup del embed.
+- `SOCIAL_POSTS_TTL_HOURS` — horas que una publicación de "En redes" sigue en la portada (12 por defecto; `0` = nunca). Ninguna es secreta.
 
 ## Rutas del sitio (SPA, todas devuelven `index.html`)
 

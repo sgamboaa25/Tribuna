@@ -5762,6 +5762,18 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
       access.textContent = 'Acceso redacción';
     }
 
+    // Las publicaciones caducan solas (lo decide el servidor con
+    // SOCIAL_POSTS_TTL_HOURS), así que el panel tiene que distinguir lo que sigue
+    // en la portada de lo que ya se fue: si no, las dos filas se ven iguales y
+    // nadie entiende por qué una aparece en el sitio y la otra no.
+    function socialExpiryLabel(post) {
+      const caduca = post && post.caduca ? Date.parse(post.caduca) : NaN;
+      if (!Number.isFinite(caduca)) return '';
+      if (caduca <= Date.now()) return ' · Ya no sale en portada';
+      const horas = Math.max(1, Math.round((caduca - Date.now()) / 36e5));
+      return ' · Sale en ' + (horas === 1 ? '1 hora' : horas + ' horas');
+    }
+
     function renderSocialManager(posts) {
       if (!socialManagerListEl) return;
       socialManagerListEl.replaceChildren();
@@ -5785,7 +5797,7 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
           name.append(badge);
         }
         const meta = document.createElement('small');
-        meta.textContent = (noteDate(post.created_at) || 'Sin fecha') + ' · ' + post.url;
+        meta.textContent = (noteDate(post.created_at) || 'Sin fecha') + ' · ' + post.url + socialExpiryLabel(post);
         text.append(name, meta);
 
         const actions = document.createElement('div');

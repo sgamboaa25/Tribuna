@@ -1265,6 +1265,14 @@ app.put('/api/settings', authenticateWriter, async (req, res) => {
 // de verdad decide cómo se renderiza.
 const SOCIAL_POSTS_CACHE_TTL_MS = 5 * 60 * 1000;
 const SOCIAL_POSTS_PUBLIC_LIMIT = 6;
+// Vida de una publicación en la portada. Una publicación pegada de más está
+// buena para las noticias del día, pero a la semana es ruido, así que sale sola
+// de la grilla: 12 h por defecto, ajustable con SOCIAL_POSTS_TTL_HOURS (con 0 o
+// menos se desactiva y solo se va cuando la redacción la borre).
+// La caducidad se aplica en la consulta de /api/social-posts, que es la única
+// puerta pública: nada caducado llega al cliente. Las fijadas caducan igual,
+// "destacada" solo ordena la grilla.
+const SOCIAL_POSTS_TTL_HOURS_DEFAULT = 12;
 // Se comparan sin "www." para que una URL pegada con o sin www entre igual, y
 // se listan los dominios exactos (nada comodines) para no abrir la puerta a
 // "x.com.atacante.com".
@@ -1315,6 +1323,36 @@ function validateSocialPost(body) {
   return { data: clean };
 }
 
+// Millis de vida de una publicación. Un valor ausente o que no sea número se
+// queda en el default en vez de dejar la sección sin caducidad por un typo.
+function socialPostsTtlMs() {
+  const raw = String(process.env.SOCIAL_POSTS_TTL_HOURS || '').trim();
+  if (raw === '') return SOCIAL_POSTS_TTL_HOURS_DEFAULT * 60 * 60 * 1000;
+  const hours = Number(raw);
+  if (!Number.isFinite(hours)) return SOCIAL_POSTS_TTL_HOURS_DEFAULT * 60 * 60 * 1000;
+  if (hours <= 0) return 0;
+  return Math.round(hours * 60 * 60 * 1000);
+}
+
+// created_at más antiguo que todavía se muestra, en ISO para la consulta.
+// null = sin caducidad.
+function socialPostsCutoff(now) {
+  const ttl = socialPostsTtlMs();
+  if (!ttl) return null;
+  const base = Number.isFinite(now) ? now : Date.now();
+  return new Date(base - ttl).toISOString();
+}
+
+// Instante en que una fila concreta sale de la portada, para que el panel pueda
+// distinguir lo vivo de lo caducado. null = sin caducidad o fecha ilegible.
+function socialPostExpiry(createdAt, ttlMs) {
+  const ttl = Number.isFinite(ttlMs) ? ttlMs : socialPostsTtlMs();
+  if (!ttl) return null;
+  const created = Date.parse(createdAt || '');
+  if (!Number.isFinite(created)) return null;
+  return new Date(created + ttl).toISOString();
+}
+
 // Las fijadas van primero y el resto se completa con lo más reciente, hasta el
 // tope. La lista llega ordenada por created_at desc desde la consulta, así que
 // aquí solo se separan los dos grupos y se concatena.
@@ -1345,11 +1383,15 @@ async function loadSocialPostsPublic() {
   }
   // Se piden más filas que las que se muestran por si varias vienen fijadas:
   // el tope se aplica después de ordenar, no antes.
-  const { data, error } = await supabase
+  const consulta = supabase
     .from('social_posts')
     .select('id, url, red, destacada, created_at')
     .order('created_at', { ascending: false })
     .limit(30);
+  // El filtro de caducidad va en la consulta, no después: si se filtrara en JS
+  // un lote cheio de publicaciones viejas dejaría fuera las recientes.
+  const cutoff = socialPostsCutoff(now);
+  const { data, error } = cutoff ? await consulta.gte('created_at', cutoff) : await consulta;
   if (error) throw error;
   socialPostsCache = selectSocialPosts(data || []);
   socialPostsCacheAt = now;
@@ -1371,7 +1413,10 @@ app.get('/api/social-posts', async (req, res) => {
   }
 });
 
-// GET del panel: todas las publicaciones, para editar y borrar.
+// GET del panel: todas las publicaciones, para editar y borrar. Incluye las ya
+// caducadas a propósito: si el panel solo mostrara las vivas, las viejas se
+// acumularían sin que nadie pudiera borrarlas. `caduca` dice cuándo sale cada
+// una de la portada.
 app.get('/api/social-posts/manager', authenticateWriter, async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -1379,7 +1424,10 @@ app.get('/api/social-posts/manager', authenticateWriter, async (req, res) => {
       .select('id, url, red, destacada, created_at')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    res.json(data || []);
+    const ttl = socialPostsTtlMs();
+    res.json(
+      (data || []).map((row) => ({ ...row, caduca: socialPostExpiry(row.created_at, ttl) }))
+    );
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -3447,6 +3495,9 @@ module.exports.socialNetworkForUrl = socialNetworkForUrl;
 module.exports.validateSocialPost = validateSocialPost;
 module.exports.selectSocialPosts = selectSocialPosts;
 module.exports.socialTimelineConfig = socialTimelineConfig;
+module.exports.socialPostsTtlMs = socialPostsTtlMs;
+module.exports.socialPostsCutoff = socialPostsCutoff;
+module.exports.socialPostExpiry = socialPostExpiry;
 module.exports.loadSocialPostsPublic = loadSocialPostsPublic;
 module.exports.decoratePromericaStandings = decoratePromericaStandings;
 module.exports.validateStandingsRows = validateStandingsRows;
