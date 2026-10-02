@@ -2932,9 +2932,16 @@
           // cada red y cambian sin aviso, se mira que haya cualquier iframe.
           const iframe = holder.querySelector('iframe');
         if (iframe) {
-          iframe.style.height = 'auto';
+          try {
+            iframe.style.height = iframe.scrollHeight > 0 ? iframe.scrollHeight + 'px' : 'auto';
+          } catch (e) {
+            iframe.style.height = 'auto';
+          }
           iframe.style.maxHeight = 'none';
+          iframe.style.minHeight = '0';
           iframe.style.overflow = 'visible';
+          holder.style.height = 'auto';
+          holder.style.overflow = 'visible';
           return resolve(true);
         }
           // X marca el fallo en el propio iframe (o en el blockquote) con
@@ -2964,20 +2971,20 @@
           if (window.instgrm && window.instgrm.Embeds && window.instgrm.Embeds.process) {
             window.instgrm.Embeds.process();
           }
-          // Instagram recarga/ajusta alto tras procesar
-          setTimeout(() => {
-            const media = holder.querySelector('.instagram-media');
+          const forceInstagramHeight = () => {
+            const media = holder.querySelector('.instagram-media, iframe[src*="instagram.com"]');
             if (media) {
-              media.style.height = 'auto';
+              media.style.height = media.scrollHeight ? media.scrollHeight + 'px' : 'auto';
               media.style.maxHeight = 'none';
+              media.style.minHeight = '0';
             }
             holder.style.height = 'auto';
             holder.style.overflow = 'visible';
-          }, 800);
-          setTimeout(() => {
-            holder.style.height = 'auto';
-            holder.style.overflow = 'visible';
-          }, 2000);
+          };
+          setTimeout(forceInstagramHeight, 500);
+          setTimeout(forceInstagramHeight, 1000);
+          setTimeout(forceInstagramHeight, 2000);
+          setTimeout(forceInstagramHeight, 4000);
         } else if (window.twttr && window.twttr.widgets) {
           // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
           // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
@@ -2998,7 +3005,11 @@
           const removeHeightLimits = () => {
             const iframe = holder.querySelector('iframe');
             if (iframe) {
-              iframe.style.height = 'auto';
+              try {
+                iframe.style.height = iframe.contentWindow ? iframe.scrollHeight + 'px' : 'auto';
+              } catch (e) {
+                iframe.style.height = 'auto';
+              }
               iframe.style.maxHeight = 'none';
               iframe.style.minHeight = '0';
               iframe.style.overflow = 'visible';
