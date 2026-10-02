@@ -29,8 +29,11 @@ app.use(
           "'unsafe-inline'"
         ],
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", 'https://fonts.googleapis.com', "'unsafe-inline'"],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        // Las tipografías se sirven desde /public/fonts: fonts.googleapis.com y
+        // fonts.gstatic.com no aparecen porque no hay nada que pedirles. Era la
+        // última petición a un tercero que salía en el primer render.
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
         connectSrc: [
           "'self'",
@@ -3373,7 +3376,7 @@ const WIDGET_CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' https://fonts.gstatic.com",
+  "font-src 'self'",
   "img-src 'self' https: data:",
   "connect-src 'self'"
 ].join('; ');
