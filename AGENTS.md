@@ -105,9 +105,20 @@ Concreto en el código:
   convierte la excepción en la infracción.
 
 `LEGAL_CONTACT` (`index.html`) es el canal legal real: correo obligatorio,
-domicilio y teléfono recomendados. Si los cambias, actualiza también el pie de
-página y `LEGAL_UPDATED` (la fecha que las cuatro políticas citan como versión
-vigente).
+domicilio y teléfono **dejados vacíos a propósito** — son datos personales de la
+casa de la redacción y se decidió no publicarlos. `legalContactLine()` solo junta
+lo rellenado, así que hoy el aviso solo muestra el correo. No los rellenes con
+datos residenciales reales; si hacen falta, un apartado postal o una dirección
+profesional. Si los cambias, actualiza también el pie de página y `LEGAL_UPDATED`
+(la fecha que las cuatro políticas citan como versión vigente).
+
+Ojo con el marco legal: los textos citan LSSI y RGPD, que son europeanass. El
+sitio es costarricense, así que el regime aplicable es el local (Ley 8968 y la
+autoridad de protección de datos) y esa redacción **no ha sido validada por
+alguien que haga derecho costarricense**. Si te piden justificar cumplimiento,
+no des por hecho que el texto actual sirve: el banner granular de cookies es más
+estricto de lo que Costa Rica pide y por eso se queda, pero las citas a la LSSI
+en un sitio local no aportan nada.
 
 ## Variables de entorno del backend (ver `.env.example`)
 

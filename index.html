@@ -7054,11 +7054,16 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
     }
 
     // ===== Contenido legal (políticas completas) =====
-    // Identificación del responsable. Es el canal que exigen el aviso legal
-    // (LSSI art. 10 / Ley 8968 CR) y el programa de AdSense para que una
-    // reclamación o un reclamo de derechos tenga una dirección verificable.
-    // Rellená `domicilio` y `telefono`: mientras estén vacíos se omiten del
-    // texto en vez de publicar datos inventados.
+    // Identificación del responsable. Es el canal que exige la LSSI art. 10 y el
+    // programa de AdSense para que una reclamación o un reclamo de derechos
+    // tenga a quién dirigirse. `legalContactLine()` solo junta los campos
+    // rellenados, así que hoy solo sale el correo.
+    //
+    // `domicilio` y `telefono` están vacíos a propósito: son datos personales de
+    // la casa de la redacción y se decidió no publicarlos. No los rellenes con
+    // datosResidentiales reales. Si alguna vez hacen falta, se pone un apartado
+    // postal o una dirección profesional, no el domicilio particular, y hay que
+    // revisar antes qué exige la ley costarricense (ver nota en AGENTS.md).
     const LEGAL_CONTACT = {
       nombre: 'Sebastián Gamboa Rivera',
       email: 'sebastiangamboa2506@gmail.com',
