@@ -578,8 +578,7 @@
     .en-redes-media iframe {
       width: 100% !important;
       max-width: 100% !important;
-      height: 100% !important;
-      min-height: 100% !important;
+      height: auto !important;
     }
     .en-redes-media blockquote {
       border: 0;
@@ -3008,6 +3007,7 @@
           const removeHeightLimits = () => {
             const iframe = holder.querySelector('iframe');
             if (iframe) {
+              iframe.style.removeProperty('height');
               iframe.style.setProperty('height', 'auto', 'important');
               iframe.style.setProperty('max-height', 'none', 'important');
               iframe.style.setProperty('min-height', '0', 'important');
@@ -3015,15 +3015,18 @@
             }
             const tweet = holder.querySelector('.twitter-tweet, .twitter-tweet-rendered, .twitter-widget');
             if (tweet) {
+              tweet.style.removeProperty('height');
               tweet.style.setProperty('height', 'auto', 'important');
               tweet.style.setProperty('max-height', 'none', 'important');
               tweet.style.setProperty('overflow', 'visible', 'important');
             }
+            holder.style.removeProperty('height');
             holder.style.setProperty('height', 'auto', 'important');
             holder.style.setProperty('max-height', 'none', 'important');
             holder.style.setProperty('overflow', 'visible', 'important');
             const card = holder.closest('.en-redes-card');
             if (card) {
+              card.style.removeProperty('height');
               card.style.setProperty('height', 'auto', 'important');
             }
           };
@@ -3031,6 +3034,15 @@
           setTimeout(removeHeightLimits, 1000);
           setTimeout(removeHeightLimits, 2000);
           setTimeout(removeHeightLimits, 4000);
+          setTimeout(removeHeightLimits, 8000);
+          // Observer para detectar cuando X pone height inline
+          try {
+            if ('MutationObserver' in window) {
+              const observer = new MutationObserver(() => removeHeightLimits());
+              observer.observe(holder, { attributes: true, childList: true, subtree: true });
+              setTimeout(() => observer.disconnect(), 10000);
+            }
+          } catch (e) {}
         }
         const ok = await waitForSocialEmbed(holder, net);
         if (!ok) throw new Error('el embed no apareció');
