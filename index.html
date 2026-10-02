@@ -2986,10 +2986,9 @@
             const card = holder.closest('.en-redes-card');
             if (card) card.style.setProperty('height', 'auto', 'important');
           };
-          setTimeout(forceInstagramHeight, 500);
-          setTimeout(forceInstagramHeight, 1000);
-          setTimeout(forceInstagramHeight, 2000);
-          setTimeout(forceInstagramHeight, 4000);
+          setTimeout(forceInstagramHeight, 800);
+          setTimeout(forceInstagramHeight, 1600);
+          setTimeout(forceInstagramHeight, 3000);
         } else if (window.twttr && window.twttr.widgets) {
           // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
           // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
@@ -3010,24 +3009,17 @@
           const removeHeightLimits = () => {
             const iframe = holder.querySelector('iframe');
             if (iframe) {
-              iframe.style.cssText = '';
-              iframe.style.setProperty('width', '100%', 'important');
-              iframe.style.setProperty('max-width', '100%', 'important');
               iframe.style.setProperty('height', 'auto', 'important');
+              iframe.style.setProperty('max-height', 'none', 'important');
               iframe.style.setProperty('min-height', '0', 'important');
               iframe.style.setProperty('overflow', 'visible', 'important');
-              iframe.style.setProperty('border', '0', 'important');
             }
             const tweet = holder.querySelector('.twitter-tweet, .twitter-tweet-rendered, .twitter-widget');
             if (tweet) {
-              tweet.style.cssText = '';
-              tweet.style.setProperty('width', '100%', 'important');
-              tweet.style.setProperty('max-width', '100%', 'important');
               tweet.style.setProperty('height', 'auto', 'important');
+              tweet.style.setProperty('max-height', 'none', 'important');
               tweet.style.setProperty('overflow', 'visible', 'important');
-              tweet.style.setProperty('margin', '0 auto', 'important');
             }
-            holder.style.cssText = '';
             holder.style.setProperty('height', 'auto', 'important');
             holder.style.setProperty('overflow', 'visible', 'important');
             const card = holder.closest('.en-redes-card');
@@ -3035,26 +3027,9 @@
               card.style.height = 'auto';
             }
           };
-          setTimeout(removeHeightLimits, 500);
-          setTimeout(removeHeightLimits, 1000);
-          setTimeout(removeHeightLimits, 2000);
+          setTimeout(removeHeightLimits, 800);
+          setTimeout(removeHeightLimits, 1600);
           setTimeout(removeHeightLimits, 3000);
-          setTimeout(removeHeightLimits, 5000);
-          setTimeout(removeHeightLimits, 8000);
-          try {
-            if ('MutationObserver' in window) {
-              const observer = new MutationObserver(() => removeHeightLimits());
-              observer.observe(holder, { attributes: true, childList: true, subtree: true, attributeFilter: ['style', 'height', 'class'] });
-              setTimeout(() => observer.disconnect(), 15000);
-            }
-            if ('ResizeObserver' in window) {
-              const resizeObs = new ResizeObserver(() => removeHeightLimits());
-              const iframe = holder.querySelector('iframe');
-              if (iframe) resizeObs.observe(iframe);
-              else resizeObs.observe(holder);
-              setTimeout(() => resizeObs.disconnect(), 15000);
-            }
-          } catch (e) {}
         }
         const ok = await waitForSocialEmbed(holder, net);
         if (!ok) throw new Error('el embed no apareció');
