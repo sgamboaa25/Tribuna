@@ -562,20 +562,23 @@
     .en-redes-media {
       position: relative;
       width: 100%;
+      height: auto;
       overflow: visible;
-      min-height: 180px;
       display: flex;
       flex-direction: column;
     }
     .en-redes-media > * {
       width: 100% !important;
       max-width: 100% !important;
+      min-width: 0 !important;
+      height: auto !important;
       margin-left: auto;
       margin-right: auto;
     }
     .en-redes-media iframe {
       width: 100% !important;
       max-width: 100% !important;
+      height: auto !important;
     }
     .en-redes-media blockquote {
       border: 0;
@@ -583,17 +586,24 @@
       font: inherit;
       width: 100% !important;
       max-width: 100% !important;
+      height: auto !important;
       margin: 0 auto;
     }
     .en-redes-media .twitter-tweet,
-    .en-redes-media .instagram-media {
+    .en-redes-media .twitter-tweet-rendered,
+    .en-redes-media .instagram-media,
+    .en-redes-media .instagram-media-rendered {
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
+      height: auto !important;
       margin: 0 auto !important;
     }
+    .en-redes-media .twitter-widget {
+      height: auto !important;
+    }
     .en-redes-pending {
-      min-height: 180px;
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2954,38 +2964,60 @@
           if (window.instgrm && window.instgrm.Embeds && window.instgrm.Embeds.process) {
             window.instgrm.Embeds.process();
           }
-          } else if (window.twttr && window.twttr.widgets) {
-            // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
-            // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
-            try {
-              window.twttr.widgets.setTheme(
-                document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
-              );
-            } catch (err) { /* sin soporte de tema */ }
-            if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
-            // Quitar restricciones de altura para mostrar el post completo
-            const removeHeightLimits = () => {
-              const iframe = holder.querySelector('iframe');
-              if (iframe) {
-                iframe.style.height = 'auto';
-                iframe.style.maxHeight = 'none';
-                iframe.style.minHeight = '0';
-                iframe.style.overflow = 'visible';
-              }
-              const tweet = holder.querySelector('.twitter-tweet');
-              if (tweet) {
-                tweet.style.height = 'auto';
-                tweet.style.maxHeight = 'none';
-                tweet.style.overflow = 'visible';
-              }
-              holder.style.height = 'auto';
-              holder.style.maxHeight = 'none';
-              holder.style.overflow = 'visible';
-            };
-            setTimeout(removeHeightLimits, 800);
-            setTimeout(removeHeightLimits, 1600);
-            setTimeout(removeHeightLimits, 3000);
-          }
+          // Instagram recarga/ajusta alto tras procesar
+          setTimeout(() => {
+            const media = holder.querySelector('.instagram-media');
+            if (media) {
+              media.style.height = 'auto';
+              media.style.maxHeight = 'none';
+            }
+            holder.style.height = 'auto';
+            holder.style.overflow = 'visible';
+          }, 800);
+          setTimeout(() => {
+            holder.style.height = 'auto';
+            holder.style.overflow = 'visible';
+          }, 2000);
+        } else if (window.twttr && window.twttr.widgets) {
+          // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
+          // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
+          try {
+            window.twttr.widgets.setTheme(
+              document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+            );
+          } catch (err) { /* sin soporte de tema */ }
+          if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
+          // Escuchar cuando el widget de X termine de renderizar para eliminar límites de altura
+          try {
+            if (window.twttr.events && window.twttr.events.bind) {
+              window.twttr.events.bind('rendered', function () {
+                removeHeightLimits();
+              });
+            }
+          } catch (err) {}
+          const removeHeightLimits = () => {
+            const iframe = holder.querySelector('iframe');
+            if (iframe) {
+              iframe.style.height = 'auto';
+              iframe.style.maxHeight = 'none';
+              iframe.style.minHeight = '0';
+              iframe.style.overflow = 'visible';
+            }
+            const tweet = holder.querySelector('.twitter-tweet, .twitter-tweet-rendered, .twitter-widget');
+            if (tweet) {
+              tweet.style.height = 'auto';
+              tweet.style.maxHeight = 'none';
+              tweet.style.overflow = 'visible';
+            }
+            holder.style.height = 'auto';
+            holder.style.maxHeight = 'none';
+            holder.style.overflow = 'visible';
+          };
+          setTimeout(removeHeightLimits, 500);
+          setTimeout(removeHeightLimits, 1000);
+          setTimeout(removeHeightLimits, 2000);
+          setTimeout(removeHeightLimits, 4000);
+        }
         const ok = await waitForSocialEmbed(holder, net);
         if (!ok) throw new Error('el embed no apareció');
       } catch (err) {
