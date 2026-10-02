@@ -21,9 +21,13 @@ app.use(
           'https://cdn.jsdelivr.net',
           'https://cdnjs.cloudflare.com',
           'https://pagead2.googlesyndication.com',
+          // gtag.js de Google Analytics. El cliente solo lo pide cuando el
+          // visitante autoriza la medición (loadAnalyticsIfAllowed en
+          // index.html): permitirlo aquí no lo carga por sí solo.
+          'https://www.googletagmanager.com',
           // Embeds oficiales de la sección "En redes": widgets.js de X y
           // embed.js de Instagram. Los carga el cliente, solo cuando la sección
-          // está por entrar en pantalla.
+          // está por entrar en pantalla y el visitante autorizó los embeds.
           'https://platform.twitter.com',
           'https://www.instagram.com',
           "'unsafe-inline'"
@@ -43,6 +47,11 @@ app.use(
           'https://googleads.g.doubleclick.net',
           'https://*.googlesyndication.com',
           'https://*.googleadservices.com',
+          // Envío de eventos a GA4, también solo con consentimiento.
+          'https://www.google-analytics.com',
+          'https://*.google-analytics.com',
+          'https://*.analytics.google.com',
+          'https://www.googletagmanager.com',
           'https://platform.twitter.com',
           'https://syndication.twitter.com',
           'https://cdn.syndication.twimg.com',

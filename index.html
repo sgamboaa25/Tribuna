@@ -44,16 +44,12 @@
     <meta property="og:url" content="https://tribuna-heos.onrender.com/" id="ogUrl" />
   <link rel="canonical" href="https://tribuna-heos.onrender.com/" id="canonicalUrl" />
   
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0Z6RBG1QL"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+  <!-- Google Analytics NO se carga aquí a propósito: gtag.js planta cookies
+       _ga / _ga_<ID> en cuanto se ejecuta, así que pedirlo en el <head> sería
+       medir al lector antes de que haya consentido. El tag se inyecta desde
+       loadAnalyticsIfAllowed(), igual que AdSense, cuando ya hay permiso.
+       Ver la sección "CONSENTIMIENTO DE COOKIES" más abajo. -->
 
-    gtag('config', 'G-X0Z6RBG1QL');
-  </script>
-  
   <style>
     /* ===== Tipografías autoalojadas =====
        Fraunces e Inter están en /public/fonts. Antes venían del CDN de Google
@@ -630,6 +626,9 @@
     .en-redes-fallback p { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
     .en-redes-fallback a { color: var(--accent); font: 700 .9rem 'Inter', sans-serif; text-decoration: none; }
     .en-redes-fallback a:hover { text-decoration: underline; }
+    .en-redes-consent { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 20px 16px; }
+    .en-redes-consent p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+    .en-redes-consent .en-redes-consent-alt { color: var(--accent); font: 700 .85rem 'Inter', sans-serif; }
     .foto-card { border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); display:flex; flex-direction:column; }
     .foto-card .foto-media { aspect-ratio:4/3; background:var(--input-bg); overflow:hidden; }
     .foto-card .foto-media img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
@@ -703,6 +702,14 @@
     .modal-head h2 { margin:0; font-size:1.2rem; font-family:'Inter', sans-serif; font-weight:700; } 
     .modal-body { padding:32px; max-height:70vh; overflow-y:auto; line-height:1.7; }
     .legal-text h3 { font-family:'Fraunces', serif; margin-top:20px; margin-bottom:var(--space-sm); }
+    .legal-updated { font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:0 0 var(--space-md); }
+    .legal-text ol { margin:0 0 var(--space-sm); padding-left:22px; }
+    .legal-text ol li { margin-bottom:8px; }
+    .legal-text code { font-size:.85em; background:var(--input-bg); border:1px solid var(--line); border-radius:4px; padding:1px 5px; }
+    .legal-table { width:100%; border-collapse:collapse; margin:0 0 var(--space-md); font-size:.85rem; }
+    .legal-table th, .legal-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; line-height:1.5; }
+    .legal-table th { background:var(--input-bg); font-weight:700; }
+    @media (max-width:600px) { .legal-table { font-size:.78rem; } .legal-table th, .legal-table td { padding:6px; } }
     
     label { display:block; font-weight:700; font-size:.78rem; margin-bottom:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; } 
     input,select { width:100%; border:1px solid var(--line); color:var(--ink); border-radius:var(--radius-md); padding:12px; font-family:'Inter', sans-serif; font-size:.95rem; margin-bottom:var(--space-md); background:var(--input-bg); outline:none; transition:border-color .2s; } 
@@ -1849,8 +1856,9 @@
           <button type="button" onclick="openLegalModal('cookies')">Política de cookies</button>
           <button type="button" onclick="openLegalModal('legal')">Aviso legal</button>
           <button type="button" onclick="openLegalModal('terms')">Términos de uso</button>
+          <button type="button" onclick="openCookiePreferences()">Cambiar mis preferencias de cookies</button>
         </div>
-        <p class="footer-credit">Los nombres de ligas, clubes y sus escudos son marcas de sus respectivos titulares. Imágenes de stock vía <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a>.</p>
+        <p class="footer-credit">Contacto, reclamaciones y ejercicio de derechos: <a href="mailto:sebastiangamboa2506@gmail.com">sebastiangamboa2506@gmail.com</a>. Los nombres de ligas, clubes y sus escudos son marcas de sus respectivos titulares. Imágenes de stock vía <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a>.</p>
       </div>
       <div class="social-links">
         <a href="https://www.facebook.com/profile.php?id=61585368417942" target="_blank" rel="noopener noreferrer" aria-label="Página de Facebook"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/></svg></a>
@@ -1894,7 +1902,7 @@
 
   <div class="cookie-banner" id="cookieBanner" role="region" aria-label="Aviso de cookies" hidden>
     <div class="cookie-banner-inner">
-      <p>Usamos cookies técnicas para que el sitio funcione (tema, sesión, guardados) y, con tu permiso, cookies de publicidad de Google AdSense. <button type="button" class="inline-link" onclick="openLegalModal('cookies')">Lee nuestra política de cookies</button>.</p>
+      <p>Usamos cookies técnicas propias para que el sitio funcione (tema, sesión, guardados, votos) y no salen de tu navegador. Con tu permiso usaremos además cookies de terceros: publicidad de Google AdSense, medición de audiencia con Google Analytics y los visores de X e Instagram. <button type="button" class="inline-link" onclick="openLegalModal('cookies')">Lee nuestra política de cookies</button> o <button type="button" class="inline-link" onclick="openCookiePreferences()">cambia tus preferencias</button> cuando quieras.</p>
       <div class="cookie-banner-actions">
         <button type="button" class="btn-cookie btn-accept" id="cookieAccept">Aceptar todas</button>
         <button type="button" class="btn-cookie btn-necessary" id="cookieNecessary">Solo necesarias</button>
@@ -1911,6 +1919,14 @@
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Aviso de que cambió el consentimiento de cookies. Se emite como evento
+    // (y no como llamada directa) porque la sección "En redes" se declara más
+    // abajo en el script: el evento llega solo a quien ya esté escuchando.
+    const CONSENT_CHANGE_EVENT = 'tribuna:consent-change';
+    function notifyConsentChange() {
+      document.dispatchEvent(new CustomEvent(CONSENT_CHANGE_EVENT));
+    }
+
     // ==========================================
     // ANUNCIOS (Google AdSense) — solo páginas públicas
     // El Publisher ID no es secreto (viaja en el HTML como indica Google).
@@ -1922,12 +1938,30 @@
     };
 
     // ==========================================
-    // CONSENTIMIENTO DE COOKIES (ePrivacy / GDPR)
-    // Las cookies técnicas (tema, sesión, guardados) son imprescindibles y
-    // siempre se usan. La publicidad de Google AdSense solo se carga si el
-    // visitante la acepta expresamente.
+    // MEDICIÓN DE AUDIENCIA (Google Analytics 4)
+    // El ID no es secreto, pero gtag.js SÍ planta cookies (_ga, _ga_<ID>) en
+    // cuanto se ejecuta. Por eso no hay etiqueta en el <head>: se inyecta desde
+    // loadAnalyticsIfAllowed(), igual que AdSense, solo con consentimiento.
+    // ==========================================
+    const ANALYTICS_ID = 'G-X0Z6RBG1QL';
+
+    // ==========================================
+    // CONSENTIMIENTO DE COOKIES (ePrivacy / GDPR / Ley 8968 CR)
+    // Lo único que se usa sin permiso es lo técnico y de primera parte (tema,
+    // modo de lectura, guardados, sesión del panel, votos): no sale de tu
+    // navegador ni identifica a nadie fuera de él. Los tres servicios de
+    // terceros —publicidad, medición y los embeds de X/Instagram— son no
+    // esenciales, así que van cada uno detrás de su propia casilla y solo se
+    // cargan si el visitante las acepta.
     // ==========================================
     const COOKIE_CONSENT_KEY = 'tribuna_cookie_consent';
+    // Se sube a 2 porque la versión 1 solo preguntaba por la publicidad y no
+    // daba a elegir medición ni embeds. Quien guardó un "Sí" v1 vuelve a ver el
+    // aviso una vez: es lo único que deja constancia de que consentió las tres
+    // categorías.
+    const COOKIE_CONSENT_VERSION = 2;
+    const CONSENT_ALL = { version: COOKIE_CONSENT_VERSION, advertising: true, analytics: true, embeds: true };
+    const CONSENT_NONE = { version: COOKIE_CONSENT_VERSION, advertising: false, analytics: false, embeds: false };
 
     function getConsent() {
       try {
@@ -1936,11 +1970,20 @@
       } catch (err) { return null; }
     }
 
+    // El consentimiento solo vale si es de la versión vigente. Cualquier otro
+    // (incluido un null) se trata como "todavía no he preguntado".
+    function currentConsent() {
+      const consent = getConsent();
+      return consent && consent.version === COOKIE_CONSENT_VERSION ? consent : null;
+    }
+
     function setConsent(consent) {
       try { localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(consent)); } catch (err) { /* almacenamiento no disponible */ }
     }
 
-    let adsenseEnabled = !!(getConsent() || {}).advertising;
+    let adsenseEnabled = !!(currentConsent() || {}).advertising;
+    let analyticsEnabled = !!(currentConsent() || {}).analytics;
+    let embedsEnabled = !!(currentConsent() || {}).embeds;
 
     function loadAdsenseIfAllowed() {
       if (!adsenseEnabled) return;
@@ -1953,31 +1996,110 @@
       document.head.appendChild(s);
     }
 
-    function initCookieBanner() {
-      const banner = document.getElementById('cookieBanner');
-      if (!banner) return;
-      const consent = getConsent();
-      if (consent) {
-        banner.hidden = true;
-        if (consent.advertising) loadAdsenseIfAllowed();
-        return;
-      }
-      banner.hidden = false;
-      const acceptBtn = document.getElementById('cookieAccept');
-      const necessaryBtn = document.getElementById('cookieNecessary');
-      if (acceptBtn) acceptBtn.onclick = () => {
-        setConsent({ version: 1, advertising: true });
-        adsenseEnabled = true;
-        banner.hidden = true;
+    function loadAnalyticsIfAllowed() {
+      if (!analyticsEnabled || window.gtag) return;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      // Consent Mode v2: se declara el estado antes de que el tag envíe nada.
+      // También sirve para la retirada posterior (update a "denied").
+      window.gtag('consent', 'default', {
+        analytics_storage: 'granted',
+        ad_storage: adsenseEnabled ? 'granted' : 'denied',
+        ad_user_data: adsenseEnabled ? 'granted' : 'denied',
+        ad_personalization: adsenseEnabled ? 'granted' : 'denied',
+        functionality_storage: 'granted',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
+      window.gtag('js', new Date());
+      window.gtag('config', ANALYTICS_ID);
+      const s = document.createElement('script');
+      s.id = 'analyticsLoader';
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ANALYTICS_ID;
+      document.head.appendChild(s);
+    }
+
+    // Retirar el consentimiento tiene que cortar el dato, no solo dejar de pedirlo:
+// por eso se vacían los anuncios ya empujados y se le dice a Google que cierre
+// los almacenes de datos.
+    function applyConsent(consent) {
+      adsenseEnabled = !!consent.advertising;
+      analyticsEnabled = !!consent.analytics;
+      embedsEnabled = !!consent.embeds;
+      if (adsenseEnabled) {
         loadAdsenseIfAllowed();
         document.querySelectorAll('ins.adsbygoogle').forEach(ins => ins.removeAttribute('data-ad-pushed'));
         pushAdsIn(document);
-      };
-      if (necessaryBtn) necessaryBtn.onclick = () => {
-        setConsent({ version: 1, advertising: false });
-        adsenseEnabled = false;
+      } else {
+        const loader = document.getElementById('adsenseLoader');
+        if (loader) loader.remove();
+        document.querySelectorAll('ins.adsbygoogle').forEach(ins => {
+          ins.removeAttribute('data-ad-pushed');
+          ins.textContent = '';
+        });
+        document.querySelectorAll('iframe[id^="google_ads_iframe"]').forEach(f => f.remove());
+      }
+      if (analyticsEnabled) {
+        loadAnalyticsIfAllowed();
+      } else if (window.gtag) {
+        // Ya hay tag en la página: el Consent Mode v2 con todo en "denied" es
+        // lo que le dice a Google que cierre el almacenamiento en lugar de
+        // simplemente dejar de pedirlo.
+        window.gtag('consent', 'update', {
+          analytics_storage: 'denied',
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied'
+        });
+      }
+      notifyConsentChange();
+    }
+
+    function saveConsentAndApply(consent) {
+      setConsent(consent);
+      applyConsent(consent);
+    }
+
+    function showCookieBanner() {
+      const banner = document.getElementById('cookieBanner');
+      if (!banner) return;
+      banner.hidden = false;
+      try {
+        banner.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } catch (err) { /* navegadores viejos */ }
+    }
+
+    // Enlace "Cambiar mis preferencias" del footer. El art. 7.3 del RGPD pide
+    // poder retirar el consentimiento tan fácil como se dio, así que esto
+    // reabre el mismo aviso sin borrar nada más.
+    function openCookiePreferences() {
+      showCookieBanner();
+    }
+
+    function initCookieBanner() {
+      const banner = document.getElementById('cookieBanner');
+      if (!banner) return;
+      const acceptBtn = document.getElementById('cookieAccept');
+      const necessaryBtn = document.getElementById('cookieNecessary');
+      // Los manejadores se enlazan siempre, no solo la primera vez que se
+      // muestra el aviso: si el banner vuelve desde "Cambiar mis preferencias",
+      // tiene que seguir respondiendo.
+      if (acceptBtn) acceptBtn.onclick = () => {
+        saveConsentAndApply(CONSENT_ALL);
         banner.hidden = true;
       };
+      if (necessaryBtn) necessaryBtn.onclick = () => {
+        saveConsentAndApply(CONSENT_NONE);
+        banner.hidden = true;
+      };
+      const consent = currentConsent();
+      if (consent) {
+        banner.hidden = true;
+        applyConsent(consent);
+        return;
+      }
+      banner.hidden = false;
     }
 
     function adSlotMarkup(slot, extraClassName, mode) {
@@ -2896,6 +3018,20 @@
       return `<div class="en-redes-fallback"><p>Esta publicación no se pudo cargar aquí.</p><a href="${escapeHtml(post.url)}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
     }
 
+    // Los visores oficiales de X e Instagram instalan cookies propias de la red
+    // (guest_id, muc_ads, ig_did...) en cuanto cargan. No son necesarias para
+    // leer la publicación, así que sin permiso se muestra el aviso con el enlace
+    // directo a la red en vez del embed.
+    function socialConsentMarkup(post, net) {
+      const label = net === 'instagram' ? 'Ver en Instagram' : 'Ver en X';
+      const netName = SOCIAL_NET_NAME[net] || 'la red social';
+      return `<div class="en-redes-consent">
+          <p>Esta publicación se muestra con el visor oficial de ${escapeHtml(netName)}, que instala cookies de terceros. Podemos cargarlo solo si lo autorizas.</p>
+          <button type="button" class="btn-cookie btn-accept" data-social-consent="1">Autorizar y ver la publicación</button>
+          <a class="en-redes-consent-alt" href="${escapeHtml(post.url)}" target="_blank" rel="noopener noreferrer">${label} sin cookies</a>
+        </div>`;
+    }
+
     function socialCardHTML(post) {
       const net = socialNetOf(post);
       const url = escapeHtml(post.url);
@@ -2978,6 +3114,11 @@
       card.dataset.hydrated = '1';
       const net = card.dataset.net === 'instagram' ? 'instagram' : 'x';
       const post = { url: card.dataset.url };
+      if (!embedsEnabled) {
+        card.dataset.hydrated = 'consent';
+        holder.innerHTML = socialConsentMarkup(post, net);
+        return;
+      }
       try {
         holder.innerHTML = card.dataset.timeline
           ? socialTimelineMarkup(card.dataset.timeline)
@@ -3056,6 +3197,29 @@
       if (!enRedesGrid) return;
       enRedesGrid.querySelectorAll('.en-redes-card').forEach(hydrateSocialCard);
     }
+
+    // Cuando el visitante autoriza (o cambia a "Aceptar todas") desde el aviso
+    // de cookies, las tarjetas que estaban esperando permiso se reintentan. El
+    // botón "Autorizar y ver la publicación" solo abre el aviso: no decide por
+    // el lector.
+    function retrySocialEmbedsWaitingConsent() {
+      if (!embedsEnabled || !enRedesGrid) return;
+      enRedesGrid.querySelectorAll('.en-redes-card[data-hydrated="consent"]').forEach(card => {
+        delete card.dataset.hydrated;
+        hydrateSocialCard(card);
+      });
+    }
+    document.addEventListener(CONSENT_CHANGE_EVENT, retrySocialEmbedsWaitingConsent);
+
+    function onSocialConsentClick(e) {
+      const btn = e.target.closest('[data-social-consent]');
+      if (!btn) return;
+      openCookiePreferences();
+      try {
+        btn.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch (err) { /* navegadores viejos */ }
+    }
+    if (enRedesGrid) enRedesGrid.addEventListener('click', onSocialConsentClick);
 
     // La sección es solo de la portada. La carga del JSON no depende de la
     // ruta (es una sola petición y pesa nada), pero el pintado sí: así, entrar
@@ -6802,8 +6966,34 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
     }
 
     // ===== Contenido legal (políticas completas) =====
-    // Contacto del responsable. Si cambias el medio de contacto, actualiza aquí.
-    const LEGAL_CONTACT = 'Instagram @s.gamboaa o TikTok @s.gamboaaa (canales públicos del medio)';
+    // Identificación del responsable. Es el canal que exigen el aviso legal
+    // (LSSI art. 10 / Ley 8968 CR) y el programa de AdSense para que una
+    // reclamación o un reclamo de derechos tenga una dirección verificable.
+    // Rellená `domicilio` y `telefono`: mientras estén vacíos se omiten del
+    // texto en vez de publicar datos inventados.
+    const LEGAL_CONTACT = {
+      nombre: 'Sebastián Gamboa Rivera',
+      email: 'sebastiangamboa2506@gmail.com',
+      domicilio: '',
+      telefono: '',
+      redes: 'Instagram @s.gamboaa y TikTok @s.gamboaaa'
+    };
+
+    // Versión visible del bloque de contacto: une solo los campos rellenados.
+    function legalContactLine() {
+      const c = LEGAL_CONTACT;
+      const partes = [
+        `correo <a href="mailto:${c.email}">${c.email}</a>`,
+        c.telefono ? `teléfono ${c.telefono}` : '',
+        c.domicilio ? `domicilio en ${c.domicilio}` : ''
+      ].filter(Boolean);
+      return partes.join(', ');
+    }
+
+    // Fecha de la última revisión de los cuatro textos. Súbela cuando toques
+    // cualquiera de ellos: es la referencia de "la versión vigente" que
+    // mencionan las propias políticas.
+    const LEGAL_UPDATED = '2 de octubre de 2026';
 
     const LEGAL_TITLES = {
       privacy: 'Política de privacidad',
@@ -6812,80 +7002,168 @@ const { data, error } = await supabaseClient.from('notes').select('*').eq('statu
       terms: 'Términos de uso'
     };
 
-    const LEGAL_CONTENT = {
+const LEGAL_CONTENT = {
       privacy: `
+        <p class="legal-updated">Última actualización: ${LEGAL_UPDATED}</p>
         <h3>1. Responsable del tratamiento</h3>
-        <p>TRIBUNA es un medio digital de periodismo deportivo independiente operado por su fundador, Sebastián Gamboa. Para ejercer cualquiera de tus derechos puedes contactar al responsable por <strong>${LEGAL_CONTACT}</strong>.</p>
-        <h3>2. Qué datos tratamos y para qué</h3>
+        <p>TRIBUNA es un medio digital de periodismo deportivo independiente. Quien responde por el tratamiento de tus datos es <strong>${LEGAL_CONTACT.nombre}</strong>, titular de este sitio y de la base de datos donde se tratan. Puedes localizarlo en <strong>${legalContactLine()}</strong>.</p>
+        <p>Los canales públicos del medio (${LEGAL_CONTACT.redes}) son para temas editoriales. No son un canal válido para ejercer derechos ni para presentar una reclamación, porque no permiten acreditar quién escribe. Usa el correo.</p>
+        <h3>2. Qué datos tratamos, para qué y con qué base legal</h3>
         <ul>
-          <li><strong>Boletín semanal:</strong> el correo electrónico que usas para suscribirte se guarda en nuestra base de datos (Supabase) únicamente para enviarte el boletín. Base legal: tu consentimiento explícito. Puedes darte de baja cuando quieras.</li>
-          <li><strong>Fotos de lectores:</strong> nombre, imagen y pie de foto. Con tu consentimiento y solo si eres mayor de edad; afirmas tener autorización de las personas que aparecen. Se publican tras moderación y se pueden retirar a petición.</li>
-          <li><strong>Reacciones y encuestas:</strong> solo guardamos contadores anónimos (aplausos, sorpresa, molestia y votos). En tu navegador se guarda una marca local para evitar votos duplicados; no recogemos tu identidad.</li>
-          <li><strong>Notas publicadas:</strong> nombre y correo de las personas autoras, que se muestran como dato editorial en el artículo.</li>
+          <li><strong>Boletín semanal — dirección de correo electrónico.</strong> Se guarda en nuestra base de datos para enviarte el boletín. Base legal: tu consentimiento explícito, que das al marcar la casilla de suscripción. Mientras no te des de baja, es la única razón por la que usamos ese correo.</li>
+          <li><strong>Fotos de lectores — nombre, imagen y pie de foto.</strong> Se publican en la portada del sitio. Base legal: tu consentimiento al enviar la foto, junto con tu declaración de que eres mayor de edad y de que tienes autorización de las personas que aparecen. La imagen queda en un almacenamiento público de nuestro proveedor de base de datos, accesible con su enlace.</li>
+          <li><strong>Perfiles de autores — nombre, correo y, si existe, biografía y avatar.</strong> El nombre se muestra como firma del artículo. Base legal: la relación editorial con la persona autora.</li>
+          <li><strong>Reacciones y encuestas — contadores agregados.</strong> Solo guardamos totales anónimos: aplausos, sorpresa, molestia y el recuento de cada opción. No registramos quién vota, desde qué dispositivo ni desde dónde.</li>
+          <li><strong>Contador de lecturas.</strong> Registramos cuántas veces se abre una nota, no quién la abrió. Base legal: interés legítimo en conocer el alcance del contenido que publicamos.</li>
+          <li><strong>Acceso al panel de redacción — sesión y credenciales.</strong> Solo lo usa el equipo editorial. Base legal: la relación laboral o de colaboración.</li>
         </ul>
-        <h3>3. Almacenamiento en tu navegador</h3>
-        <p>Usamos almacenamiento local estrictamente necesario para que el sitio funcione: tu tema claro/oscuro, modo de lectura, notas guardadas y la marca de votos. Estos datos no salen de tu navegador.</p>
-        <h3>4. Proveedores y servicios de terceros</h3>
+        <h3>3. Datos que no tratamos</h3>
         <ul>
-          <li><strong>Supabase</strong> — alojamiento, base de datos, envío del boletín y almacenamiento de imágenes.</li>
-          <li><strong>Google AdSense</strong> — publicidad. Solo se activa si aceptas las cookies de publicidad. Google puede usar cookies para anuncios personalizados.</li>
-          <li><strong>Google Fonts</strong> — tipografías (fontes); tu dirección IP se envía a Google al cargar las fuentes.</li>
-          <li><strong>Gravatar</strong> — avatar del perfil público de las personas autoras.</li>
-          <li><strong>TheSportsDB y football-data.org</strong> — datos públicos de competiciones y escudos de clubes.</li>
-          <li><strong>Unsplash</strong> — fotografías de archivo.</li>
-          <li><strong>Redes sociales</strong> — enlaces salientes a Facebook, Instagram, TikTok y X.</li>
+          <li>No elaboramos perfiles ni tomamos decisiones automatizadas que produzcan efectos jurídicos sobre ti. Los contadores de reacciones y las encuestas no segmentan a ninguna persona.</li>
+          <li>No tratamos categorías especiales de datos: salud, religión, orientación sexual, afiliación sindical, datos biométricos ni datos de menores de edad.</li>
+          <li>No vendemos, alquilamos ni cedemos tus datos con fines comerciales.</li>
         </ul>
-        <p>Estos servicios tienen sus propias políticas de privacidad; te recomendamos revisarlas.</p>
-        <h3>5. Tus derechos</h3>
-        <p>De acuerdo con la Ley de Protección de la Persona frente al Tratamiento de sus Datos Personales (Ley 8968 de Costa Rica) y, si resides en la Unión Europea, el RGPD, puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad, y revocar tu consentimiento en cualquier momento.</p>
-        <h3>6. Conservación y seguridad</h3>
-        <p>Los correos del boletín se conservan mientras quieras recibirlo; las fotos de lectores, mientras no solicites su retirada. El sitio usa conexión cifrada (HTTPS), control de acceso sobre los datos sensibles y políticas de seguridad en la base de datos.</p>
-        <h3>7. Cambios</h3>
-        <p>Actualizaremos esta política cuando cambien los datos tratados o los servicios utilizados. La versión vigente es la publicada en esta página.</p>
+        <h3>4. Con quién los compartimos</h3>
+        <p>Solo con proveedores que hacen posible el servicio, y solo en la medida que hace falta:</p>
+        <ul>
+          <li><strong>Supabase Inc.</strong> — base de datos, alojamiento, envío del boletín y almacenamiento de imágenes.</li>
+          <li><strong>Google LLC</strong> (AdSense y Analytics) — publicidad y medición, siempre con tu consentimiento, como se explica en la <button type="button" class="inline-link" onclick="openLegalModal('cookies')">política de cookies</button>.</li>
+          <li><strong>Gravatar</strong> — imagen de perfil de las personas autoras, que se pide a un servidor de Google al abrir su perfil.</li>
+          <li><strong>X Corp. e Instagram (Meta Ireland)</strong> — visores de publicaciones embebidas, siempre con tu consentimiento.</li>
+          <li><strong>TheSportsDB, football-data.org y API-Football</strong> — datos públicos de competiciones, escudos y calendario. De esos servicios no recibimos datos personales tuyos.</li>
+          <li><strong>Proveedor de envío de correo</strong> — solo para remitirte el boletín.</li>
+        </ul>
+        <h3>5. Transferencias internacionales</h3>
+        <p>Nuestros proveedores operan en Estados Unidos y en otros países fuera del Espacio Económico Europeo y fuera de Costa Rica. Estados Unidos no cuenta con una decisión de adecuamiento equivalente a la del RGPD, así que exigimos a cada proveedor las garantías del artículo 46: cláusulas contractuales tipo de la Comisión Europea, con salvaguardas adicionales cuando el destino ofrece una protección insuficiente. Cuando el marco de privacidad de datos entre Estados Unidos y la Unión Europea resulta aplicable, también nos apoyamos en él.</p>
+        <p>Si en algún momento una transferencia deja de estar garantizada, suspendemos ese servicio en lugar de continuar con el riesgo.</p>
+        <h3>6. Conservación</h3>
+        <ul>
+          <li><strong>Correo del boletín:</strong> hasta que te das de baja.</li>
+          <li><strong>Fotos de lectores:</strong> mientras la foto esté publicada, y hasta cinco días hábiles después de que solicites su retirada con los datos del punto 5 del aviso legal.</li>
+          <li><strong>Perfiles de autores:</strong> mientras la persona mantenga su actividad editorial con el medio.</li>
+          <li><strong>Registros del servidor:</strong> nuestro proveedor de alojamiento los conserva hasta 90 días por motivos de seguridad.</li>
+          <li><strong>Sesión del panel:</strong> se elimina al cerrar el navegador o la sesión.</li>
+        </ul>
+        <h3>7. Tus derechos</h3>
+        <p>Conforme a la Ley de Protección de la Persona frente al Tratamiento de sus Datos Personales (<strong>Ley 8968 de Costa Rica</strong>), que reconoce el principio de accesibilidad y, en la Unión Europea, al <strong>RGPD</strong>, puedes ejercer los derechos de <strong>acceso</strong>, <strong>rectificación</strong>, <strong>supresión</strong>, <strong>oposición</strong>, <strong>limitación</strong> y <strong>portabilidad</strong>, además de revocar tu consentimiento en cualquier momento. Revocar no afecta a la licitud del tratamiento que se hizo antes de revocarlo.</p>
+        <p>Ejerce cualquiera de ellos escribiendo a <a href="mailto:${LEGAL_CONTACT.email}">${LEGAL_CONTACT.email}</a> con el asunto "Derechos sobre mis datos" e indicando tu nombre, el correo desde el que nos escribes, el derecho que quieres ejercer y, si ya lo sabes, los datos concretos afectados.</p>
+        <p>Respondemos en un máximo de <strong>30 días naturales</strong>, ampliable en 60 días más por complejidad o volumen de solicitudes; en ese caso te avisamos dentro del primer plazo y te explicamos el retraso. No cobramos por ejercer tus derechos. Si crees que no los hemos atendido, puedes reclamar ante la autoridad de protección de datos que te corresponda: en Costa Rica, el IERA; en la Unión Europea, la de tu país de residencia.</p>
+        <h3>8. Menores de edad</h3>
+        <p>El sitio está dirigido a personas mayores de 18 años. No recopilamos de forma consciente datos de menores de edad. Si crees que un menor nos ha enviado datos, escríbenos y los eliminaremos.</p>
+        <h3>9. Seguridad</h3>
+        <p>El sitio se sirve íntegramente por HTTPS, el tráfico va cifrado, el acceso a la base de datos está protegido y solo el equipo editorial lo tiene. Ningún sistema es infalible: si crees que ha habido una brecha de seguridad, escríbenos y lo comunicaremos.</p>
+        <h3>10. Cambios</h3>
+        <p>Actualizaremos esta política cuando cambien los datos tratados, los servicios utilizados o la normativa aplicable. La versión vigente es la publicada en esta página, con su fecha de actualización arriba. Los cambios que afecten de forma sustancial tus derechos se anunciarán de forma visible en el sitio antes de aplicarlos.</p>
       `,
       cookies: `
+        <p class="legal-updated">Última actualización: ${LEGAL_UPDATED}</p>
         <h3>¿Qué son las cookies?</h3>
-        <p>Las cookies y el almacenamiento local del navegador guardan pequeños datos en tu dispositivo para que el sitio funcione o para personalizar tu visita.</p>
-        <h3>Cookies que usamos</h3>
+        <p>Las cookies son archivos pequeños que un sitio guarda en tu navegador. El almacenamiento local (<code>localStorage</code>) cumple la misma función, pero se queda en tu dispositivo. Aquí usamos de las dos cosas, y separamos lo que hace falta para que el sitio funcione de lo que solo sirve para medir o mostrar publicidad.</p>
+        <h3>1. Lo que usamos sin pedirte permiso</h3>
+        <p>Son datos de primera parte: no salen de tu navegador, no identifican a nadie fuera de tu dispositivo y no permiten rastrear tu navegación. Se basan en el interés legítimo de prestar el servicio.</p>
+        <table class="legal-table">
+          <thead><tr><th>Nombre</th><th>Dónde</th><th>Para qué</th><th>Duración</th></tr></thead>
+          <tbody>
+            <tr><td><code>tribuna_theme</code></td><td>Almacenamiento local</td><td>Recordar si usas el tema claro u oscuro</td><td>Hasta que la borres</td></tr>
+            <tr><td><code>tribuna_read_mode</code></td><td>Almacenamiento local</td><td>Recordar el modo de lectura</td><td>Hasta que la borres</td></tr>
+            <tr><td><code>tribuna_bookmarks</code></td><td>Almacenamiento local</td><td>Recordar las notas que guardaste</td><td>Hasta que la borres</td></tr>
+            <tr><td><code>tribuna_vote_mark</code></td><td>Almacenamiento local</td><td>Evitar que votes dos veces en la misma reacción o encuesta</td><td>Hasta que la borres</td></tr>
+            <tr><td><code>tribuna_cookie_consent</code></td><td>Almacenamiento local</td><td>Recordar tu elección en el aviso de cookies</td><td>Hasta que la cambies o la borres</td></tr>
+            <tr><td><code>tribuna_writer_token</code></td><td>Sesión del navegador</td><td>Mantener abierta la sesión del panel de redacción</td><td>Hasta que cierras el navegador</td></tr>
+          </tbody>
+        </table>
+        <h3>2. Lo que usamos solo si lo autorizas</h3>
+        <p>Son cookies de terceros. No son necesarias para leer el sitio y no se cargan si eliges "Solo necesarias" o si nunca respondes el aviso.</p>
+        <table class="legal-table">
+          <thead><tr><th>Proveedor</th><th>Cookies habituales</th><th>Para qué</th><th>Duración</th></tr></thead>
+          <tbody>
+            <tr><td>Google AdSense</td><td><code>IDE</code>, <code>test_cookie</code>, <code>ANID</code>, <code>NID</code>, <code>1P_JAR</code>, <code>DSID</code></td><td>Servir anuncios, medirlos, limitar la repetición y detectar publicidad inválida</td><td>De 1 mes a 2 años, según la cookie</td></tr>
+            <tr><td>Google Analytics</td><td><code>_ga</code>, <code>_ga_</code> seguido del identificador del sitio</td><td>Medir de forma agregada cómo se usa el sitio</td><td>2 años</td></tr>
+            <tr><td>X (Twitter)</td><td><code>guest_id</code>, <code>muc_ads</code>, <code>personalization_id</code></td><td>Mostrar el visor oficial de publicaciones embebidas</td><td>De 5 minutos a 13 meses, según la cookie</td></tr>
+            <tr><td>Instagram (Meta)</td><td><code>ig_did</code></td><td>Mostrar el visor oficial de publicaciones embebidas</td><td>Hasta 13 meses</td></tr>
+            <tr><td>Google Fonts</td><td>No se usa</td><td>Las tipografías se sirven desde este mismo sitio, no desde Google: pedirlas a su CDN mandaba tu dirección IP a Google antes de que hubieras aceptado nada</td><td>No aplica</td></tr>
+          </tbody>
+        </table>
+        <p>Esta es una lista de las cookies habituales, no un inventario cerrado: los proveedores pueden añadir o cambiar identificadores. La <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">tabla oficial de cookies de Google</a> es la referencia completa para su material publicitario.</p>
+        <h3>3. Cómo se decide</h3>
+        <p>El aviso ofrece dos opciones: <strong>"Aceptar todas"</strong> (publicidad, medición y visores de redes) o <strong>"Solo necesarias"</strong> (nada de lo anterior). Nadie que no responda recibe cookies de terceros.</p>
+        <h3>4. Cómo cambiar tu decisión o retirar tu consentimiento</h3>
         <ul>
-          <li><strong>Estrictamente necesarias (siempre activas):</strong> tema claro/oscuro, modo de lectura, notas guardadas, marca de votos y la sesión del panel de redacción. Sin ellas el sitio no funciona correctamente y no requieren tu consentimiento.</li>
-          <li><strong>Registro de tu elección:</strong> guardamos tu decisión de cookies para no volver a mostrarte el aviso.</li>
-          <li><strong>Publicidad (solo si aceptas):</strong> Google AdSense y sus socios (autorizadas por Google) instalan cookies como <em>NID</em>, <em>IDE</em> o <em>ANID</em> para mostrar anuncios relevantes, medir su rendimiento y evitar anuncios repetidos. No se carga ningún anuncio si eliges "Solo necesarias".</li>
+          <li>En cualquier momento, con el enlace <strong>"Cambiar mis preferencias de cookies"</strong> del pie de página. Se abre el mismo aviso.</li>
+          <li>Borrando las cookies y los datos de sitio desde la configuración de tu navegador.</li>
+          <li>Para anuncios personalizados, en <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">adssettings.google.com</a> y en <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">aboutads.info</a>.</li>
         </ul>
-        <h3>Configuración y revocación</h3>
-        <p>En el aviso puedes elegir "Aceptar todas" o "Solo necesarias". Puedes borrar o bloquear cookies desde la configuración de tu navegador. Para anuncios personalizados puedes gestionar tus preferencias en <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">adssettings.google.com</a> y en <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">aboutads.info</a>.</p>
-        <h3>Base legal</h3>
-        <p>Los datos que tratamos se ajustan a la Ley 8968 de Costa Rica y, para visitantes en la Unión Europea, a la directiva ePrivacy y al RGPD. Las cookies necesarias se basan en el interés legítimo de prestar el servicio; la publicidad se basa en tu consentimiento.</p>
+        <p>Cuando cambias tu decisión a "Solo necesarias" dejamos de cargar esos servicios, retiramos los anuncios ya mostrados y le decimos a Google que cierre el almacenamiento asociado. Ten en cuenta que las cookies que un tercero ya plantó en tu navegador no se pueden borrar desde nuestra web: para eliminarlas de verdad tienes que borrarlas desde tu navegador o usar los enlaces de gestión anteriores.</p>
+        <h3>5. Base legal</h3>
+        <p>Las cookies necesarias se basan en el interés legítimo de prestar el servicio. Las de publicidad, medición y visores se basan en tu consentimiento, que es libre, específico, informado, inequívoco y revocable en cualquier momento. Nos ajustamos a la Ley 8968 de Costa Rica y, para visitantes en la Unión Europea, a la directiva ePrivacy 2002/58/CE y al RGPD.</p>
       `,
       legal: `
-        <h3>Identificación</h3>
-        <p>Este sitio, <strong>TRIBUNA</strong>, es un medio digital de periodismo deportivo independiente operado por su fundador, Sebastián Gamboa, sin personalidad jurídica propia.</p>
-        <h3>Responsabilidad editorial</h3>
-        <p>El contenido publicado tiene finalidad informativa y de entretenimiento deportivo. Se hace un esfuerzo razonable por verificar los datos, pero la información sobre resultados, posiciones y fichajes puede contener errores o estar desactualizada. No constituye asesoramiento profesional ni financiero.</p>
-        <h3>Propiedad intelectual y marcas</h3>
-        <p>Los textos, imágenes propias y el diseño de TRIBUNA están protegidos por la normativa de propiedad intelectual. Los nombres, escudos y marcas de ligas y clubes pertenecen a sus respectivos titulares y se utilizan únicamente con fines informativos y periodísticos. Los escudos provienen de fuentes públicas (TheSportsDB) y las fotografías de archivo de Unsplash bajo su licencia.</p>
-        <h3>Fotos de lectores y derechos de imagen</h3>
-        <p>Las imágenes enviadas por lectores se publican únicamente con el consentimiento expreso de la persona autora, que declara ser mayor de edad y contar con la autorización de las personas fotografiadas.</p>
-        <h3>Retirada de contenido</h3>
-        <p>Si consideras que algún contenido vulnera tus derechos (imagen, marca o propiedad intelectual), puedes solicitarnos su retirada contactándonos por ${LEGAL_CONTACT}. Atenderemos la solicitud en un plazo razonable.</p>
-        <h3>Enlaces externos</h3>
-        <p>Los enlaces a sitios externos (redes sociales, fuentes de datos) se ofrecen por conveniencia; no nos responsabilizamos de su contenido ni de sus políticas.</p>
-        <h3>Legislación aplicable</h3>
-        <p>Este sitio se rige por la legislación de la República de Costa Rica. Para controversias, se aplican los tribunales competentes de Costa Rica.</p>
+        <p class="legal-updated">Última actualización: ${LEGAL_UPDATED}</p>
+        <h3>1. Identificación del responsable</h3>
+        <ul>
+          <li><strong>Nombre:</strong> ${LEGAL_CONTACT.nombre}</li>
+          <li><strong>Titular del sitio:</strong> TRIBUNA, periodismo deportivo independiente</li>
+          <li><strong>Correo electrónico:</strong> <a href="mailto:${LEGAL_CONTACT.email}">${LEGAL_CONTACT.email}</a></li>
+          <li><strong>Teléfono:</strong> ${LEGAL_CONTACT.telefono || 'No publicado'}</li>
+          <li><strong>Domicilio:</strong> ${LEGAL_CONTACT.domicilio || 'No publicado'}</li>
+          <li><strong>Redes oficiales:</strong> ${LEGAL_CONTACT.redes}</li>
+        </ul>
+        <p>TRIBUNA es un proyecto editorial independiente sin personalidad jurídica constituida. Quien lo edita y responde por él es ${LEGAL_CONTACT.nombre}, identificable con los datos anteriores.</p>
+        <h3>2. Responsabilidad editorial</h3>
+        <p>El contenido publicado tiene finalidad informativa y de entretenimiento deportivo. Se hace un esfuerzo razonable por verificar los datos, pero la información sobre resultados, posiciones, calendarios y fichajes puede contener errores o estar desactualizada. TRIBUNA no responde de la exactitud de los datos de terceros ni de la situación de ningún club, jugador o competidor. Nada de lo publicado constituye asesoramiento profesional, financiero, médico ni de apuestas.</p>
+        <p>Las opiniones expresadas en las notas y en las cuentas del medio pertenecen a sus autores y no reflejan necesariamente la línea editorial de TRIBUNA.</p>
+        <h3>3. Propiedad intelectual y marcas</h3>
+        <p>Los textos, las imágenes propias y el diseño de TRIBUNA están protegidos por la normativa de propiedad intelectual. Puedes citar y compartir nuestros artículos indicando la fuente y enlazando al original.</p>
+        <p>Los nombres, escudos, uniformes y marcas de ligas, clubes y jugadores pertenecen a sus respectivos titulares y se utilizan con fines exclusivamente informativos y periodísticos, sin sugerir patrocinio ni afiliación. Los escudos provienen de fuentes públicas (TheSportsDB) y las fotografías de archivo de Unsplash, bajo su licencia.</p>
+        <h3>4. Fotos enviadas por lectores</h3>
+        <p>Las imágenes enviadas por lectores se publican únicamente con el consentimiento expreso de quien las envía, que declara ser mayor de edad y tener autorización de las personas fotografiadas. Quien envía la foto cede a TRIBUNA una licencia no exclusiva para publicarla, moderarla y retirarla del sitio, y sigue siendo responsable de que la imagen no vulnere derechos de terceros. Tu nombre se muestra junto a la foto, en la portada del sitio.</p>
+        <h3>5. Reclamación, retirada de contenido y contra-notificación</h3>
+        <p>Si consideras que un contenido vulnera tus derechos (propiedad intelectual, derecho de imagen, marca, honor o privacidad), escribe a <a href="mailto:${LEGAL_CONTACT.email}">${LEGAL_CONTACT.email}</a> con el asunto "Reclamación de derechos" e indica:</p>
+        <ol>
+          <li>Tu nombre completo y, si actúas como representante, quién te representa y con qué poder.</li>
+          <li>La dirección exacta del contenido reclamado.</li>
+          <li>Qué derecho consideras vulnerado y una explicación del conflicto.</li>
+          <li>Un correo de contacto para poder responderte.</li>
+          <li>Si reclamas propiedad intelectual, una descripción del trabajo y la fecha en que lo publicaste.</li>
+          <li>Si reclamas derecho de imagen, una explicación de tu relación con la persona fotografiada.</li>
+          <li>Una declaración bajo tu responsabilidad de que la solicitud es legítima.</li>
+        </ol>
+        <p>Respondemos dentro de los <strong>5 días hábiles</strong> siguientes a la recepción de la solicitud completa. Si el contenido reúne los requisitos, lo retiramos o lo modificamos; si no, te explicamos por qué.</p>
+        <p>Si denegamos tu solicitud y no estás de acuerdo, puedes enviar una <strong>contra-notificación</strong> dentro de los <strong>10 días hábiles</strong> siguientes a nuestra respuesta, indicando por qué la decisión debe revisarse. La contra-notificación se tramita con el mismo rigor y dentro del mismo plazo.</p>
+        <p>El uso reiterado y de mala fe del procedimiento, o el envío de reclamaciones falsas o denegadas de forma sistemática, puede generar responsabilidad por los daños ocasionados, conforme a la normativa aplicable.</p>
+        <h3>6. Enlaces externos y contenido de terceros</h3>
+        <p>Los enlaces a sitios externos (redes sociales, fuentes de datos, proveedores) se ofrecen por conveniencia. No controlamos ni respondemos por su contenido, su disponibilidad ni sus políticas de privacidad. Los visores de X e Instagram son contenido de terceros embebido en nuestras páginas: su funcionamiento depende de esas plataformas.</p>
+        <h3>7. Publicidad</h3>
+        <p>El sitio muestra publicidad servida por Google AdSense. TRIBUNA no selecciona ni controla los anuncios, no responde del contenido de los anunciantes ni de los sitios a los que enlazan, y no se hace responsable de los daños que pueda causar interactuar con ellos. Puedes consultar las <a href="https://policies.google.com/ads" target="_blank" rel="noopener noreferrer">políticas de publicidad de Google</a>.</p>
+        <h3>8. Responsabilidad y limitación de responsabilidad</h3>
+        <p>TRIBUNA pone los medios razonables para que el sitio funcione y su contenido sea exacto, pero no garantiza la disponibilidad permanente, la ausencia de errores ni la continuidad del servicio. En la medida en que la ley lo permita, no responde de los daños o de la pérdida de lucro derivados del uso o de la imposibilidad de uso del sitio, de la pérdida de datos o de la existencia de virus u otros elementos dañinos.</p>
+        <h3>9. Menores de edad</h3>
+        <p>El sitio y su contenido se dirigen a personas mayores de 18 años. TRIBUNA no recopila de forma consciente datos de menores de edad y recomienda que el uso del sitio y de la publicidad que en él aparece se haga bajo la supervisión de una persona adulta.</p>
+        <h3>10. Legislación aplicable y jurisdicción</h3>
+        <p>Este sitio se rige por la legislación de la República de Costa Rica. Para cualquier controversia las partes se someten a la jurisdicción de los tribunales ordinarios de Costa Rica, sin perjuicio de los derechos irrenunciables que reconozca la normativa aplicable a la persona consumidora o a quien resida en la Unión Europea.</p>
       `,
       terms: `
-        <h3>Condiciones de uso</h3>
-        <p>Al acceder a TRIBUNA aceptas estas condiciones. Si no estás de acuerdo, te pedimos que no utilices el sitio.</p>
-        <h3>Uso del contenido</h3>
-        <p>Puedes compartir y citar nuestros artículos citando la fuente. Queda prohibida la reproducción comercial, el scraping masivo, la redistribución sin autorización y cualquier uso que infrinja derechos de autor.</p>
-        <h3>Contenido enviado por usuarios</h3>
-        <p>Al enviar una foto de lector cedes a TRIBUNA una licencia no exclusiva para publicarla, moderarla y retirarla del sitio. No se publicará tu contenido sin moderación previa, y nos reservamos el derecho a rechazar contenido que no cumpla estas condiciones. Eres responsable de no enviar contenido que viole derechos de terceros, incluido el derecho de imagen de las personas fotografiadas.</p>
-        <h3>Boletín</h3>
-        <p>La suscripción al boletín es voluntaria y puedes darte de baja en cualquier momento. Tu correo se usa únicamente para enviarte el boletín.</p>
-        <h3>Exclusión de responsabilidad</h3>
-        <p>El medio no garantiza la disponibilidad permanente del sitio ni la exactitud total de los datos. No nos hacemos responsables por daños derivados del uso de la información publicada.</p>
-        <h3>Modificaciones</h3>
-        <p>Podemos actualizar estas condiciones cuando lo consideremos necesario. La versión vigente es la publicada en esta página.</p>
+        <p class="legal-updated">Última actualización: ${LEGAL_UPDATED}</p>
+        <h3>1. Aceptación y edad mínima</h3>
+        <p>Al acceder a TRIBUNA aceptas estas condiciones. Si no estás de acuerdo, te pedimos que no utilices el sitio. El sitio está dirigido a personas <strong>mayores de 18 años</strong>; al usarlo declaras que tienes esa edad o que actúas con autorización de quien la tiene.</p>
+        <h3>2. Uso del contenido</h3>
+        <p>Puedes compartir y citar nuestros artículos indicando la fuente y enlazando al original. Queda prohibida la reproducción comercial o integral, el descarga masiva y automatizada de contenido (scraping), la redistribución sin autorización y cualquier uso que infrinja derechos de autor o las normas de uso de los servicios de terceros de donde proceda un contenido.</p>
+        <h3>3. Contenido enviado por lectores</h3>
+        <p>Al enviar una foto de lector cedes a TRIBUNA una licencia no exclusiva para publicarla, moderarla y retirarla del sitio. No se publica nada sin moderación previa y nos reservamos el derecho a rechazar contenido que no cumpla estas condiciones. Eres responsable de no enviar contenido que viole derechos de terceros, incluido el derecho de imagen de las personas fotografiadas, y declaras que eres mayor de edad.</p>
+        <h3>4. Boletín</h3>
+        <p>La suscripción al boletín es voluntaria y puedes darte de baja en cualquier momento con el enlace incluido en cada envío. Tu correo se usa únicamente para enviarte el boletín. Ver la <button type="button" class="inline-link" onclick="openLegalModal('privacy')">política de privacidad</button>.</p>
+        <h3>5. Contenido informativo</h3>
+        <p>Lo publicado en TRIBUNA es periodismo deportivo con fines informativos y de entretenimiento. No es asesoramiento profesional, financiero, médico ni de apuestas, y no debe ser la única base de ninguna decisión. Los datos de resultados, posiciones y fichajes provienen de servicios de terceros y pueden contener errores o retrasarse.</p>
+        <h3>6. Publicidad</h3>
+        <p>TRIBUNA muestra publicidad de terceros, identificada como tal. No controlamos los anuncios ni los sitios a los que enlazan, y no respondemos de su contenido ni de lo que resulte de interactuar con ellos. La publicidad no implica ninguna relación ni respaldo de TRIBUNA hacia el anunciante.</p>
+        <h3>7. Disponibilidad y conducta aceptable</h3>
+        <p>El sitio se ofrece tal cual: no garantizamos que funcione sin interrupciones ni que el contenido esté siempre actualizado. No puedes usarlo para cometer actos prohibidos por la ley, para acceder al panel de redacción sin autorización o para molestar a otras personas con un uso abusivo del servicio.</p>
+        <h3>8. Exclusión y limitación de responsabilidad</h3>
+        <p>El medio no se hace responsable de los daños derivados del uso de la información publicada, de la pérdida de datos o de la imposibilidad de usar el sitio. Nada en estas condiciones excluye la responsabilidad que no puede excluirse legalmente, como la derivada de dolo o culpa grave, ni los derechos del consumidor.</p>
+        <h3>9. Modificaciones</h3>
+        <p>Podemos actualizar estas condiciones cuando lo consideremos necesario. La versión vigente es la publicada en esta página, con su fecha de actualización. Los cambios sustanciales se anunciarán de forma visible en el sitio antes de entrar en vigor.</p>
+        <h3>10. Legislación aplicable</h3>
+        <p>Estas condiciones se rigen por la legislación de la República de Costa Rica, con sometimiento a los tribunales competentes de Costa Rica.</p>
       `
     };
 

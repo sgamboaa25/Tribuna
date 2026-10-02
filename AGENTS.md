@@ -62,6 +62,43 @@ Notas de aplicación:
   real sale como hermano con `twitter-widget twitter-widget-rendered`. Las
   clases de `widgets.js` son internas de X y cambian sin aviso.
 
+## Regla de consentimiento NO NEGOCIABLE
+
+**Nada de terceros que plante cookies o mida al visitante puede cargarse antes
+de que acepte.** Igual que las claves, es una regla de servidores, no de
+preferencias.
+
+Concreto en el código:
+
+- Ningún `<script>` de terceros en el `<head>`. Ni AdSense, ni gtag.js, ni los
+  visores de redes. Cada uno se inyecta desde su cargador (`loadAdsenseIfAllowed()`,
+  `loadAnalyticsIfAllowed()`, `hydrateSocialCard()`), que sale con
+  `adsenseEnabled` / `analyticsEnabled` / `embedsEnabled` en `false`.
+- Si añades una fuente nueva, self-hosteala en `public/fonts/` y declárala con
+  `@font-face` en el CSS de `index.html` y de `widgets/posiciones.html`. No
+  vuelvas a meter un `<link>` a `fonts.googleapis.com`: eso manda la IP del
+  visitante a Google en el primer render, antes de que acepte nada. Declararlo
+  en la política de cookies no lo hace legal. `test/fonts-local.test.js` falla
+  si reaparece el CDN.
+- `consumo/embeds` sin permiso no es "no cargar" el embed: es tampoco cargar el
+  script de la red. Sin permiso se pinta `socialConsentMarkup()` con el enlace
+  directo a la red.
+- `COOKIE_CONSENT_VERSION` sube a 3 cada vez que se añade una categoría nueva al
+  `CONSENT_ALL`: así quien ya había contestado vuelve a ver el aviso y queda
+  constancia de que aceptó también lo nuevo.
+- Retirar el consentimiento tiene que **cortar**, no solo dejar de pedir: por eso
+  `applyConsent()` vacía los anuncios, manda `gtag('consent','update',…)` con
+  todo en `denied` y avisa con el evento `tribuna:consent-change` para que las
+  tarjetas de "En redes" que esperaban permiso se reintenten.
+- Al tocar la CSP de `server.js`: permitir un dominio en `scriptSrc`/`connectSrc`
+  **no** lo carga, solo deja que se cargue. Ampliarlo sin el gate de arriba
+  convierte la excepción en la infracción.
+
+`LEGAL_CONTACT` (`index.html`) es el canal legal real: correo obligatorio,
+domicilio y teléfono recomendados. Si los cambias, actualiza también el pie de
+página y `LEGAL_UPDATED` (la fecha que las cuatro políticas citan como versión
+vigente).
+
 ## Variables de entorno del backend (ver `.env.example`)
 
 - `SUPABASE_URL` — URL pública de Supabase (no secreta).
@@ -90,5 +127,5 @@ Rutas de servidor aparte: `/rss.xml`, `/feed`, `/sitemap.xml`, `/robots.txt`, `/
 - `npm run test:unit` (puro, sin red) y `npm run test:regression` (levanta el servidor
   en un puerto libre y pega con HTTP de verdad).
 - `index.html` no lo cubre ESLint: si tocas JS del cliente, el parseo se comprueba
-  con `node --check` sobre el script inline extraído, o indirectamente con los tests
-  de `test/mercado-tags.test.js`, que lo aíslan en un `vm`.
+  con `npm run lint:client` (extrae el script inline a `.tribuna-inline.js` y le
+  pasa `node --check`), o indirectamente con los tests de `test/mercado-tags.test.js`, que lo aíslan en un `vm`.
