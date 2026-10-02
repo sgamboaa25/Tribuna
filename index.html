@@ -654,15 +654,27 @@
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
     .skip-link { position:absolute; left:-9999px; top:-9999px; z-index:9999; background:var(--accent); color:#fff; padding:10px 16px; border-radius:8px; font-weight:700; }
     .skip-link:focus { left:12px; top:12px; }
-    .cookie-banner { position:fixed; left:0; right:0; bottom:0; z-index:1000; background:var(--panel-bg); color:var(--panel-fg); border-top:1px solid var(--line); padding:18px 20px; box-shadow:0 -8px 24px rgba(0,0,0,.15); }
-    .cookie-banner-inner { max-width:1120px; margin:0 auto; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; }
-    .cookie-banner p { margin:0; max-width:720px; font-size:.9rem; line-height:1.5; color:var(--panel-fg); }
+    .cookie-banner { position:fixed; left:0; right:0; bottom:0; z-index:1000; background:var(--panel-bg); color:var(--panel-fg); border-top:1px solid var(--line); padding:18px 20px; box-shadow:0 -8px 24px rgba(0,0,0,.15); max-height:88vh; overflow:auto; }
+    .cookie-banner-inner { max-width:1120px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,380px); gap:16px 28px; align-items:start; }
+    .cookie-banner-copy h2 { font:700 1.05rem 'Fraunces', serif; margin:0 0 6px; }
+    .cookie-banner p { margin:0 0 8px; font-size:.9rem; line-height:1.5; color:var(--panel-fg); }
+    .cookie-banner p:last-child { margin-bottom:0; }
     .cookie-banner p a { color:var(--panel-fg); }
+    .cookie-banner-links { font-size:.85rem; opacity:.85; }
     .cookie-banner .inline-link { background:none; border:0; padding:0; margin:0; color:var(--panel-fg); text-decoration:underline; cursor:pointer; font:inherit; }
-    .cookie-banner-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .cookie-banner-actions { grid-column:1 / -1; display:flex; gap:10px; flex-wrap:wrap; }
     .cookie-banner .btn-cookie { border:1px solid transparent; border-radius:8px; padding:10px 14px; font-size:.85rem; font-weight:700; cursor:pointer; font-family:'Inter', sans-serif; min-height:44px; }
     .cookie-banner .btn-accept { background:var(--accent); color:#fff; }
+    .cookie-banner .btn-all { background:var(--panel-fg); color:var(--panel-bg); }
     .cookie-banner .btn-necessary { background:transparent; border-color:var(--line); color:var(--panel-fg); }
+    .cookie-options { grid-column:2; grid-row:1; border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+    .cookie-option { display:flex; align-items:flex-start; gap:10px; margin:0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; cursor:pointer; text-transform:none; letter-spacing:normal; font-weight:400; font-size:.85rem; color:var(--panel-fg); }
+    .cookie-option:hover { background:rgba(255,255,255,.06); }
+    .cookie-option input { flex:none; width:18px; height:18px; margin:2px 0 0; accent-color:var(--accent); }
+    .cookie-option span { display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .cookie-option strong { font:700 .85rem 'Inter', sans-serif; color:var(--panel-fg); }
+    .cookie-option small { font-size:.78rem; line-height:1.45; opacity:.75; }
+    @media (max-width:820px) { .cookie-banner-inner { grid-template-columns:1fr; } .cookie-options { grid-column:1; grid-row:auto; } }
     .cookie-banner-msg[aria-live] { }
     .footer-credit { margin-top:12px; font-size:.75rem; opacity:.6; }
     .footer-credit a { color:inherit; }
@@ -1900,12 +1912,32 @@
 
   <button class="to-top" id="toTop" type="button" aria-label="Volver arriba" title="Volver arriba">↑</button>
 
-  <div class="cookie-banner" id="cookieBanner" role="region" aria-label="Aviso de cookies" hidden>
+  <div class="cookie-banner" id="cookieBanner" role="region" aria-labelledby="cookieBannerTitle" hidden>
     <div class="cookie-banner-inner">
-      <p>Usamos cookies técnicas propias para que el sitio funcione (tema, sesión, guardados, votos) y no salen de tu navegador. Con tu permiso usaremos además cookies de terceros: publicidad de Google AdSense, medición de audiencia con Google Analytics y los visores de X e Instagram. <button type="button" class="inline-link" onclick="openLegalModal('cookies')">Lee nuestra política de cookies</button> o <button type="button" class="inline-link" onclick="openCookiePreferences()">cambia tus preferencias</button> cuando quieras.</p>
+      <div class="cookie-banner-copy">
+        <h2 id="cookieBannerTitle">Cookies en Tribuna</h2>
+        <p>Las cookies técnicas (tema, sesión, guardados, votos) son propias, hacen falta para que el sitio funcione y no salen de tu navegador: no necesitan permiso. Las de terceros sí, y cada una va por separado. Puedes aceptarlas todas, rechazarlas todas o marcar solo las que quieras.</p>
+        <p class="cookie-banner-links"><button type="button" class="inline-link" onclick="openLegalModal('cookies')">Lee la política de cookies</button> · <button type="button" class="inline-link" onclick="openCookiePreferences()">cambia tus preferencias</button></p>
+      </div>
+      <fieldset class="cookie-options">
+        <legend class="sr-only">Elige qué cookies de terceros permites</legend>
+        <label class="cookie-option">
+          <input type="checkbox" id="optAdvertising" />
+          <span><strong>Publicidad</strong><small>Google AdSense y sus socios. Anuncios, medición de clics y publicidad personalizada.</small></span>
+        </label>
+        <label class="cookie-option">
+          <input type="checkbox" id="optAnalytics" />
+          <span><strong>Medición de audiencia</strong><small>Google Analytics. Cuántas visitas recibe cada nota, de forma agregada.</small></span>
+        </label>
+        <label class="cookie-option">
+          <input type="checkbox" id="optEmbeds" />
+          <span><strong>Visores de redes sociales</strong><small>X e Instagram. Necesarios para mostrar las publicaciones de "En redes" dentro del sitio.</small></span>
+        </label>
+      </fieldset>
       <div class="cookie-banner-actions">
-        <button type="button" class="btn-cookie btn-accept" id="cookieAccept">Aceptar todas</button>
-        <button type="button" class="btn-cookie btn-necessary" id="cookieNecessary">Solo necesarias</button>
+        <button type="button" class="btn-cookie btn-accept" id="cookieSave">Guardar mis preferencias</button>
+        <button type="button" class="btn-cookie btn-all" id="cookieAccept">Aceptar todas</button>
+        <button type="button" class="btn-cookie btn-necessary" id="cookieNecessary">Rechazar todas</button>
       </div>
     </div>
   </div>
@@ -2061,18 +2093,63 @@
       applyConsent(consent);
     }
 
+    // Las tres casillas del aviso, con su clave dentro del objeto de
+    // consentimiento. Cada una es una finalidad distinta, así que se deciden
+    // por separado: aceptarlas todas de golpe es comodo, no obligatorio.
+    const CONSENT_OPTIONS = [
+      { key: 'advertising', el: 'optAdvertising' },
+      { key: 'analytics', el: 'optAnalytics' },
+      { key: 'embeds', el: 'optEmbeds' }
+    ];
+
+    function setCheckboxes(consent) {
+      CONSENT_OPTIONS.forEach((opt) => {
+        const input = document.getElementById(opt.el);
+        if (input) input.checked = !!(consent && consent[opt.key]);
+      });
+    }
+
+    function readCheckboxes() {
+      const consent = { version: COOKIE_CONSENT_VERSION };
+      CONSENT_OPTIONS.forEach((opt) => {
+        const input = document.getElementById(opt.el);
+        consent[opt.key] = !!(input && input.checked);
+      });
+      return consent;
+    }
+
     function showCookieBanner() {
       const banner = document.getElementById('cookieBanner');
       if (!banner) return;
+      // Al reabrirlo se muestra lo que ya habia decidido, no un formulario en
+      // blanco: si alguien viene a cambiar una sola casilla, lo ve. Sin
+      // decision previa, ninguna marcada.
+      setCheckboxes(currentConsent() || CONSENT_NONE);
       banner.hidden = false;
       try {
         banner.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       } catch (err) { /* navegadores viejos */ }
+      const first = document.getElementById('optAdvertising');
+      if (first) first.focus();
+    }
+
+    // Autorizar una sola finalidad sin tocar las demas. Lo usan los botones
+    // "Ver la publicacion" de las tarjetas de "En redes": quiver un post no
+    // puede implicar aceptar publicidad (art. 4.11 del RGPD: el consentimiento
+    // es especifico por finalidad).
+    function grantConsentFor(key) {
+      // Copia: CONSENT_NONE es una constante compartida y mutarla contaminaria
+      // el "Rechazar todas" del resto de la sesion.
+      const consent = Object.assign({}, currentConsent() || CONSENT_NONE);
+      consent.version = COOKIE_CONSENT_VERSION;
+      consent[key] = true;
+      setConsent(consent);
+      applyConsent(consent);
     }
 
     // Enlace "Cambiar mis preferencias" del footer. El art. 7.3 del RGPD pide
-    // poder retirar el consentimiento tan fácil como se dio, así que esto
-    // reabre el mismo aviso sin borrar nada más.
+    // poder retirar el consentimiento tan facil como se dio, asi que esto
+    // reabre el mismo aviso sin borrar nada mas.
     function openCookiePreferences() {
       showCookieBanner();
     }
@@ -2080,25 +2157,35 @@
     function initCookieBanner() {
       const banner = document.getElementById('cookieBanner');
       if (!banner) return;
+      const saveBtn = document.getElementById('cookieSave');
       const acceptBtn = document.getElementById('cookieAccept');
       const necessaryBtn = document.getElementById('cookieNecessary');
       // Los manejadores se enlazan siempre, no solo la primera vez que se
       // muestra el aviso: si el banner vuelve desde "Cambiar mis preferencias",
       // tiene que seguir respondiendo.
+      if (saveBtn) saveBtn.onclick = () => {
+        saveConsentAndApply(readCheckboxes());
+        banner.hidden = true;
+      };
       if (acceptBtn) acceptBtn.onclick = () => {
+        setCheckboxes(CONSENT_ALL);
         saveConsentAndApply(CONSENT_ALL);
         banner.hidden = true;
       };
       if (necessaryBtn) necessaryBtn.onclick = () => {
+        setCheckboxes(CONSENT_NONE);
         saveConsentAndApply(CONSENT_NONE);
         banner.hidden = true;
       };
       const consent = currentConsent();
       if (consent) {
         banner.hidden = true;
+        setCheckboxes(consent);
         applyConsent(consent);
         return;
       }
+      // Primera visita: ninguna casilla marcada. Ningun tercero carga.
+      setCheckboxes(CONSENT_NONE);
       banner.hidden = false;
     }
 
@@ -3020,15 +3107,14 @@
 
     // Los visores oficiales de X e Instagram instalan cookies propias de la red
     // (guest_id, muc_ads, ig_did...) en cuanto cargan. No son necesarias para
-    // leer la publicación, así que sin permiso se muestra el aviso con el enlace
-    // directo a la red en vez del embed.
+    // leer la publicacion, asi que sin permiso se muestra esto en vez del embed.
     function socialConsentMarkup(post, net) {
       const label = net === 'instagram' ? 'Ver en Instagram' : 'Ver en X';
       const netName = SOCIAL_NET_NAME[net] || 'la red social';
       return `<div class="en-redes-consent">
-          <p>Esta publicación se muestra con el visor oficial de ${escapeHtml(netName)}, que instala cookies de terceros. Podemos cargarlo solo si lo autorizas.</p>
-          <button type="button" class="btn-cookie btn-accept" data-social-consent="1">Autorizar y ver la publicación</button>
-          <a class="en-redes-consent-alt" href="${escapeHtml(post.url)}" target="_blank" rel="noopener noreferrer">${label} sin cookies</a>
+          <p>Para mostrar esta publicación aquí cargamos el visor oficial de ${escapeHtml(netName)}, que instala cookies de terceros. Necesita tu permiso.</p>
+          <button type="button" class="btn-cookie btn-accept" data-social-consent="1">Ver la publicación</button>
+          <a class="en-redes-consent-alt" href="${escapeHtml(post.url)}" target="_blank" rel="noopener noreferrer">${label} en su sitio</a>
         </div>`;
     }
 
@@ -3198,10 +3284,10 @@
       enRedesGrid.querySelectorAll('.en-redes-card').forEach(hydrateSocialCard);
     }
 
-    // Cuando el visitante autoriza (o cambia a "Aceptar todas") desde el aviso
-    // de cookies, las tarjetas que estaban esperando permiso se reintentan. El
-    // botón "Autorizar y ver la publicación" solo abre el aviso: no decide por
-    // el lector.
+    // Cuando el visitante concede el permiso de visores —con el boton "Ver la
+    // publicacion" de la propia tarjeta o con la casilla del aviso— las tarjetas
+    // que estaban esperando se reintentan. Todas las que havia en pantalla se
+    // montan de golpe: si solo autorizo al pulsar una, las demas ya podian.
     function retrySocialEmbedsWaitingConsent() {
       if (!embedsEnabled || !enRedesGrid) return;
       enRedesGrid.querySelectorAll('.en-redes-card[data-hydrated="consent"]').forEach(card => {
@@ -3211,13 +3297,15 @@
     }
     document.addEventListener(CONSENT_CHANGE_EVENT, retrySocialEmbedsWaitingConsent);
 
+    // El boton "Ver la publicacion" concede permiso SOLO para los visores y monta
+    // el embed en el acto: ver un post no puede implicar aceptar publicidad
+    // (art. 4.11 del RGPD). Los visores ya cargados por otras tarjetas no se
+    // tocan, y si el lector no quiere, el enlace "en su sitio" esta a mano.
     function onSocialConsentClick(e) {
       const btn = e.target.closest('[data-social-consent]');
       if (!btn) return;
-      openCookiePreferences();
-      try {
-        btn.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      } catch (err) { /* navegadores viejos */ }
+      btn.disabled = true;
+      grantConsentFor('embeds');
     }
     if (enRedesGrid) enRedesGrid.addEventListener('click', onSocialConsentClick);
 
@@ -7086,14 +7174,15 @@ const LEGAL_CONTENT = {
         </table>
         <p>Esta es una lista de las cookies habituales, no un inventario cerrado: los proveedores pueden añadir o cambiar identificadores. La <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">tabla oficial de cookies de Google</a> es la referencia completa para su material publicitario.</p>
         <h3>3. Cómo se decide</h3>
-        <p>El aviso ofrece dos opciones: <strong>"Aceptar todas"</strong> (publicidad, medición y visores de redes) o <strong>"Solo necesarias"</strong> (nada de lo anterior). Nadie que no responda recibe cookies de terceros.</p>
+        <p>El aviso tiene una casilla por finalidad. Puedes marcar solo las que quieras y guardar, aceptarlas todas o rechazarlas todas. Nadie que no responda recibe cookies de terceros.</p>
+        <p>También puedes autorizar una finalidad concreta en el momento: si pulsas "Ver la publicación" en una tarjeta de la sección "En redes", eso concede permiso solo para los visores de X e Instagram, sin tocar publicidad ni medición. Ver un post no implica aceptar publicidad.</p>
         <h3>4. Cómo cambiar tu decisión o retirar tu consentimiento</h3>
         <ul>
-          <li>En cualquier momento, con el enlace <strong>"Cambiar mis preferencias de cookies"</strong> del pie de página. Se abre el mismo aviso.</li>
+          <li>En cualquier momento, con el enlace <strong>"Cambiar mis preferencias de cookies"</strong> del pie de página. Se abre el mismo aviso con las casillas que tenías marcadas.</li>
           <li>Borrando las cookies y los datos de sitio desde la configuración de tu navegador.</li>
           <li>Para anuncios personalizados, en <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">adssettings.google.com</a> y en <a href="https://www.aboutads.info" target="_blank" rel="noopener noreferrer">aboutads.info</a>.</li>
         </ul>
-        <p>Cuando cambias tu decisión a "Solo necesarias" dejamos de cargar esos servicios, retiramos los anuncios ya mostrados y le decimos a Google que cierre el almacenamiento asociado. Ten en cuenta que las cookies que un tercero ya plantó en tu navegador no se pueden borrar desde nuestra web: para eliminarlas de verdad tienes que borrarlas desde tu navegador o usar los enlaces de gestión anteriores.</p>
+        <p>Cuando rechazas o cambias tu decisión dejamos de cargar esos servicios, retiramos los anuncios ya mostrados y le decimos a Google que cierre el almacenamiento asociado. Ten en cuenta que las cookies que un tercero ya plantó en tu navegador no se pueden borrar desde nuestra web: para eliminarlas de verdad tienes que borrarlas desde tu navegador o usar los enlaces de gestión anteriores.</p>
         <h3>5. Base legal</h3>
         <p>Las cookies necesarias se basan en el interés legítimo de prestar el servicio. Las de publicidad, medición y visores se basan en tu consentimiento, que es libre, específico, informado, inequívoco y revocable en cualquier momento. Nos ajustamos a la Ley 8968 de Costa Rica y, para visitantes en la Unión Europea, a la directiva ePrivacy 2002/58/CE y al RGPD.</p>
       `,

@@ -83,6 +83,16 @@ Concreto en el código:
 - `consumo/embeds` sin permiso no es "no cargar" el embed: es tampoco cargar el
   script de la red. Sin permiso se pinta `socialConsentMarkup()` con el enlace
   directo a la red.
+- Cada finalidad va por su casilla (`CONSENT_OPTIONS`: publicidad, medición,
+  visores). Nada de un único "Aceptar todas" como única vía: el art. 4.11 del
+  RGPD pide consentimiento específico, y el botón "Ver la publicación" de las
+  tarjetas de "En redes" llama a `grantConsentFor('embeds')` justamente para no
+  arrastrar publicidad al ver un post. Si añades una finalidad, nueva casilla y
+  `grantConsentFor()` tiene que seguir sin tocar las demás.
+- `grantConsentFor()` copia el consentimiento antes de modificarlo
+  (`Object.assign({}, …)`). Mutar `CONSENT_NONE` en el sitio contaminaría el
+  "Rechazar todas" del resto de la sesión. `test/consent-granular.test.js`
+  cubre las tres casillas, el aislamiento por finalidad y esa regresión.
 - `COOKIE_CONSENT_VERSION` sube a 3 cada vez que se añade una categoría nueva al
   `CONSENT_ALL`: así quien ya había contestado vuelve a ver el aviso y queda
   constancia de que aceptó también lo nuevo.
