@@ -2972,14 +2972,16 @@
             window.instgrm.Embeds.process();
           }
           const forceInstagramHeight = () => {
-            const media = holder.querySelector('.instagram-media, iframe[src*="instagram.com"]');
+            const media = holder.querySelector('.instagram-media, .instagram-media-rendered, iframe[src*="instagram.com"]');
             if (media) {
-              media.style.height = media.scrollHeight ? media.scrollHeight + 'px' : 'auto';
-              media.style.maxHeight = 'none';
-              media.style.minHeight = '0';
+              media.style.setProperty('height', 'auto', 'important');
+              media.style.setProperty('max-height', 'none', 'important');
+              media.style.setProperty('min-height', '0', 'important');
             }
-            holder.style.height = 'auto';
-            holder.style.overflow = 'visible';
+            holder.style.setProperty('height', 'auto', 'important');
+            holder.style.setProperty('overflow', 'visible', 'important');
+            const card = holder.closest('.en-redes-card');
+            if (card) card.style.setProperty('height', 'auto', 'important');
           };
           setTimeout(forceInstagramHeight, 500);
           setTimeout(forceInstagramHeight, 1000);
@@ -3005,24 +3007,24 @@
           const removeHeightLimits = () => {
             const iframe = holder.querySelector('iframe');
             if (iframe) {
-              try {
-                iframe.style.height = iframe.contentWindow ? iframe.scrollHeight + 'px' : 'auto';
-              } catch (e) {
-                iframe.style.height = 'auto';
-              }
-              iframe.style.maxHeight = 'none';
-              iframe.style.minHeight = '0';
-              iframe.style.overflow = 'visible';
+              iframe.style.setProperty('height', 'auto', 'important');
+              iframe.style.setProperty('max-height', 'none', 'important');
+              iframe.style.setProperty('min-height', '0', 'important');
+              iframe.style.setProperty('overflow', 'visible', 'important');
             }
             const tweet = holder.querySelector('.twitter-tweet, .twitter-tweet-rendered, .twitter-widget');
             if (tweet) {
-              tweet.style.height = 'auto';
-              tweet.style.maxHeight = 'none';
-              tweet.style.overflow = 'visible';
+              tweet.style.setProperty('height', 'auto', 'important');
+              tweet.style.setProperty('max-height', 'none', 'important');
+              tweet.style.setProperty('overflow', 'visible', 'important');
             }
-            holder.style.height = 'auto';
-            holder.style.maxHeight = 'none';
-            holder.style.overflow = 'visible';
+            holder.style.setProperty('height', 'auto', 'important');
+            holder.style.setProperty('max-height', 'none', 'important');
+            holder.style.setProperty('overflow', 'visible', 'important');
+            const card = holder.closest('.en-redes-card');
+            if (card) {
+              card.style.setProperty('height', 'auto', 'important');
+            }
           };
           setTimeout(removeHeightLimits, 500);
           setTimeout(removeHeightLimits, 1000);
