@@ -519,24 +519,91 @@
     .foto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
 
     /* Punto 18 · "En redes": grilla de embeds de X e Instagram curados por la
-       redacción. Los embeds oficiales crecen con el contenido (una foto de
-       Instagram es mucho más alta que un post de texto), así que cada tarjeta
-       topa su propio alto: sin eso, una sola publicación larga estiraría la
-       fila y dejaría huecos debajo de las demás. */
-    .en-redes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:20px; align-items:start; }
-    .en-redes-card { min-width:0; background:var(--card-bg); border:1px solid var(--line); border-radius:var(--radius-lg); padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.02), 0 1px 0 rgba(0,0,0,.03); }
-    .en-redes-card.is-featured { grid-column:span 2; }
-    .en-redes-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
-    .en-redes-net { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font:600 .78rem 'Inter', sans-serif; }
-    .en-redes-net svg { width:15px; height:15px; fill:currentColor; flex:none; }
-    .en-redes-featured { color:var(--accent); font:700 .68rem 'Inter', sans-serif; text-transform:uppercase; letter-spacing:.08em; }
-    .en-redes-media { max-height:520px; overflow:auto; }
-    .en-redes-media > * { max-width:100%; margin-left:auto; margin-right:auto; }
-    .en-redes-media blockquote { border:0; padding:0; font:inherit; }
-    .en-redes-pending { min-height:160px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.85rem; }
-    .en-redes-fallback p { margin:0 0 12px; color:var(--muted); font-size:.9rem; }
-    .en-redes-fallback a { color:var(--accent); font:700 .9rem 'Inter', sans-serif; text-decoration:none; }
-    .en-redes-fallback a:hover { text-decoration:underline; }
+       redacción. Los posts se acomodan en grilla ordenada de izquierda a
+       derecha y hacia abajo. */
+    .en-redes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    .en-redes-card {
+      min-width: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.02), 0 1px 0 rgba(0,0,0,.03);
+      display: flex;
+      flex-direction: column;
+    }
+    .en-redes-card.is-featured { grid-column: span 1; }
+    .en-redes-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .en-redes-net {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font: 600 .78rem 'Inter', sans-serif;
+    }
+    .en-redes-net svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
+    .en-redes-featured {
+      color: var(--accent);
+      font: 700 .68rem 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .en-redes-media {
+      position: relative;
+      width: 100%;
+      overflow: visible;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+    }
+    .en-redes-media > * {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .en-redes-media iframe {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .en-redes-media blockquote {
+      border: 0;
+      padding: 0;
+      font: inherit;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 auto;
+    }
+    .en-redes-media .twitter-tweet,
+    .en-redes-media .instagram-media {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin: 0 auto !important;
+    }
+    .en-redes-pending {
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: .85rem;
+      flex: 1;
+    }
+    .en-redes-fallback p { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+    .en-redes-fallback a { color: var(--accent); font: 700 .9rem 'Inter', sans-serif; text-decoration: none; }
+    .en-redes-fallback a:hover { text-decoration: underline; }
     .foto-card { border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; background:var(--card-bg); display:flex; flex-direction:column; }
     .foto-card .foto-media { aspect-ratio:4/3; background:var(--input-bg); overflow:hidden; }
     .foto-card .foto-media img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
@@ -856,7 +923,11 @@
     .card:active { transform:translateY(-1px) scale(.99); }
     .share-btn:active, .load-more-btn:active, .reaction-btn:active, .btn-secondary:active, .chip:active, .reading-toggle:active, .bookmark-btn:active { transform:scale(.96); }
 
-    @media (max-width:768px) { 
+    @media (max-width: 1024px) {
+      .en-redes-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) { 
       input, select, textarea { font-size:16px; }
       .search-bar input { font-size:16px; }
       .status-select { font-size:16px !important; padding:var(--space-sm) 12px !important; min-height:44px; }
@@ -876,10 +947,11 @@
       .utility { flex-wrap:wrap; gap:var(--space-sm); }
       .brand { font-size:2.3rem; } 
       .hero,.grid,.ranking,.editor-grid { grid-template-columns:1fr; } 
-      /* En móvil la grilla de "En redes" es de una sola columna, así que una
-         fija deja de ocupar dos casillas: el ancho extra se perdería. */
-      .en-redes-grid { grid-template-columns:1fr; }
-      .en-redes-card.is-featured { grid-column:span 1; }
+      .en-redes-card.is-featured { grid-column: span 1; }
+    }
+
+    @media (max-width: 640px) {
+      .en-redes-grid { grid-template-columns: 1fr; }
       .card-featured { grid-column:auto; } 
       .hero { gap:28px; }
       .grid { gap:var(--space-lg); }
@@ -2747,6 +2819,7 @@
     // Una publicación borrada, protegida o caída deja el iframe sin aparecer.
     // Con este techo la tarjeta pasa al enlace plano en vez de quedar en hueco.
     const SOCIAL_EMBED_TIMEOUT_MS = 8000;
+    const X_EMBED_MAX_HEIGHT = 700; // Altura máxima controlada para posts largos de X. Usado con overflow para mostrar degradado/opción Ver en X si se desea.
     const enRedesSection = document.getElementById('enRedes');
     const enRedesGrid = document.getElementById('enRedesGrid');
     const enRedesStatus = document.getElementById('enRedesStatus');
@@ -2847,7 +2920,13 @@
           // "twitter-tweet" es solo del blockquote original. Instagram, en
           // cambio, sí usa "instagram-media". Como las clases son internas de
           // cada red y cambian sin aviso, se mira que haya cualquier iframe.
-          if (holder.querySelector('iframe')) return resolve(true);
+          const iframe = holder.querySelector('iframe');
+        if (iframe) {
+          iframe.style.height = 'auto';
+          iframe.style.maxHeight = 'none';
+          iframe.style.overflow = 'visible';
+          return resolve(true);
+        }
           // X marca el fallo en el propio iframe (o en el blockquote) con
           // "<clase>-error". Si aparece, no tiene sentido esperar al techo.
           if (net === 'x' && holder.querySelector('.twitter-widget-error')) {
@@ -2875,16 +2954,38 @@
           if (window.instgrm && window.instgrm.Embeds && window.instgrm.Embeds.process) {
             window.instgrm.Embeds.process();
           }
-        } else if (window.twttr && window.twttr.widgets) {
-          // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
-          // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
-          try {
-            window.twttr.widgets.setTheme(
-              document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
-            );
-          } catch (err) { /* sin soporte de tema */ }
-          if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
-        }
+          } else if (window.twttr && window.twttr.widgets) {
+            // X sí tiene tema para sus widgets; sin esto el tweet saldría claro
+            // sobre un sitio oscuro. Es una API opcional: si no existe, no pasa nada.
+            try {
+              window.twttr.widgets.setTheme(
+                document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+              );
+            } catch (err) { /* sin soporte de tema */ }
+            if (window.twttr.widgets.load) window.twttr.widgets.load(holder);
+            // Quitar restricciones de altura para mostrar el post completo
+            const removeHeightLimits = () => {
+              const iframe = holder.querySelector('iframe');
+              if (iframe) {
+                iframe.style.height = 'auto';
+                iframe.style.maxHeight = 'none';
+                iframe.style.minHeight = '0';
+                iframe.style.overflow = 'visible';
+              }
+              const tweet = holder.querySelector('.twitter-tweet');
+              if (tweet) {
+                tweet.style.height = 'auto';
+                tweet.style.maxHeight = 'none';
+                tweet.style.overflow = 'visible';
+              }
+              holder.style.height = 'auto';
+              holder.style.maxHeight = 'none';
+              holder.style.overflow = 'visible';
+            };
+            setTimeout(removeHeightLimits, 800);
+            setTimeout(removeHeightLimits, 1600);
+            setTimeout(removeHeightLimits, 3000);
+          }
         const ok = await waitForSocialEmbed(holder, net);
         if (!ok) throw new Error('el embed no apareció');
       } catch (err) {
